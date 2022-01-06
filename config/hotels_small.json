@@ -1,0 +1,20 @@
+{
+  "dataset_path": "../../datasets/hotels50k/",
+  "nb_classes": 2468,
+  "train_file": "train_small.csv",
+  "val_file": "val1_small.csv",
+  "test_file": "test1_small.csv",
+  "all_val_files": [
+    "val1_small.txt",
+    "val2_small.txt",
+    "val3_small.txt",
+    "val4_small.txt"
+  ],
+  "all_test_files": [
+    "test1_small.txt",
+    "test2_small.txt",
+    "test3_small.txt",
+    "test4_small.txt"
+  ],
+  "loss_mode": "metric"
+}
