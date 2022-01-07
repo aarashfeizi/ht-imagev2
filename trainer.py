@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import torch
 
+from SummaryWriter import SummaryWriter
 from metrics import Metric_Accuracy
 
 OPTIMIZERS = {'adam': torch.optim.Adam}
@@ -17,6 +18,8 @@ class Trainer:
         self.val_loader = val_loader
         self.optimizer_name = optimizer
         self.optimizer = None
+        self.tensorboard_path = args.get('tensorboard_path')
+        self.tb_writer = SummaryWriter(self.tensorboard_path)
 
     def set_train_loader(self, train_loader):
         self.train_loader = train_loader
@@ -40,6 +43,15 @@ class Trainer:
         self.optimizer = OPTIMIZERS[self.optimizer_name](params=learnable_params,
                                                          lr=self.args.get('learning_rate'),
                                                          weight_decay=self.args.get('weight_decay'))
+
+    def _tb_draw_histograms(self, net):
+
+        for name, param in net.named_parameters():
+            if param.requires_grad:
+                self.tb_writer.add_histogram(name, param.flatten(), self.current_epoch)
+
+        self.writer.flush()
+
 
     def __train_one_epoch(self, net):
         net.train()
@@ -89,3 +101,9 @@ class Trainer:
 
             self.current_epoch = epoch
 
+            self._tb_draw_histograms(net)
+
+            # if self.scheduler:
+            #     self.scheduler.step()
+            # else:
+            #     self.adaptive_scheduler.step(current_loss=val_loss, current_val=val_acc)

@@ -280,6 +280,7 @@ def _resnet(arch, block, layers, pretrained, progress, num_classes, pooling_meth
     return model
 
 
+
 def resnet18(args, pretrained=False, progress=True, num_classes=1, mask=False, fourth_dim=False, output_dim=0, **kwargs):
     r"""ResNet-18 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_

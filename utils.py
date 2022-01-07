@@ -22,6 +22,12 @@ class Global_Config_File:
 
         self.__merge_config_files(args=args, config=config_file)
 
+        self.__add_other_params()
+
+    def __add_other_params(self):
+        self.global_config_file['tensorboard_path'] = 'tensorboard_' + self.global_config_file.get('dataset')
+        self.global_config_file['save_path'] = 'save_' + self.global_config_file.get('dataset')
+
     def __merge_config_files(self, args, config):
         for key, value in args.items():
             self.global_config_file[key] = value
