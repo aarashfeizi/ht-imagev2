@@ -26,14 +26,14 @@ def main():
     if args.test:
         test_loader = utils.get_data(all_args, mode='test')
 
-    net = model.get_top_module(args=args)
+    net = model.get_top_module(args=all_args)
 
     loss = losses.get_loss(all_args)
 
-    if args.get('cuda'):
-        if args.get('gpu_ids') != '':
-            os.environ["CUDA_VISIBLE_DEVICES"] = args.get('gpu_ids')
-            logger.info(f"use gpu: {args.get('gpu_ids')} to train.")
+    if all_args.get('cuda'):
+        if all_args.get('gpu_ids') != '':
+            os.environ["CUDA_VISIBLE_DEVICES"] = all_args.get('gpu_ids')
+            logger.info(f"use gpu: {all_args.get('gpu_ids')} to train.")
 
         if torch.cuda.device_count() > 1:
             logger.info(f'torch.cuda.device_count() = {torch.cuda.device_count()}')
@@ -42,7 +42,7 @@ def main():
         net.cuda()
         loss.cuda()
 
-    trainer = Trainer(args, loss=loss, train_loader=train_loader, val_loader=val_loader)
+    trainer = Trainer(all_args, loss=loss, train_loader=train_loader, val_loader=val_loader)
 
     trainer.train(net, val=True)
 
