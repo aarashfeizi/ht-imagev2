@@ -10,13 +10,13 @@ def get_args():
     # logistics
     parser.add_argument('--cuda', default=False, action='store_true')
     parser.add_argument('--gpu_ids', default='', help="gpu ids used to train")  # before: default="0,1,2,3"
-    parser.add_argument('--seed', default=402, help="set random seed")
+    parser.add_argument('--seed', type=int, default=402, help="set random seed")
     parser.add_argument('--config_path', default='config/', help="config_path for datasets")
     parser.add_argument('--project_path', default='./', help="project_path")
 
 
     parser.add_argument('--test', default=False, action='store_true')
-    parser.add_argument('--workers', default=10, help="number of workers for data loading")
+    parser.add_argument('--workers', type=int, default=10, help="number of workers for data loading")
     parser.add_argument('--pin_memory', default=False, action='store_true', help="pinning memory for data loading")
 
     # data
