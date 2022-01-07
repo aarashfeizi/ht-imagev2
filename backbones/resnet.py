@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.nn import Parameter
 import torch.nn.functional as F
 from torchvision.models import ResNet as tResNet
-import models.pooling as pooling
+import backbones.pooling as pooling
 from torch.hub import load_state_dict_from_url
 import utils
 import os

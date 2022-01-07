@@ -2,18 +2,17 @@
 
 read -p "gpu: " GPU
 read -p "epochs: " EPOCHS
-read -a LRS -p "lrs: "
-read -a LRR -p "lrr: "
-read -a LPK -p "lpk: "
-read -a BHK -p "bhk: "
+read -a LRS -p "lr: "
+read -a BBLRS -p "backbone lr: "
+read -a KS -p "Ks: "
 
-en="${EPOCHS}-nf"
+en="${EPOCHS}v2"
 
-for bhk in ${BHK[@]}
+for ks in ${KS[@]}
 do
 	for lr in ${LRS[@]}
 	do
-		for bblr in ${LRR[@]}
+		for bblr in ${BBLRS[@]}
 		do
 			python3 main.py --cuda \
 				--dataset new_hotels_small \
@@ -25,27 +24,13 @@ do
 				--epochs $EPOCHS \
 				--learning_rate $lr \
 				--bb_learning_rate $bblr \
-				--num_inst_per_class $bhk \
+				--num_inst_per_class $ks \
 				--extra_name $en \
 				--loss pnpp \
 				--project_path ./ \
 				--temperature 1 \
         --emb_size 512 \
-
-				-es 20 \
-				-ls 4 \
-
-				--metric cosine \
-
-
-				-pool spoc \
-				-soft \
-				-sr \
-				-katn \
-
-				--link_prediction_k 0 \
-				--no_final_network \
-
+        #--
 		done
 	done
 done

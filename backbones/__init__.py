@@ -1,4 +1,4 @@
-from resnet import *
+from backbones.resnet import *
 import timm
 
 NETWORKS = {
