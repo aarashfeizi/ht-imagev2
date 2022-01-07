@@ -75,14 +75,6 @@ def make_dirs(path):
 def load_config(config_name):
     config = json.load(open(config_name))
 
-    def eval_json(config):
-        for k in config:
-            if type(config[k]) != dict:
-                config[k] = eval(config[k])
-            else:
-                eval_json(config[k])
-
-    eval_json(config)
     return config
 
 

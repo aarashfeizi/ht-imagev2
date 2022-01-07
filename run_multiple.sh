@@ -15,7 +15,7 @@ do
 		for bblr in ${BBLRS[@]}
 		do
 			python3 main.py --cuda \
-				--dataset new_hotels_small \
+				--dataset hotels_small \
 				--backbone resnet50 \
 				--gpu_ids $GPU  \
 				--workers 10 \
