@@ -34,3 +34,7 @@ def get_args():
     parser.add_argument('--temperature', type=float, default=1.0)
     parser.add_argument('--scale', type=float, default=3.0)
     parser.add_argument('--backbone', default='resnet50', choices=BACKBONE_LIST)
+
+    args = parser.parse_args()
+
+    return args
