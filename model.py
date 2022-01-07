@@ -5,6 +5,7 @@ import backbones
 
 class TopModule(nn.Module):
     def __init__(self, args, encoder):
+        super(TopModule, self).__init__()
         self.metric = 'cosine'
         self.encoder = encoder
 
