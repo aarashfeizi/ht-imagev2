@@ -1,5 +1,5 @@
 
-import linkprediction, proxynca, triplet
+from losses import linkprediction, proxynca, triplet
 
 LOSSES = {
     'pnpp': proxynca.ProxyNCA_prob,

@@ -176,3 +176,4 @@ models/*.pt
 scripts/*
 backbones/*.pt
 backbones/*.pth
+*.sh
