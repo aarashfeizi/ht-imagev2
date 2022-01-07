@@ -20,7 +20,7 @@ class BaseDataset(Dataset):
         self.transform = transform
         self.data_dict = self.__make_data_dict()
 
-        self.labels = len(self.data_dict.keys())
+        self.labels = list(self.data_dict.keys())
 
     def __make_data_dict(self):
         data_dict = {}
