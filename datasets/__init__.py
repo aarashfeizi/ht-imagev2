@@ -45,14 +45,16 @@ class BaseDataset(Dataset):
         return data_dict
 
     def __read_txt(self):
-        with open(self.data_file_path, 'r') as f:
+        path = os.path.join(self.root, self.data_file_path)
+        with open(path, 'r') as f:
             for line in f:
                 _path, _label = re.split(r",| ", line.strip())
                 self.path_list.append(_path)
                 self.label_list.append(_label)
 
     def __read_csv(self):
-        file = pd.read_csv(self.data_file_path)
+        path = os.path.join(self.root, self.data_file_path)
+        file = pd.read_csv(path)
         self.path_list = list(file['image'])
         self.label_list = list(file['label'])
 
