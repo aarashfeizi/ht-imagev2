@@ -263,7 +263,7 @@ def _resnet(arch, block, layers, pretrained, progress, num_classes, pooling_meth
 
 
     if pretrained:
-        pretrained_path = os.path.join(project_path, f'pretrained_{arch}.pt')
+        pretrained_path = os.path.join(project_path, 'backbones/', f'pretrained_{arch}.pt')
 
         if os.path.exists(pretrained_path):
             print(f'loading {arch} from pretrained')
