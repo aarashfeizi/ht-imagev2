@@ -22,11 +22,14 @@ class Global_Config_File:
 
         self.__merge_config_files(args=args, config=config_file)
 
-        self.__add_other_params()
+        self.__initialize_env()
 
-    def __add_other_params(self):
+    def __initialize_env(self):
         self.global_config_file['tensorboard_path'] = 'tensorboard_' + self.global_config_file.get('dataset')
         self.global_config_file['save_path'] = 'save_' + self.global_config_file.get('dataset')
+
+        make_dirs(self.global_config_file['tensorboard_path'])
+        make_dirs(self.global_config_file['save_path'])
 
     def __merge_config_files(self, args, config):
         for key, value in args.items():
@@ -62,7 +65,12 @@ def get_logger(): # params before: logname, env
                         filemode='a', format='%(asctime)s - %(message)s', level=logging.INFO)
     return logging.getLogger()
 
-
+def make_dirs(path):
+    if os.path.exists(path):
+        return
+    else:
+        os.makedirs(path)
+        return
 
 def load_config(config_name):
     config = json.load(open(config_name))

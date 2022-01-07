@@ -174,3 +174,5 @@ scripts/
 plots_FUCKING_NEW/
 models/*.pt
 scripts/*
+backbones/*.pt
+backbones/*.pth
