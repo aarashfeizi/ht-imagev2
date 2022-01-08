@@ -20,8 +20,8 @@ def main():
 
     logger = utils.get_logger()
 
-    train_transforms, train_transforms_names = utils.TransformLoader(args).get_composed_transform(mode='train')
-    val_transforms, val_transforms_names = utils.TransformLoader(args).get_composed_transform(mode='val')
+    train_transforms, train_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='train')
+    val_transforms, val_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='val')
 
     print('Train transforms: ', train_transforms_names)
     print('Val transforms: ', val_transforms_names)
