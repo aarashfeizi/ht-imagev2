@@ -11,7 +11,7 @@ from PIL import Image
 
 import datasets, samplers
 from torch.utils.data import DataLoader
-
+from torchvision.transforms import transforms
 
 class Global_Config_File:
     def __init__(self, config_file, args):
@@ -45,7 +45,8 @@ class Global_Config_File:
         res = self.global_config_file.get(key, '#')
 
         if res == '#':
-            raise Exception(f'No key {key} found in config or args')
+            print(f'No key {key} found in config or args!!!')
+            res = None
 
         return res
 
@@ -55,6 +56,86 @@ class Global_Config_File:
         self.global_config_file[key] = value
 
         return
+
+class TransformLoader:
+
+    def __init__(self, args, image_size=224, rotate=0,
+                 normalize_param=dict(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                 jitter_param=dict(Brightness=0.4, Contrast=0.4, Color=0.4),
+                 color_jitter_param=dict(brightness=0.5, hue=0.5,contrast=0.5, saturation=0.5),
+                 scale=[0.5, 1.0],
+                 resize_size=256):
+        # hotels v5 train small mean: tensor([0.5791, 0.5231, 0.4664])
+        # hotels v5 train small std: tensor([0.2512, 0.2581, 0.2698])
+
+        # hotels v5 train mean: tensor([0.5805, 0.5247, 0.4683])
+        # hotels v5 train std: tensor([0.2508, 0.2580, 0.2701])
+
+        self.image_size = image_size
+        self.first_resize = resize_size
+        if args.get('normalize_param') is None:
+            self.normalize_param = normalize_param
+        else:
+            self.normalize_param = args.get('normalize_param')
+
+        if args.get('color_jitter_param') is None:
+            self.color_jitter_param = color_jitter_param
+        else:
+            self.color_jitter_param = args.get('color_jitter_param')
+
+        self.jitter_param = jitter_param
+        self.rotate = rotate
+        self.scale = scale
+        self.random_erase_prob = 0.0
+
+    def parse_transform(self, transform_type):
+
+        method = getattr(transforms, transform_type)
+        if transform_type == 'RandomResizedCrop':
+            return method(self.image_size, scale=self.scale, ratio=[1.0, 1.0])
+        elif transform_type == 'CenterCrop':
+            return method(self.image_size)
+        elif transform_type == 'Resize':
+            return method([self.first_resize, self.first_resize]) # 256 by 256
+        elif transform_type == 'Normalize':
+            return method(**self.normalize_param)
+        elif transform_type == 'RandomRotation':
+            return method(self.rotate)
+        elif transform_type == 'ColorJitter':
+            return method(**self.color_jitter_param)
+        elif transform_type == 'RandomErasing':
+            return method(p=self.random_erase_prob, scale=(0.1, 0.75), ratio=(0.3, 3.3))  # TODO RANDOM ERASE!!!
+        elif transform_type == 'RandomHorizontalFlip':
+            return method(p=0.5)
+        else:
+            return method()
+
+    def get_composed_transform(self, mode='train',
+                               color_jitter=False,
+                               random_erase=0.0):
+        transform_list = []
+
+        if mode == 'train':
+            transform_list = ['Resize', 'RandomResizedCrop', 'RandomHorizontalFlip' ]
+        else:
+            transform_list = ['Resize', 'CenterCrop']
+
+
+        if color_jitter and mode == 'train':
+            transform_list.extend(['ColorJitter'])
+
+        transform_list.extend(['ToTensor'])
+
+        if mode == 'train' and random_erase > 0.0:
+            self.random_erase_prob = random_erase
+            transform_list.extend(['RandomErasing'])
+
+        transform_list.extend(['Normalize'])
+
+        transform_funcs = [self.parse_transform(x) for x in transform_list]
+        transform = transforms.Compose(transform_funcs)
+
+        return transform, transform_list
 
 def get_logger(): # params before: logname, env
     # if env == 'hlr' or env == 'local':
@@ -107,8 +188,8 @@ def open_img(path):
     return img
 
 
-def get_data(args, mode, file_name=''):
-    dataset = datasets.BaseDataset(args, mode, file_name)
+def get_data(args, mode, file_name='', transform=None):
+    dataset = datasets.BaseDataset(args, mode, file_name, transform=transform)
     sampler = samplers.RandomIdentitySampler(dataset=dataset,
                                              batch_size=args.get('batch_size'),
                                              num_instances=args.get('num_inst_per_class'))

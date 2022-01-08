@@ -20,11 +20,17 @@ def main():
 
     logger = utils.get_logger()
 
-    train_loader = utils.get_data(all_args, mode='train')
-    val_loader = utils.get_data(all_args, mode='val')
+    train_transforms, train_transforms_names = utils.TransformLoader(args).get_composed_transform(mode='train')
+    val_transforms, val_transforms_names = utils.TransformLoader(args).get_composed_transform(mode='val')
+
+    print('Train transforms: ', train_transforms_names)
+    print('Val transforms: ', val_transforms_names)
+
+    train_loader = utils.get_data(all_args, mode='train', transform=train_transforms)
+    val_loader = utils.get_data(all_args, mode='val', transform=val_transforms)
     test_loader = None
     if args.test:
-        test_loader = utils.get_data(all_args, mode='test')
+        test_loader = utils.get_data(all_args, mode='test', transform=val_transforms)
 
     net = model.get_top_module(args=all_args)
 
