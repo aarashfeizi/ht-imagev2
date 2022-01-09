@@ -92,7 +92,7 @@ class Trainer:
                 bce_labels = self.__make_bce_labels(lbls)
                 loss = self.loss_function(img_embeddings, lbls)
 
-                acc.update_acc(preds.flatten(), bce_labels.flatten())
+                acc.update_acc(preds.flatten(), bce_labels.flatten(), sigmoid=False)
 
                 epoch_loss += loss.item()
 
