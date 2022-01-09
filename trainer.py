@@ -1,11 +1,12 @@
 import numpy as np
-from tqdm import tqdm
 import torch
+from tqdm import tqdm
 
 from SummaryWriter import SummaryWriter
 from metrics import Metric_Accuracy
 
 OPTIMIZERS = {'adam': torch.optim.Adam}
+
 
 class Trainer:
     def __init__(self, args, loss, train_loader, val_loader, optimizer='adam', current_epoch=1):
@@ -42,6 +43,12 @@ class Trainer:
                                   'weight_decay': self.args.get('weight_decay'),
                                   'new': True}]
 
+        if self.args.get('loss') == 'pnpp':
+            assert self.args.get('proxypcapp_lr') is not None
+
+            learnable_params += [{'params': self.loss_function.parameters(),
+                                  'lr': self.args.get('proxypcapp_lr'),
+                                  'new': True}]
 
         self.optimizer = OPTIMIZERS[self.optimizer_name](params=learnable_params,
                                                          lr=self.args.get('learning_rate'),
@@ -89,7 +96,6 @@ class Trainer:
 
                 epoch_loss += loss.item()
 
-
                 self.optimizer.zero_grad()
                 loss.backward()
 
@@ -102,7 +108,6 @@ class Trainer:
                 t.update()
 
         return epoch_loss, acc.get_acc()
-
 
     def train(self, net, val=True):
         self.__set_optimizer(net)
