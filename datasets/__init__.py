@@ -3,6 +3,7 @@ from datasets.hotels_dataset import HotelsDataset
 
 DATASETS = {
     'hotels': HotelsDataset,
+    'hotels_small': HotelsDataset,
     'cub': BaseDataset
 }
 
