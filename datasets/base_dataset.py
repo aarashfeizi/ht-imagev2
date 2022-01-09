@@ -18,7 +18,7 @@ class BaseDataset(Dataset):
         self.path_list = []
         self.label_list = []
         self.transform = transform
-        self.data_dict = self.__make_data_dict()
+        self.data_dict = self.make_data_dict()
         self.lbl2idx = None
         self.labels = list(self.data_dict.keys())
 
