@@ -32,8 +32,8 @@ class Trainer:
     def __set_tb(self):
         model_name = 'model_%s_lss%s_bs%d_lr%f' % (self.args.get('dataset'),
                                                    self.args.get('loss'),
-                                                   self.args.get('learning_rate'),
-                                                   self.args.get('batch_size'))
+                                                   self.args.get('batch_size'),
+                                                       self.args.get('learning_rate'))
         self.tensorboard_path = os.path.join(self.args.get('tensorboard_path'), f'{model_name}')
         utils.make_dirs(self.tensorboard_path)
         self.tb_writer = SummaryWriter(self.tensorboard_path)
@@ -144,7 +144,7 @@ class Trainer:
                 with torch.no_grad():
                     val_loss, val_acc, val_embeddings = self.validate(net)
 
-                    print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss, f', val_acc: ', epoch_acc)
+                    print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss, f', val_acc: ', val_acc)
 
             self.current_epoch = epoch
             self.__tb_draw_histograms(net)
