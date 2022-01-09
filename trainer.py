@@ -1,3 +1,4 @@
+import numpy as np
 from tqdm import tqdm
 import torch
 
@@ -8,6 +9,8 @@ OPTIMIZERS = {'adam': torch.optim.Adam}
 
 class Trainer:
     def __init__(self, args, loss, train_loader, val_loader, optimizer='adam', current_epoch=1):
+        self.batch_size = args.get('batch_size')
+        self.emb_size = args.get('emb_size')
         self.args = args
         self.cuda = args.get('cuda')
         self.epochs = args.get('epochs')
@@ -44,14 +47,26 @@ class Trainer:
                                                          lr=self.args.get('learning_rate'),
                                                          weight_decay=self.args.get('weight_decay'))
 
-    def _tb_draw_histograms(self, net):
+    def __tb_draw_histograms(self, net):
 
         for name, param in net.named_parameters():
             if param.requires_grad:
                 self.tb_writer.add_histogram(name, param.flatten(), self.current_epoch)
 
-        self.writer.flush()
+        self.tb_writer.flush()
 
+    def __make_bce_labels(self, labels):
+        """
+
+        :param labels: e.g. [0, 0, 1, 1, 1, 2, 1, 2, 2, 3, 3]
+        :return:
+        """
+        l_ = labels.repeat(len(labels)).reshape(-1, len(labels))
+        l__ = labels.repeat_interleave(len(labels)).reshape(-1, len(labels))
+
+        final_bce_labels = (l_ == l__).type(torch.float32)
+
+        return final_bce_labels
 
     def __train_one_epoch(self, net):
         net.train()
@@ -67,8 +82,10 @@ class Trainer:
                     lbls = lbls.cuda()
 
                 preds, img_embeddings = net(imgs)
-                labels = self.__make_bce_labels()
+                bce_labels = self.__make_bce_labels(lbls)
                 loss = self.loss_function(img_embeddings, lbls)
+
+                acc.update_acc(preds.flatten(), bce_labels.flatten())
 
                 epoch_loss += loss.item()
 
@@ -84,6 +101,9 @@ class Trainer:
 
                 t.update()
 
+        return epoch_loss, acc.get_acc()
+
+
     def train(self, net, val=True):
         self.__set_optimizer(net)
 
@@ -97,13 +117,58 @@ class Trainer:
 
         for epoch in range(starting_epoch, self.epochs):
 
-            loss = self.__train_one_epoch(net)
+            epoch_loss, epoch_acc = self.__train_one_epoch(net)
+
+            print(f'Epoch {self.current_epoch}-> loss: ', epoch_loss, f', acc: ', epoch_acc)
+
+            if val:
+                with torch.no_grad:
+                    val_loss, val_acc, val_embeddings = self.validate(net)
+
+                    print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss, f', val_acc: ', epoch_acc)
 
             self.current_epoch = epoch
-
-            self._tb_draw_histograms(net)
+            self.__tb_draw_histograms(net)
 
             # if self.scheduler:
             #     self.scheduler.step()
             # else:
             #     self.adaptive_scheduler.step(current_loss=val_loss, current_val=val_acc)
+
+    def validate(self, net):
+        net.eval()
+
+        val_loss = 0
+
+        acc = Metric_Accuracy()
+
+        val_size = self.val_loader.dataset.__len__()
+
+        embeddings = np.zeros((val_size, self.emb_size), dtype=torch.float32)
+
+        with tqdm(total=len(self.val_loader), desc=f'{self.current_epoch} validating...') as t:
+            for batch_id, (imgs, lbls) in enumerate(self.train_loader, 1):
+                if self.cuda:
+                    imgs = imgs.cuda()
+                    lbls = lbls.cuda()
+
+                preds, img_embeddings = net(imgs)
+                bce_labels = self.__make_bce_labels(lbls)
+                loss = self.loss_function(img_embeddings, lbls)
+
+                begin_idx = (batch_id - 1) * self.batch_size
+                end_idx = min(val_size, batch_id * self.batch_size)
+
+                embeddings[begin_idx: end_idx, :] = img_embeddings.cpu().detach().numpy()
+
+                acc.update_acc(preds.flatten(), bce_labels.flatten())
+
+                val_loss += loss.item()
+
+                t.set_postfix(loss=f'{val_loss / (batch_id) :.4f}',
+                              val_acc=f'{acc.get_acc():.4f}'
+                              )
+
+                t.update()
+
+        return val_loss, acc.get_acc(), embeddings
