@@ -148,6 +148,7 @@ class Trainer:
 
             self.current_epoch = epoch
             self.__tb_draw_histograms(net)
+            self.__tb_draw_histograms(self.loss_function)
 
             # if self.scheduler:
             #     self.scheduler.step()
