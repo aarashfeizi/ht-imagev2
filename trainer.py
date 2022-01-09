@@ -150,7 +150,7 @@ class Trainer:
 
         val_size = self.val_loader.dataset.__len__()
 
-        embeddings = np.zeros((val_size, self.emb_size), dtype=torch.float32)
+        embeddings = np.zeros((val_size, self.emb_size), dtype=np.float32)
 
         with tqdm(total=len(self.val_loader), desc=f'{self.current_epoch} validating...') as t:
             for batch_id, (imgs, lbls) in enumerate(self.train_loader, 1):

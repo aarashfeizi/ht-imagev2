@@ -32,6 +32,7 @@ class BaseDataset(Dataset):
 
         self.data_dict = new_data_dict
         self.label_list = [self.lbl2idx[l] for l in self.label_list]
+        self.labels = list(self.data_dict.keys())
 
         return
 
