@@ -33,7 +33,7 @@ class BaseDataset(Dataset):
         self.data_dict = new_data_dict
         return
 
-    def __make_data_dict(self):
+    def make_data_dict(self):
         data_dict = {}
 
         if self.data_file_path.endswith('.txt'):
