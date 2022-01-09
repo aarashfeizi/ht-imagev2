@@ -189,7 +189,7 @@ def open_img(path):
 
 
 def get_data(args, mode, file_name='', transform=None):
-    dataset = datasets.BaseDataset(args, mode, file_name, transform=transform)
+    dataset = datasets.load_dataset(args, mode, file_name, transform=transform)
     sampler = samplers.RandomIdentitySampler(dataset=dataset,
                                              batch_size=args.get('batch_size'),
                                              num_instances=args.get('num_inst_per_class'))

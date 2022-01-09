@@ -1,11 +1,5 @@
-import os
-import re
+from datasets.base_dataset import BaseDataset
 
-import pandas as pd
-import torch
-from datasets import BaseDataset
-
-import utils
 
 class HotelsDataset(BaseDataset):
     def __init__(self, args, mode, filename='', transform=None):
