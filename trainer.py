@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+import utils
 from SummaryWriter import SummaryWriter
 from metrics import Metric_Accuracy
 
@@ -22,7 +23,14 @@ class Trainer:
         self.val_loader = val_loader
         self.optimizer_name = optimizer
         self.optimizer = None
-        self.tensorboard_path = args.get('tensorboard_path')
+        self.tensorboard_path = None
+        self.tb_writer = None
+        self.__set_tb()
+
+    def __set_tb(self):
+        model_name = 'model_%s_%d' % self.args.get('')
+        self.tensorboard_path = os.path.join(self.args.get('tensorboard_path'), f'{model_name}')
+        utils.make_dirs(self.tensorboard_path)
         self.tb_writer = SummaryWriter(self.tensorboard_path)
 
     def set_train_loader(self, train_loader):
@@ -153,7 +161,7 @@ class Trainer:
         embeddings = np.zeros((val_size, self.emb_size), dtype=np.float32)
 
         with tqdm(total=len(self.val_loader), desc=f'{self.current_epoch} validating...') as t:
-            for batch_id, (imgs, lbls) in enumerate(self.train_loader, 1):
+            for batch_id, (imgs, lbls) in enumerate(self.val_loader, 1):
                 if self.cuda:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
