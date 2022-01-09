@@ -108,7 +108,7 @@ class Trainer:
                 preds, similarities, img_embeddings = net(imgs)
                 bce_labels = self.__make_bce_labels(lbls)
 
-                loss = self.loss_function(img_embeddings, lbls)
+                loss = self.get_loss_value(img_embeddings, preds, lbls)
 
                 acc.update_acc(preds.flatten(), bce_labels.flatten(), sigmoid=False)
 
@@ -187,7 +187,7 @@ class Trainer:
 
                 preds, similarities, img_embeddings = net(imgs)
                 bce_labels = self.__make_bce_labels(lbls)
-                loss = self.loss_function(img_embeddings, lbls)
+                loss = self.get_loss_value(img_embeddings, preds, lbls)
 
                 begin_idx = (batch_id - 1) * self.batch_size
                 end_idx = min(val_size, batch_id * self.batch_size)
@@ -205,3 +205,14 @@ class Trainer:
                 t.update()
 
         return val_loss, acc.get_acc(), embeddings
+
+    def get_loss_value(self, embeddings, binary_predictions, lbls):
+        if self.loss_name == 'bce':
+            binary_labels = self.__make_bce_labels(lbls)
+            loss = self.loss_function(binary_predictions.flatten(), binary_labels.flatten())
+        elif self.loss_name == 'pnpp':
+            loss = self.loss_function(embeddings, lbls)
+        else:
+            raise Exception(f'Loss function "{self.loss_name}" not supported in Trainer')
+
+        return loss

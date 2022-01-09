@@ -3,6 +3,15 @@ import torch.nn.functional as F
 import torch
 import utils
 
+class NormalBCELoss(nn.Module):
+    def __init__(self, args):
+        super(NormalBCELoss, self).__init__()
+        self.bce_loss = nn.BCELoss()
+
+    def forward(self, output, true_labels):
+        loss = self.bce_loss(output, true_labels)
+        return loss
+
 class BCE_Loss(nn.Module):
     """
         Choose k nearest neighbors and calculate a BCE-Cross-Entropy loss

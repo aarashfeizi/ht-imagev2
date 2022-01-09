@@ -3,7 +3,7 @@ from losses import linkprediction, proxynca, triplet
 
 LOSSES = {
     'pnpp': proxynca.ProxyNCA_prob,
-    'bce': linkprediction.BCE_Loss,
+    'bce': linkprediction.NormalBCELoss,
     'trpl': triplet.TripletMargin_Loss,
 }
 
