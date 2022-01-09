@@ -24,17 +24,14 @@ class Trainer:
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.optimizer_name = optimizer
+        self.model_name = utils.get_model_name(self.args)
         self.optimizer = None
         self.tensorboard_path = None
         self.tb_writer = None
         self.__set_tb()
 
     def __set_tb(self):
-        model_name = 'model_%s_lss%s_bs%d_lr%f' % (self.args.get('dataset'),
-                                                   self.args.get('loss'),
-                                                   self.args.get('batch_size'),
-                                                       self.args.get('learning_rate'))
-        self.tensorboard_path = os.path.join(self.args.get('tensorboard_path'), f'{model_name}')
+        self.tensorboard_path = os.path.join(self.args.get('tensorboard_path'), f'{self.model_name}')
         utils.make_dirs(self.tensorboard_path)
         self.tb_writer = SummaryWriter(self.tensorboard_path)
 

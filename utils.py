@@ -1,4 +1,3 @@
-import argparse
 import json
 import logging
 import os
@@ -8,10 +7,12 @@ import sys
 import numpy as np
 import torch
 from PIL import Image
-
-import datasets, samplers
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
+
+import datasets
+import samplers
+
 
 class Global_Config_File:
     def __init__(self, config_file, args):
@@ -35,7 +36,7 @@ class Global_Config_File:
         for key, value in args.items():
             self.global_config_file[key] = value
 
-        for key, value in config.items(): # overrites args if specified in config file
+        for key, value in config.items():  # overrites args if specified in config file
             self.global_config_file[key] = value
 
     def __str__(self):
@@ -57,12 +58,13 @@ class Global_Config_File:
 
         return
 
+
 class TransformLoader:
 
     def __init__(self, args, image_size=224, rotate=0,
                  normalize_param=dict(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
                  jitter_param=dict(Brightness=0.4, Contrast=0.4, Color=0.4),
-                 color_jitter_param=dict(brightness=0.5, hue=0.5,contrast=0.5, saturation=0.5),
+                 color_jitter_param=dict(brightness=0.5, hue=0.5, contrast=0.5, saturation=0.5),
                  scale=[0.5, 1.0],
                  resize_size=256):
         # hotels v5 train small mean: tensor([0.5791, 0.5231, 0.4664])
@@ -96,7 +98,7 @@ class TransformLoader:
         elif transform_type == 'CenterCrop':
             return method(self.image_size)
         elif transform_type == 'Resize':
-            return method([self.first_resize, self.first_resize]) # 256 by 256
+            return method([self.first_resize, self.first_resize])  # 256 by 256
         elif transform_type == 'Normalize':
             return method(**self.normalize_param)
         elif transform_type == 'RandomRotation':
@@ -116,10 +118,9 @@ class TransformLoader:
         transform_list = []
 
         if mode == 'train':
-            transform_list = ['Resize', 'RandomResizedCrop', 'RandomHorizontalFlip' ]
+            transform_list = ['Resize', 'RandomResizedCrop', 'RandomHorizontalFlip']
         else:
             transform_list = ['Resize', 'CenterCrop']
-
 
         if color_jitter and mode == 'train':
             transform_list.extend(['ColorJitter'])
@@ -137,7 +138,8 @@ class TransformLoader:
 
         return transform, transform_list
 
-def get_logger(): # params before: logname, env
+
+def get_logger():  # params before: logname, env
     # if env == 'hlr' or env == 'local':
     #     logging.basicConfig(filename=os.path.join('logs', logname + '.log'),
     #                         filemode='a', format='%(asctime)s - %(message)s', level=logging.INFO)
@@ -146,12 +148,14 @@ def get_logger(): # params before: logname, env
                         filemode='a', format='%(asctime)s - %(message)s', level=logging.INFO)
     return logging.getLogger()
 
+
 def make_dirs(path):
     if os.path.exists(path):
         return
     else:
         os.makedirs(path)
         return
+
 
 def load_config(config_name):
     config = json.load(open(config_name))
@@ -194,9 +198,10 @@ def get_data(args, mode, file_name='', transform=None):
                                              batch_size=args.get('batch_size'),
                                              num_instances=args.get('num_inst_per_class'))
     dataloader = DataLoader(dataset=dataset, shuffle=False, num_workers=args.get('workers'), batch_sampler=sampler,
-                                  pin_memory=args.get('pin_memory'), worker_init_fn=seed_worker)
+                            pin_memory=args.get('pin_memory'), worker_init_fn=seed_worker)
 
     return dataloader
+
 
 def get_all_data(args, dataset_config, mode):
     all_sets = dataset_config[f'all_{mode}_files']
@@ -205,6 +210,7 @@ def get_all_data(args, dataset_config, mode):
         loaders.append(get_data(args, dataset_config, mode, ds_name))
 
     return loaders
+
 
 def pairwise_distance(a, squared=False, diag_to_max=False):
     """Computes the pairwise distance matrix with numerical stability."""
@@ -250,6 +256,7 @@ def pairwise_distance(a, squared=False, diag_to_max=False):
 
     return pairwise_distances
 
+
 def binarize_and_smooth_labels(T, nb_classes, smoothing_const=0):
     import sklearn.preprocessing
     T = T.cpu().numpy()
@@ -261,3 +268,17 @@ def binarize_and_smooth_labels(T, nb_classes, smoothing_const=0):
     T = torch.FloatTensor(T).cuda()
 
     return T
+
+
+def get_model_name(args):
+    name = ''
+    name += 'model_%s_lss%s_bs%d_k%d_lr%f_bblr%f' % (args.get('dataset'),
+                                                 args.get('loss'),
+                                                 args.get('batch_size'),
+                                                 args.get('num_inst_per_class'),
+                                                 args.get('learning_rate'),
+                                                 args.get('bb_learning_rate'))
+    if args.get('loss') == 'pnpp':
+        name += '_prxlr%f' % (args.get('learning_rate'),
+                              )
+    return name
