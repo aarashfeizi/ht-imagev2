@@ -144,7 +144,7 @@ class ResNet(tResNet):
 
         previous_output = self.layer4[-1].conv3.out_channels if type(self.layer4[-1]) == Bottleneck else self.layer4[-1].conv2.out_channels
 
-        if output_dim != 0 and previous_output == output_dim:
+        if output_dim != 0:
             self.last_conv = nn.Conv2d(in_channels=previous_output, out_channels=output_dim,
                                        kernel_size=(1, 1), stride=(1, 1))
         else:
