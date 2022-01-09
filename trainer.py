@@ -72,6 +72,13 @@ class Trainer:
 
         self.tb_writer.flush()
 
+    def __tb_update_value(self, names_values):
+
+        for (name, value) in names_values:
+            self.tb_writer.add_scalar(name, value, self.current_epoch)
+
+        self.tb_writer.flush()
+
     def __make_bce_labels(self, labels):
         """
 
@@ -135,17 +142,26 @@ class Trainer:
 
             epoch_loss, epoch_acc = self.__train_one_epoch(net)
 
-            print(f'Epoch {self.current_epoch}-> loss: ', epoch_loss, f', acc: ', epoch_acc)
+            print(f'Epoch {self.current_epoch}-> loss: ', epoch_loss / len(self.train_loader), f', acc: ', epoch_acc)
+            self.__tb_update_value([('Train/Loss', epoch_loss / len(self.train_loader)),
+                                    ('Train/Accuracy', epoch_acc)])
 
             if val:
                 with torch.no_grad():
                     val_loss, val_acc, val_embeddings = self.validate(net)
 
-                    print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss, f', val_acc: ', val_acc)
+                    print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss / len(self.val_loader),
+                          f', val_acc: ', val_acc)
+
+                    self.__tb_update_value([('Val/Loss', val_loss / len(self.val_loader)),
+                                            ('Val/Accuracy', val_acc)])
 
             self.current_epoch = epoch
+
             self.__tb_draw_histograms(net)
-            self.__tb_draw_histograms(self.loss_function)
+
+            if self.loss_name == 'pnpp':
+                self.__tb_draw_histograms(self.loss_function)
 
             # if self.scheduler:
             #     self.scheduler.step()
