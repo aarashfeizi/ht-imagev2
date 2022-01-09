@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import torch
 from tqdm import tqdm
@@ -28,7 +30,10 @@ class Trainer:
         self.__set_tb()
 
     def __set_tb(self):
-        model_name = 'model_%s_%d' % self.args.get('')
+        model_name = 'model_%s_lss%s_bs%d_lr%f' % (self.args.get('dataset'),
+                                                   self.args.get('loss'),
+                                                   self.args.get('learning_rate'),
+                                                   self.args.get('batch_size'))
         self.tensorboard_path = os.path.join(self.args.get('tensorboard_path'), f'{model_name}')
         utils.make_dirs(self.tensorboard_path)
         self.tb_writer = SummaryWriter(self.tensorboard_path)
