@@ -90,6 +90,7 @@ class Trainer:
 
                 preds, similarities, img_embeddings = net(imgs)
                 bce_labels = self.__make_bce_labels(lbls)
+
                 loss = self.loss_function(img_embeddings, lbls)
 
                 acc.update_acc(preds.flatten(), bce_labels.flatten(), sigmoid=False)
@@ -127,7 +128,7 @@ class Trainer:
             print(f'Epoch {self.current_epoch}-> loss: ', epoch_loss, f', acc: ', epoch_acc)
 
             if val:
-                with torch.no_grad:
+                with torch.no_grad():
                     val_loss, val_acc, val_embeddings = self.validate(net)
 
                     print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss, f', val_acc: ', epoch_acc)
