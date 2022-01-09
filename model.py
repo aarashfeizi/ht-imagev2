@@ -18,12 +18,12 @@ class TopModule(nn.Module):
         else:
             raise Exception(f'{self.metric} not supported in Top Module')
 
-        return cosine_sim, preds
+        return preds, cosine_sim
 
 
     def forward(self, imgs):
         embeddings = self.encoder(imgs)
-        sims, preds = self.get_preds(embeddings)
+        preds, sims = self.get_preds(embeddings)
 
         return preds, sims, embeddings
 

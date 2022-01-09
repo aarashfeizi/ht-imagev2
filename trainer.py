@@ -166,7 +166,7 @@ class Trainer:
 
                 embeddings[begin_idx: end_idx, :] = img_embeddings.cpu().detach().numpy()
 
-                acc.update_acc(preds.flatten(), bce_labels.flatten())
+                acc.update_acc(preds.flatten(), bce_labels.flatten(), sigmoid=False)
 
                 val_loss += loss.item()
 
