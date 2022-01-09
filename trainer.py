@@ -81,7 +81,7 @@ class Trainer:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
 
-                preds, img_embeddings = net(imgs)
+                preds, similarities, img_embeddings = net(imgs)
                 bce_labels = self.__make_bce_labels(lbls)
                 loss = self.loss_function(img_embeddings, lbls)
 
@@ -152,7 +152,7 @@ class Trainer:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
 
-                preds, img_embeddings = net(imgs)
+                preds, similarities, img_embeddings = net(imgs)
                 bce_labels = self.__make_bce_labels(lbls)
                 loss = self.loss_function(img_embeddings, lbls)
 

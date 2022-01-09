@@ -19,8 +19,19 @@ class BaseDataset(Dataset):
         self.label_list = []
         self.transform = transform
         self.data_dict = self.__make_data_dict()
-
+        self.lbl2idx = None
         self.labels = list(self.data_dict.keys())
+
+    def rename_labels(self):
+        if self.lbl2idx is None:
+            raise Exception(f'lbl2idx is None!!')
+        print('Relabelling labels to sequential numbers!')
+        new_data_dict = {}
+        for key, value in self.data_dict.items():
+            new_data_dict[self.lbl2idx[key]] = value
+
+        self.data_dict = new_data_dict
+        return
 
     def __make_data_dict(self):
         data_dict = {}

@@ -23,9 +23,9 @@ class TopModule(nn.Module):
 
     def forward(self, imgs):
         embeddings = self.encoder(imgs)
-        preds = self.get_preds(embeddings)
+        sims, preds = self.get_preds(embeddings)
 
-        return preds, embeddings
+        return preds, sims, embeddings
 
 def get_top_module(args):
     encoder = backbones.get_bb_network(args)
