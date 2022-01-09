@@ -31,6 +31,8 @@ class BaseDataset(Dataset):
             new_data_dict[self.lbl2idx[key]] = value
 
         self.data_dict = new_data_dict
+        self.label_list = [self.lbl2idx[l] for l in self.label_list]
+
         return
 
     def make_data_dict(self):
