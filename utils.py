@@ -284,6 +284,6 @@ def get_model_name(args):
                                                  args.get('learning_rate'),
                                                  args.get('bb_learning_rate'))
     if args.get('loss') == 'pnpp':
-        name += '_prxlr%f' % (args.get('learning_rate'),
+        name += '_prxlr%f' % (args.get('proxypncapp_lr'),
                               )
     return name
