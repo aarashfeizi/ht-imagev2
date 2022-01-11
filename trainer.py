@@ -140,7 +140,7 @@ class Trainer:
 
         starting_epoch = max(1, self.current_epoch)
 
-        for epoch in range(starting_epoch, self.epochs):
+        for epoch in range(starting_epoch, self.epochs + 1):
 
             epoch_loss, epoch_acc = self.__train_one_epoch(net)
 
