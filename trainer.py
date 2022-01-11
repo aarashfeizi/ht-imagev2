@@ -2,13 +2,12 @@ import os
 
 import numpy as np
 import torch
+from sklearn.metrics import roc_auc_score
 from tqdm import tqdm
 
 import utils
 from SummaryWriter import SummaryWriter
 from metrics import Metric_Accuracy
-from sklearn.metrics import roc_auc_score
-
 
 OPTIMIZERS = {'adam': torch.optim.Adam}
 
@@ -144,7 +143,9 @@ class Trainer:
 
             epoch_loss, epoch_acc = self.__train_one_epoch(net)
 
-            print(f'Epoch {self.current_epoch}-> loss: ', epoch_loss / len(self.train_loader), f', acc: ', epoch_acc)
+            print(f'Epoch {self.current_epoch}-> loss: ', epoch_loss / len(self.train_loader),
+                  f', acc: ', epoch_acc)
+
             self.__tb_update_value([('Train/Loss', epoch_loss / len(self.train_loader)),
                                     ('Train/Accuracy', epoch_acc)])
 
@@ -153,7 +154,8 @@ class Trainer:
                     val_loss, val_acc, val_auroc_score, val_embeddings = self.validate(net)
 
                     print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss / len(self.val_loader),
-                          f', val_acc: ', val_acc)
+                          f', val_acc: ', val_acc,
+                          f', val_auroc: ', val_auroc_score)
 
                     self.__tb_update_value([('Val/Loss', val_loss / len(self.val_loader)),
                                             ('Val/AUROC', val_auroc_score),
