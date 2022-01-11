@@ -8,7 +8,7 @@ import utils
 class TopModule(nn.Module):
     def __init__(self, args, encoder):
         super(TopModule, self).__init__()
-        self.metric = args.get('metric')
+        self.metric = 'cosine'
         self.encoder = encoder
         self.logits_net = None
 
@@ -29,10 +29,11 @@ class TopModule(nn.Module):
             euclidean_dist = utils.pairwise_distance(embeddings)
             euclidean_sim = -1 * euclidean_dist
             euclidean_sim = euclidean_sim / self.temperature
-
-            preds = torch.clamp(preds, min=0.0, max=1.0)
-        elif self.metric == 'mlp':
-            logits =
+            preds = None
+            cosine_sim = None
+            # preds = torch.clamp(preds, min=0.0, max=1.0)
+        # elif self.metric == 'mlp':
+        #     logits =
         else:
             raise Exception(f'{self.metric} not supported in Top Module')
 
