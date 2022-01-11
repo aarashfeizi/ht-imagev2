@@ -15,10 +15,14 @@ import torch.nn as nn
 def main():
     args = arg_parser.get_args()
     dataset_config = utils.load_config(os.path.join(args.config_path, args.dataset + '.json'))
+
+
     all_args = utils.Global_Config_File(args=args, config_file=dataset_config)
     utils.seed_all(all_args.get('seed'))
 
     logger = utils.get_logger()
+    print(args)
+    logger.info(args)
 
     train_transforms, train_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='train')
     val_transforms, val_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='val')
