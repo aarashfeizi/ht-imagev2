@@ -17,7 +17,6 @@
     "v5_splits/test4_small.txt"
   ],
   "loss_mode": "metric",
-  "proxypcapp_lr": 2e3,
   "normalize_param": {
     "mean": [0.5805, 0.5247, 0.4683],
     "std": [0.2508, 0.2580, 0.2701]

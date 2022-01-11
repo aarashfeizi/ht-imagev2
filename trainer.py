@@ -54,10 +54,10 @@ class Trainer:
                                   'new': True}]
 
         if self.args.get('loss') == 'pnpp':
-            assert self.args.get('proxypcapp_lr') is not None
+            assert self.args.get('proxypncapp_lr') is not None
 
             learnable_params += [{'params': self.loss_function.parameters(),
-                                  'lr': self.args.get('proxypcapp_lr'),
+                                  'lr': self.args.get('proxypncapp_lr'),
                                   'new': True}]
 
         self.optimizer = OPTIMIZERS[self.optimizer_name](params=learnable_params,

@@ -33,7 +33,7 @@ def get_args():
     parser.add_argument('--loss', default='pnpp', choices=LOSSES_LIST)
     parser.add_argument('--temperature', type=float, default=1.0)
     parser.add_argument('--scale', type=float, default=3.0)
-    parser.add_argument('--proxypcapp_lr', type=float, default=None)
+    parser.add_argument('--proxypncapp_lr', type=float, default=None)
     parser.add_argument('--backbone', default='resnet50', choices=BACKBONE_LIST)
 
 
