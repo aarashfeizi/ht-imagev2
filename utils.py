@@ -272,6 +272,11 @@ def binarize_and_smooth_labels(T, nb_classes, smoothing_const=0):
 
 def get_model_name(args):
     name = ''
+
+    if args.get('cuda'):
+        gpu_ids = args.get("gpu_ids").replace(',','')
+        name += f'gpu{gpu_ids}_'
+
     name += 'model_%s_lss%s_bs%d_k%d_lr%f_bblr%f' % (args.get('dataset'),
                                                  args.get('loss'),
                                                  args.get('batch_size'),
