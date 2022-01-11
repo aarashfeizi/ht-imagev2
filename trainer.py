@@ -7,6 +7,8 @@ from tqdm import tqdm
 import utils
 from SummaryWriter import SummaryWriter
 from metrics import Metric_Accuracy
+from sklearn.metrics import roc_auc_score
+
 
 OPTIMIZERS = {'adam': torch.optim.Adam}
 
@@ -148,12 +150,13 @@ class Trainer:
 
             if val:
                 with torch.no_grad():
-                    val_loss, val_acc, val_embeddings = self.validate(net)
+                    val_loss, val_acc, val_auroc_score, val_embeddings = self.validate(net)
 
                     print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss / len(self.val_loader),
                           f', val_acc: ', val_acc)
 
                     self.__tb_update_value([('Val/Loss', val_loss / len(self.val_loader)),
+                                            ('Val/AUROC', val_auroc_score),
                                             ('Val/Accuracy', val_acc)])
 
             self.current_epoch = epoch
@@ -179,6 +182,9 @@ class Trainer:
 
         embeddings = np.zeros((val_size, self.emb_size), dtype=np.float32)
 
+        predicted_links = []
+        true_links = []
+
         with tqdm(total=len(self.val_loader), desc=f'{self.current_epoch} validating...') as t:
             for batch_id, (imgs, lbls) in enumerate(self.val_loader, 1):
                 if self.cuda:
@@ -194,6 +200,9 @@ class Trainer:
 
                 embeddings[begin_idx: end_idx, :] = img_embeddings.cpu().detach().numpy()
 
+                predicted_links.extend(preds.cpu().detach().numpy() >= 0.5)
+                true_links.extend(bce_labels.cpu().detach().numpy())
+
                 acc.update_acc(preds.flatten(), bce_labels.flatten(), sigmoid=False)
 
                 val_loss += loss.item()
@@ -204,7 +213,10 @@ class Trainer:
 
                 t.update()
 
-        return val_loss, acc.get_acc(), embeddings
+        assert len(true_links) == len(predicted_links)
+        auroc_score = roc_auc_score(true_links, predicted_links)
+
+        return val_loss, acc.get_acc(), auroc_score, embeddings
 
     def get_loss_value(self, embeddings, binary_predictions, lbls):
         if self.loss_name == 'bce':
