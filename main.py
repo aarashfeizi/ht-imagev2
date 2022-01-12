@@ -53,7 +53,7 @@ def main():
         loss.cuda()
 
     trainer = Trainer(all_args, loss=loss, train_loader=train_loader, val_loader=val_loader)
-    if all_args.get('train'):
+    if not all_args.get('test'):
         trainer.train(net, val=True)
     else:
         net = utils.load_model(net, os.path.join(all_args.get('ckpt_path')))
