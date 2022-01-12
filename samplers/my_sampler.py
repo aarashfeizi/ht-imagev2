@@ -50,7 +50,7 @@ class BalancedValSampler(RandomIdentitySampler):
                 triplets = []
                 for pair in batch_idxs_dict[label]:
                     neg_label = np.random.choice(other_labels, size=1)[0]
-                    pair.extend(np.random.choice(self.data_dict[neg_label], size=1)[0])
+                    pair.extend(np.random.choice(self.data_dict[neg_label], size=1))
                     triplets.append(pair)
 
                 batch_idxs_dict[label] = triplets
