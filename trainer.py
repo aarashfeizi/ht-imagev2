@@ -157,8 +157,8 @@ class Trainer:
                 balanced_preds = utils.balance_labels(preds.cpu().detach().numpy(), k=3)
                 balanced_bce_labels = utils.balance_labels(bce_labels.cpu().detach().numpy(), k=3)
 
-                predicted_links.extend(balanced_preds >= 0.5)
-                true_links.extend(balanced_bce_labels)
+                predicted_links.extend(balanced_preds.numpy() >= 0.5)
+                true_links.extend(balanced_bce_labels.numpy())
 
                 acc.update_acc(balanced_preds.flatten(), balanced_bce_labels.flatten(), sigmoid=False)
 

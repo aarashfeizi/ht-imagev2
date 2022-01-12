@@ -305,7 +305,7 @@ def balance_labels(pairwise_batch, k):
         balanced_inst_list = pairwise_batch[[idx, idx], [idx + 1, idx + 2]]
         balanced_batch = np.concatenate([balanced_batch, balanced_inst_list])
 
-    return balanced_batch
+    return torch.tensor(balanced_batch, dtype=torch.float32)
 
 
 def load_model(net, checkpoint_path):
