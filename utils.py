@@ -274,16 +274,20 @@ def get_model_name(args):
     name = ''
 
     if args.get('cuda'):
-        gpu_ids = args.get("gpu_ids").replace(',','')
+        gpu_ids = args.get("gpu_ids").replace(',', '')
         name += f'gpu{gpu_ids}_'
 
-    name += 'model_%s_lss%s_bs%d_k%d_lr%f_bblr%f' % (args.get('dataset'),
-                                                 args.get('loss'),
-                                                 args.get('batch_size'),
-                                                 args.get('num_inst_per_class'),
-                                                 args.get('learning_rate'),
-                                                 args.get('bb_learning_rate'))
+    name += 'model_%s_%s_lss%s_bs%d_k%d_lr%f_bblr%f' % (args.get('dataset'),
+                                                        args.get('metric'),
+                                                        args.get('loss'),
+                                                        args.get('batch_size'),
+                                                        args.get('num_inst_per_class'),
+                                                        args.get('learning_rate'),
+                                                        args.get('bb_learning_rate'))
     if args.get('loss') == 'pnpp':
         name += '_prxlr%f' % (args.get('proxypncapp_lr'),
                               )
+
+    if args.get('metric') != 'cosine':
+        name += f"_temp{args.get('temperature')}"
     return name

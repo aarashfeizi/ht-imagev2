@@ -3,6 +3,7 @@ import argparse
 DATASET_LIST = ['hotels', 'hotels_small', 'cub']
 LOSSES_LIST = ['pnpp', 'bce', 'trpl']
 BACKBONE_LIST = ['resnet50', 'deit', 'bninception']  # only implementing resnet50 :))
+METRIC_LIST = ['cosine', 'euclidean', 'mlp']
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -34,8 +35,8 @@ def get_args():
     parser.add_argument('--temperature', type=float, default=1.0)
     parser.add_argument('--scale', type=float, default=3.0)
     parser.add_argument('--proxypncapp_lr', type=float, default=None)
+    parser.add_argument('--metric', default='cosine', choices=METRIC_LIST)
     parser.add_argument('--backbone', default='resnet50', choices=BACKBONE_LIST)
-
 
     args = parser.parse_args()
 
