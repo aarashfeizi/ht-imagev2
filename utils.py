@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
 import datasets
-import samplers
+from samplers.train_sampler import BalancedValSampler, TrainSampler
 
 
 class Global_Config_File:
@@ -193,10 +193,14 @@ def open_img(path):
 
 
 def get_data(args, mode, file_name='', transform=None):
+    SAMPLERS = {'train': TrainSampler,
+                'val': BalancedValSampler}
+
     dataset = datasets.load_dataset(args, mode, file_name, transform=transform)
-    sampler = samplers.RandomIdentitySampler(dataset=dataset,
-                                             batch_size=args.get('batch_size'),
-                                             num_instances=args.get('num_inst_per_class'))
+    sampler = SAMPLERS[mode](dataset=dataset,
+                             batch_size=args.get('batch_size'),
+                             num_instances=args.get('num_inst_per_class'))
+
     dataloader = DataLoader(dataset=dataset, shuffle=False, num_workers=args.get('workers'), batch_sampler=sampler,
                             pin_memory=args.get('pin_memory'), worker_init_fn=seed_worker)
 
@@ -291,3 +295,29 @@ def get_model_name(args):
     if args.get('metric') != 'cosine':
         name += f"_temp{args.get('temperature')}"
     return name
+
+
+def balance_labels(pairwise_batch, k):
+    balanced_batch = np.array([], dtype=np.float32)
+    bs = pairwise_batch.shape[0]
+    for i in range(bs // k):
+        idx = i * k
+        balanced_inst_list = pairwise_batch[[idx, idx], [idx + 1, idx + 2]]
+        balanced_batch = np.concatenate([balanced_batch, balanced_inst_list])
+
+    return balanced_batch
+
+
+def load_model(net, checkpoint_path):
+    checkpoint = torch.load(checkpoint_path, map_location=next(net.parameters()).device)
+    net.load_state_dict(checkpoint['model_state_dict'])
+    print(f'Retrieving model {checkpoint_path} from epoch {checkpoint["epoch"]}...')
+    return net
+
+
+def save_model(net, epoch, val_acc, save_path):
+    best_model_name = 'model-epoch-' + str(epoch) + '-val-acc-' + str(val_acc) + '.pt'
+    torch.save({'epoch': epoch, 'model_state_dict': net.state_dict()},
+               save_path + '/' + best_model_name)
+
+    return best_model_name

@@ -53,10 +53,11 @@ def main():
         loss.cuda()
 
     trainer = Trainer(all_args, loss=loss, train_loader=train_loader, val_loader=val_loader)
-
-    trainer.train(net, val=True)
-
-
+    if args.get('train'):
+        trainer.train(net, val=True)
+    else:
+        net = utils.load_model(net, os.path.join(args.get('ckpt_path')))
+        trainer.validate(net)
 
 if __name__ == '__main__':
     main()

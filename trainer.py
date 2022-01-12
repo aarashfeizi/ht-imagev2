@@ -28,13 +28,17 @@ class Trainer:
         self.model_name = utils.get_model_name(self.args)
         self.optimizer = None
         self.tensorboard_path = None
+        self.save_path = None
         self.tb_writer = None
-        self.__set_tb()
+        self.__set_tb_svdir()
 
-    def __set_tb(self):
+    def __set_tb_svdir(self):
         self.tensorboard_path = os.path.join(self.args.get('tensorboard_path'), f'{self.model_name}')
         utils.make_dirs(self.tensorboard_path)
         self.tb_writer = SummaryWriter(self.tensorboard_path)
+
+        self.save_path = os.path.join(self.args.get('save_path'), f'{self.model_name}')
+        utils.make_dirs(self.save_path)
 
     def set_train_loader(self, train_loader):
         self.train_loader = train_loader
@@ -128,50 +132,6 @@ class Trainer:
 
         return epoch_loss, acc.get_acc()
 
-    def train(self, net, val=True):
-        self.__set_optimizer(net)
-
-        if self.train_loader is None:
-            raise Exception(f'train_loader is not initialized in trainer')
-
-        if self.optimizer is None:
-            raise Exception(f'optimizer is not initialized in trainer')
-
-        starting_epoch = max(1, self.current_epoch)
-
-        for epoch in range(starting_epoch, self.epochs + 1):
-
-            epoch_loss, epoch_acc = self.__train_one_epoch(net)
-
-            print(f'Epoch {self.current_epoch}-> loss: ', epoch_loss / len(self.train_loader),
-                  f', acc: ', epoch_acc)
-
-            self.__tb_update_value([('Train/Loss', epoch_loss / len(self.train_loader)),
-                                    ('Train/Accuracy', epoch_acc)])
-
-            if val:
-                with torch.no_grad():
-                    val_loss, val_acc, val_auroc_score, val_embeddings = self.validate(net)
-
-                    print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss / len(self.val_loader),
-                          f', val_acc: ', val_acc,
-                          f', val_auroc: ', val_auroc_score)
-
-                    self.__tb_update_value([('Val/Loss', val_loss / len(self.val_loader)),
-                                            ('Val/AUROC', val_auroc_score),
-                                            ('Val/Accuracy', val_acc)])
-
-            self.current_epoch = epoch
-
-            self.__tb_draw_histograms(net)
-
-            if self.loss_name == 'pnpp':
-                self.__tb_draw_histograms(self.loss_function)
-
-            # if self.scheduler:
-            #     self.scheduler.step()
-            # else:
-            #     self.adaptive_scheduler.step(current_loss=val_loss, current_val=val_acc)
 
     def validate(self, net):
         net.eval()
@@ -197,15 +157,19 @@ class Trainer:
                 bce_labels = self.__make_bce_labels(lbls)
                 loss = self.get_loss_value(img_embeddings, preds, lbls)
 
+                # equal numbers of positives and negatives
+                balanced_preds = utils.balance_labels(preds.cpu().detach().numpy(), k=3)
+                balanced_bce_labels = utils.balance_labels(bce_labels.cpu().detach().numpy(), k=3)
+
                 begin_idx = (batch_id - 1) * self.batch_size
                 end_idx = min(val_size, batch_id * self.batch_size)
 
                 embeddings[begin_idx: end_idx, :] = img_embeddings.cpu().detach().numpy()
 
-                predicted_links.extend(preds.cpu().detach().numpy() >= 0.5)
-                true_links.extend(bce_labels.cpu().detach().numpy())
+                predicted_links.extend(balanced_preds >= 0.5)
+                true_links.extend(balanced_bce_labels)
 
-                acc.update_acc(preds.flatten(), bce_labels.flatten(), sigmoid=False)
+                acc.update_acc(balanced_preds.flatten(), balanced_bce_labels.flatten(), sigmoid=False)
 
                 val_loss += loss.item()
 
@@ -230,3 +194,55 @@ class Trainer:
             raise Exception(f'Loss function "{self.loss_name}" not supported in Trainer')
 
         return loss
+
+
+    def train(self, net, val=True):
+        self.__set_optimizer(net)
+
+        if self.train_loader is None:
+            raise Exception(f'train_loader is not initialized in trainer')
+
+        if self.optimizer is None:
+            raise Exception(f'optimizer is not initialized in trainer')
+
+        starting_epoch = max(1, self.current_epoch)
+
+        best_val_acc = -1
+
+        for epoch in range(starting_epoch, self.epochs + 1):
+
+            self.current_epoch = epoch
+
+            epoch_loss, epoch_acc = self.__train_one_epoch(net)
+
+            print(f'Epoch {self.current_epoch}-> loss: ', epoch_loss / len(self.train_loader),
+                  f', acc: ', epoch_acc)
+
+            self.__tb_update_value([('Train/Loss', epoch_loss / len(self.train_loader)),
+                                    ('Train/Accuracy', epoch_acc)])
+
+            if val:
+                with torch.no_grad():
+                    val_loss, val_acc, val_auroc_score, val_embeddings = self.validate(net)
+
+                    print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss / len(self.val_loader),
+                          f', val_acc: ', val_acc,
+                          f', val_auroc: ', val_auroc_score)
+
+                    self.__tb_update_value([('Val/Loss', val_loss / len(self.val_loader)),
+                                            ('Val/AUROC', val_auroc_score),
+                                            ('Val/Accuracy', val_acc)])
+
+                if val_acc > best_val_acc:
+                    best_val_acc = val_acc
+                    utils.save_model(net, self.current_epoch, best_val_acc, self.save_path)
+
+            self.__tb_draw_histograms(net)
+
+            if self.loss_name == 'pnpp':
+                self.__tb_draw_histograms(self.loss_function)
+
+            # if self.scheduler:
+            #     self.scheduler.step()
+            # else:
+            #     self.adaptive_scheduler.step(current_loss=val_loss, current_val=val_acc)

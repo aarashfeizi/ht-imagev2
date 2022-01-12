@@ -40,26 +40,15 @@ class RandomIdentitySampler(Sampler):
     def __str__(self):
         return f"|Sampler| iters {self.max_iters}| K {self.K}| M {self.batch_size}|"
 
-    def _prepare_batch(self):
-        batch_idxs_dict = defaultdict(list)
-
-        for label in self.labels:
-            idxs = copy.deepcopy(self.data_dict[label])
-            if len(idxs) < self.K:
-                idxs.extend(np.random.choice(idxs, size=self.K - len(idxs), replace=True))
-            random.shuffle(idxs)
-
-            batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
-
-        avai_labels = copy.deepcopy(self.labels)
-        return batch_idxs_dict, avai_labels
+    def prepare_batch(self):
+        raise NotImplemented
 
     def __iter__(self):
-        batch_idxs_dict, avai_labels = self._prepare_batch()
+        batch_idxs_dict, avai_labels = self.prepare_batch()
         for _ in range(self.max_iters):
             batch = []
             if len(avai_labels) < self.num_labels_per_batch:
-                batch_idxs_dict, avai_labels = self._prepare_batch()
+                batch_idxs_dict, avai_labels = self.prepare_batch()
 
             selected_labels = random.sample(avai_labels, self.num_labels_per_batch)
             for label in selected_labels:
