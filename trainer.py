@@ -140,10 +140,6 @@ class Trainer:
 
         acc = Metric_Accuracy()
 
-        val_size = self.val_loader.dataset.__len__()
-
-        embeddings = np.zeros((val_size, self.emb_size), dtype=np.float32)
-
         predicted_links = []
         true_links = []
 
@@ -161,11 +157,6 @@ class Trainer:
                 balanced_preds = utils.balance_labels(preds.cpu().detach().numpy(), k=3)
                 balanced_bce_labels = utils.balance_labels(bce_labels.cpu().detach().numpy(), k=3)
 
-                begin_idx = (batch_id - 1) * self.batch_size
-                end_idx = min(val_size, batch_id * self.batch_size)
-
-                embeddings[begin_idx: end_idx, :] = img_embeddings.cpu().detach().numpy()
-
                 predicted_links.extend(balanced_preds >= 0.5)
                 true_links.extend(balanced_bce_labels)
 
@@ -182,7 +173,7 @@ class Trainer:
         assert len(true_links) == len(predicted_links)
         auroc_score = roc_auc_score(true_links, predicted_links)
 
-        return val_loss, acc.get_acc(), auroc_score, embeddings
+        return val_loss, acc.get_acc(), auroc_score
 
     def get_loss_value(self, embeddings, binary_predictions, lbls):
         if self.loss_name == 'bce':
@@ -195,6 +186,19 @@ class Trainer:
 
         return loss
 
+    def get_embeddings(self, net, loader):
+
+        val_size = loader.dataset.__len__()
+        embeddings = np.zeros((val_size, self.emb_size), dtype=np.float32)
+        for batch_id, (imgs, _) in enumerate(loader):
+            preds, similarities, img_embeddings = net(imgs)
+
+            begin_idx = (batch_id - 1) * self.batch_size
+            end_idx = min(val_size, batch_id * self.batch_size)
+
+            embeddings[begin_idx: end_idx, :] = img_embeddings.cpu().detach().numpy()
+
+        return embeddings
 
     def train(self, net, val=True):
         self.__set_optimizer(net)
