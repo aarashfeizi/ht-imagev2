@@ -227,7 +227,7 @@ class Trainer:
 
             if val:
                 with torch.no_grad():
-                    val_loss, val_acc, val_auroc_score, val_embeddings = self.validate(net)
+                    val_loss, val_acc, val_auroc_score = self.validate(net)
 
                     print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss / len(self.val_loader),
                           f', val_acc: ', val_acc,
