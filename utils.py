@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
 import datasets
-from samplers.train_sampler import BalancedValSampler, TrainSampler
+from samplers.my_sampler import BalancedValSampler, TrainSampler
 
 
 class Global_Config_File:
