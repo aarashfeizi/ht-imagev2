@@ -45,15 +45,15 @@ class BalancedValSampler(RandomIdentitySampler):
 
             batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
 
-            for label in self.labels:
-                other_labels = list(set(self.labels) - set([label]))
-                triplets = []
-                for pair in batch_idxs_dict[label]:
-                    neg_label = np.random.choice(other_labels, size=1)[0]
-                    pair.extend(np.random.choice(self.data_dict[neg_label], size=1))
-                    triplets.append(pair)
+        for label in self.labels:
+            other_labels = list(set(self.labels) - set([label]))
+            triplets = []
+            for pair in batch_idxs_dict[label]:
+                neg_label = np.random.choice(other_labels, size=1)[0]
+                pair.extend(np.random.choice(self.data_dict[neg_label], size=1))
+                triplets.append(pair)
 
-                batch_idxs_dict[label] = triplets
+            batch_idxs_dict[label] = triplets
 
         avai_labels = copy.deepcopy(self.labels)
         return batch_idxs_dict, avai_labels
