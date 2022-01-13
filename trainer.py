@@ -13,7 +13,7 @@ OPTIMIZERS = {'adam': torch.optim.Adam}
 
 
 class Trainer:
-    def __init__(self, args, loss, train_loader, val_loader, optimizer='adam', current_epoch=1):
+    def __init__(self, args, loss, train_loader, val_loader, val_db_loader, optimizer='adam', current_epoch=1):
         self.batch_size = args.get('batch_size')
         self.emb_size = args.get('emb_size')
         self.args = args
@@ -24,6 +24,7 @@ class Trainer:
         self.loss_function = loss
         self.train_loader = train_loader
         self.val_loader = val_loader
+        self.val_db_loader = val_db_loader
         self.optimizer_name = optimizer
         self.model_name = utils.get_model_name(self.args)
         self.optimizer = None
@@ -45,6 +46,9 @@ class Trainer:
 
     def set_val_loader(self, val_loader):
         self.val_loader = val_loader
+
+    def set_val_db_loader(self, val_db_loader):
+        self.val_db_loader = val_db_loader
 
     def __set_optimizer(self, net):
         learnable_params = [{'params': net.encoder.rest.parameters(),
@@ -132,7 +136,6 @@ class Trainer:
 
         return epoch_loss, acc.get_acc()
 
-
     def validate(self, net):
         net.eval()
 
@@ -186,11 +189,11 @@ class Trainer:
 
         return loss
 
-    def get_embeddings(self, net, loader):
+    def get_embeddings(self, net):
 
-        val_size = loader.dataset.__len__()
+        val_size = self.val_db_loader.dataset.__len__()
         embeddings = np.zeros((val_size, self.emb_size), dtype=np.float32)
-        for batch_id, (imgs, _) in enumerate(loader):
+        for batch_id, (imgs, _) in enumerate(self.val_db_loader):
             preds, similarities, img_embeddings = net(imgs)
 
             begin_idx = (batch_id - 1) * self.batch_size
@@ -229,13 +232,30 @@ class Trainer:
                 with torch.no_grad():
                     val_loss, val_acc, val_auroc_score = self.validate(net)
 
+                    embeddings, classes = self.get_embeddings(net)
+
+                    r_at_k_score = utils.get_recall_at_k(embeddings, classes,
+                                                         metric='cosine',
+                                                         sim_matrix=None)
+
+                    # r_at_k_score.to_csv(
+                    #     os.path.join(self.save_path, f'{self.args.get("dataset")}_{mode}_per_class_total_avg_k@n.csv'),
+                    #     header=True,
+                    #     index=False)
+
                     print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss / len(self.val_loader),
                           f', val_acc: ', val_acc,
-                          f', val_auroc: ', val_auroc_score)
+                          f', val_auroc: ', val_auroc_score,
+                          f', val_R@K: ', r_at_k_score)
 
-                    self.__tb_update_value([('Val/Loss', val_loss / len(self.val_loader)),
-                                            ('Val/AUROC', val_auroc_score),
-                                            ('Val/Accuracy', val_acc)])
+                    list_for_tb = [('Val/Loss', val_loss / len(self.val_loader)),
+                                   ('Val/AUROC', val_auroc_score),
+                                   ('Val/Accuracy', val_acc)]
+
+                    for k, v in r_at_k_score.items():
+                        list_for_tb.append((f'Val/{k}', v))
+
+                    self.__tb_update_value(list_for_tb)
 
                 if val_acc > best_val_acc:
                     best_val_acc = val_acc

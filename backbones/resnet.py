@@ -1,12 +1,11 @@
+import os
+
 import torch
 import torch.nn as nn
 from torch.nn import Parameter
-import torch.nn.functional as F
 from torchvision.models import ResNet as tResNet
+
 import backbones.pooling as pooling
-from torch.hub import load_state_dict_from_url
-import utils
-import os
 
 __all__ = ['ResNet', 'resnet18', 'resnet50']
 
@@ -125,7 +124,8 @@ class Bottleneck(nn.Module):
 
 class ResNet(tResNet):
 
-    def __init__(self, block, layers, num_classes, four_dim=False, pooling_method='spoc', output_dim=0):
+    def __init__(self, block, layers, num_classes, four_dim=False, pooling_method='spoc', output_dim=0,
+                 layer_norm=False):
         super(ResNet, self).__init__(block, layers)
         self.gradients = None
         self.activations = None
@@ -142,7 +142,13 @@ class ResNet(tResNet):
         else:
             raise Exception(f'Pooling method {pooling_method} not implemented... :(')
 
-        previous_output = self.layer4[-1].conv3.out_channels if type(self.layer4[-1]) == Bottleneck else self.layer4[-1].conv2.out_channels
+        previous_output = self.layer4[-1].conv3.out_channels if type(self.layer4[-1]) == Bottleneck else self.layer4[
+            -1].conv2.out_channels
+
+        if layer_norm:
+            self.layer_norm = nn.LayerNorm(previous_output, elementwise_affine=False)
+        else:
+            self.layer_norm = None
 
         if output_dim != 0:
             self.last_conv = nn.Conv2d(in_channels=previous_output, out_channels=output_dim,
@@ -150,18 +156,6 @@ class ResNet(tResNet):
         else:
             self.last_conv = None
 
-        # if four_dim:
-        #     self.conv1 = nn.Conv2d(4, 64, kernel_size=7, stride=2, padding=3,
-        #                            bias=False)
-        #
-        #     self.rest = nn.Sequential(self.bn1,
-        #                               self.relu,
-        #                               self.maxpool,
-        #                               self.layer1,
-        #                               self.layer2,
-        #                               self.layer3,
-        #                               self.layer4)
-        # else:
         self.rest = nn.Sequential(self.conv1,
                                   self.bn1,
                                   self.relu,
@@ -170,7 +164,6 @@ class ResNet(tResNet):
                                   self.layer2,
                                   self.layer3,
                                   self.layer4)
-
 
     def activations_hook(self, grad):
         self.gradients = grad.clone()
@@ -192,6 +185,9 @@ class ResNet(tResNet):
         f3 = x
         x = self.layer4(x)
 
+        if self.layer_norm is not None:
+            x = self.layer_norm(x)
+
         if self.last_conv is not None:
             x = self.last_conv(x)  # downsampling channels for dim reduction
 
@@ -209,7 +205,6 @@ class ResNet(tResNet):
             return feat, [f1, f2, f3, f4]
         else:
             return x
-
 
     def get_activations_gradient(self):
         return self.gradients
@@ -236,8 +231,13 @@ class ResNet(tResNet):
 
             own_state[name].copy_(param)
 
-def _resnet(arch, block, layers, pretrained, progress, num_classes, pooling_method='spoc', mask=False, fourth_dim=False, project_path='.', output_dim=0, pretrained_model='', **kwargs):
-    model = ResNet(block, layers, num_classes, four_dim=(mask and fourth_dim), pooling_method=pooling_method, output_dim=output_dim, **kwargs)
+
+def _resnet(arch, block, layers, pretrained, progress, num_classes, pooling_method='spoc',
+            mask=False, fourth_dim=False, project_path='.', output_dim=0, pretrained_model='',
+            layer_norm=False, **kwargs):
+    model = ResNet(block, layers, num_classes, four_dim=(mask and fourth_dim),
+                   pooling_method=pooling_method, output_dim=output_dim,
+                   layer_norm=layer_norm, **kwargs)
 
     # if pretrained and pretrained_model != '':
     #     arch += '-' + pretrained_model
@@ -261,7 +261,6 @@ def _resnet(arch, block, layers, pretrained, progress, num_classes, pooling_meth
     #     print('pretrained loaded!')
     #     return model
 
-
     if pretrained:
         pretrained_path = os.path.join(project_path, 'backbones/', f'pretrained_{arch}.pt')
 
@@ -280,16 +279,18 @@ def _resnet(arch, block, layers, pretrained, progress, num_classes, pooling_meth
     return model
 
 
-
-def resnet18(args, pretrained=False, progress=True, num_classes=1, mask=False, fourth_dim=False, output_dim=0, **kwargs):
+def resnet18(args, pretrained=False, progress=True, num_classes=1, mask=False, fourth_dim=False, output_dim=0,
+             **kwargs):
     r"""ResNet-18 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], pretrained, progress, num_classes, project_path=args.project_path,
-                   mask=mask, fourth_dim=fourth_dim, pooling_method=args.pooling, output_dim=output_dim, pretrained_model=args.pretrained_model, **kwargs)
+    return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], pretrained, progress, num_classes,
+                   project_path=args.project_path,
+                   mask=mask, fourth_dim=fourth_dim, pooling_method=args.pooling, output_dim=output_dim,
+                   pretrained_model=args.pretrained_model, **kwargs)
 
 
 def simple_resnet50(args, pretrained=False, progress=True, num_classes=1, **kwargs):
@@ -297,12 +298,15 @@ def simple_resnet50(args, pretrained=False, progress=True, num_classes=1, **kwar
                    project_path=args.project_path,
                    pretrained_model=args.pretrained_model, output_dim=args.dim_reduction, **kwargs)
 
+
 def simple_resnet18(args, pretrained=False, progress=True, num_classes=1, **kwargs):
     return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], pretrained, progress, num_classes,
                    project_path=args.project_path,
                    pretrained_model=args.pretrained_model, output_dim=args.dim_reduction, **kwargs)
 
-def resnet50(args, pretrained=False, progress=True, num_classes=1, mask=False, fourth_dim=False, output_dim=0, **kwargs):
+
+def resnet50(args, pretrained=False, progress=True, num_classes=1, mask=False, fourth_dim=False, output_dim=0,
+             **kwargs):
     r"""ResNet-50 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
     Args:
@@ -312,27 +316,6 @@ def resnet50(args, pretrained=False, progress=True, num_classes=1, mask=False, f
     return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress, num_classes,
                    project_path=args.get('project_path'),
                    mask=mask, fourth_dim=fourth_dim, pooling_method='spoc',
-                   output_dim=args.get('emb_size'), **kwargs)
+                   output_dim=args.get('emb_size'), layer_norm=args.get('lnorm'), **kwargs)
     # return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress, num_classes, project_path=args.get('project_path'),
     #                mask=mask, fourth_dim=fourth_dim, pooling_method='spoc', output_dim=output_dim, pretrained_model=args.pretrained_model, **kwargs)
-
-if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser('argument for training')
-    parser.add_argument('--model', type=str, choices=['resnet12', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
-                                                      'seresnet12', 'seresnet18', 'seresnet24', 'seresnet50',
-                                                      'seresnet101'])
-    args = parser.parse_args()
-
-    model_dict = {
-        'resnet18': resnet18,
-        'resnet34': resnet34,
-        'resnet50': resnet50,
-        'resnet101': resnet101,
-    }
-
-    model = model_dict[args.model](pretrained=True)
-    print(model)
-    torch.save({'model_state_dict': model.state_dict()},
-               f'models/pretrained_{args.model}.pt')

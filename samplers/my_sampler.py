@@ -7,7 +7,7 @@ import numpy as np
 from samplers import RandomIdentitySampler
 
 
-class TrainSampler(RandomIdentitySampler):
+class KBatchSampler(RandomIdentitySampler):
 
     def prepare_batch(self):
         batch_idxs_dict = defaultdict(list)
@@ -24,7 +24,7 @@ class TrainSampler(RandomIdentitySampler):
         return batch_idxs_dict, avai_labels
 
 
-class BalancedValSampler(RandomIdentitySampler):
+class BalancedTripletSampler(RandomIdentitySampler):
     """
     Produce batches of [Anchor, Positive, Negative]
     """
@@ -57,3 +57,30 @@ class BalancedValSampler(RandomIdentitySampler):
 
         avai_labels = copy.deepcopy(self.labels)
         return batch_idxs_dict, avai_labels
+
+class DataBaseSampler(RandomIdentitySampler):
+    def __init__(self, dataset, batch_size, num_instances):
+        super().__init__(dataset, batch_size, num_instances)
+        self.batch_size = batch_size
+
+    def prepare_batch(self):
+        all_idxs = []
+
+        for label in self.labels:
+            idxs = copy.deepcopy(self.data_dict[label])
+            all_idxs.extend(idxs)
+
+        batch_idxs_list = []
+
+        for i in range(self.max_iters + 1):
+            idx_to_add = all_idxs[i * self.batch_size: (i + 1) * self.batch_size]
+            if len(idx_to_add) > 0:
+                batch_idxs_list.append(idx_to_add)
+
+        return batch_idxs_list, None
+
+    def __iter__(self):
+        batch_idxs_list, _ = self.prepare_batch()
+        for _ in range(len(batch_idxs_list)):
+            batch = batch_idxs_list.pop(0)
+            yield batch

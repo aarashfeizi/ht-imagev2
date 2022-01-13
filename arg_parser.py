@@ -37,6 +37,8 @@ def get_args():
     parser.add_argument('--proxypncapp_lr', type=float, default=None)
     parser.add_argument('--metric', default='cosine', choices=METRIC_LIST)
     parser.add_argument('--backbone', default='resnet50', choices=BACKBONE_LIST)
+    parser.add_argument('--lnorm', default=False, action='store_true', help="Layer norm BEFORE creating embeddings")
+
 
     args = parser.parse_args()
 

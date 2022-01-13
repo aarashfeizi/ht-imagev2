@@ -62,12 +62,20 @@ class Accuracy_At_K():
 
     def __str__(self):
         output_str = ''
-        for k in self.ks:
-            final_k = self.k_valus[k] / max(self.n, 1)
-            output_str += f'k@{k} = {final_k}\n'
+        metrics = self.get_all_metrics()
+
+        for k, v in metrics.items():
+            output_str += f'{k} = {v}\n'
 
         return output_str
 
+    def get_all_metrics(self):
+        output_dict = {}
+        for k in self.ks:
+            final_k = self.k_valus[k] / max(self.n, 1)
+            output_dict[f'R@{k}'] = final_k
+
+        return output_dict
 
     def get_per_class_metrics(self):
 

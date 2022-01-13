@@ -41,7 +41,7 @@ class RandomIdentitySampler(Sampler):
         return f"|Sampler| iters {self.max_iters}| K {self.K}| M {self.batch_size}|"
 
     def prepare_batch(self):
-        raise NotImplemented
+        raise NotImplemented()
 
     def __iter__(self):
         batch_idxs_dict, avai_labels = self.prepare_batch()

@@ -30,11 +30,12 @@ def main():
     print('Train transforms: ', train_transforms_names)
     print('Val transforms: ', val_transforms_names)
 
-    train_loader = utils.get_data(all_args, mode='train', transform=train_transforms)
-    val_loader = utils.get_data(all_args, mode='val', transform=val_transforms)
+    train_loader = utils.get_data(all_args, mode='train', transform=train_transforms, sampler_mode='kbatch')
+    val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet')
+    val_db_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='db')
     test_loader = None
     if args.test:
-        test_loader = utils.get_data(all_args, mode='test', transform=val_transforms)
+        test_loader = utils.get_data(all_args, mode='test', transform=val_transforms, sampler_mode='balanced_triplet')
 
     net = model.get_top_module(args=all_args)
 
@@ -52,7 +53,7 @@ def main():
         net.cuda()
         loss.cuda()
 
-    trainer = Trainer(all_args, loss=loss, train_loader=train_loader, val_loader=val_loader)
+    trainer = Trainer(all_args, loss=loss, train_loader=train_loader, val_loader=val_loader, val_db_loader=val_db_loader)
     if not all_args.get('test'):
         trainer.train(net, val=True)
     else:

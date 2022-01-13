@@ -4,14 +4,17 @@ import os
 import random
 import sys
 
+import faiss
 import numpy as np
+import pandas as pd
 import torch
 from PIL import Image
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
 import datasets
-from samplers.my_sampler import BalancedValSampler, TrainSampler
+import metrics
+from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseSampler
 
 
 class Global_Config_File:
@@ -192,12 +195,13 @@ def open_img(path):
     return img
 
 
-def get_data(args, mode, file_name='', transform=None):
-    SAMPLERS = {'train': TrainSampler,
-                'val': BalancedValSampler}
+def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch'): # 'kbatch', 'balanced_triplet', 'db'
+    SAMPLERS = {'kbatch': KBatchSampler,
+                'balanced_triplet': BalancedTripletSampler,
+                'db': DataBaseSampler}
 
     dataset = datasets.load_dataset(args, mode, file_name, transform=transform)
-    sampler = SAMPLERS[mode](dataset=dataset,
+    sampler = SAMPLERS[sampler_mode](dataset=dataset,
                              batch_size=args.get('batch_size'),
                              num_instances=args.get('num_inst_per_class'))
 
@@ -288,6 +292,9 @@ def get_model_name(args):
                                                         args.get('num_inst_per_class'),
                                                         args.get('learning_rate'),
                                                         args.get('bb_learning_rate'))
+    if args.get('lnorm'):
+        name += f"_n"
+
     if args.get('loss') == 'pnpp':
         name += '_prxlr%f' % (args.get('proxypncapp_lr'),
                               )
@@ -321,3 +328,89 @@ def save_model(net, epoch, val_acc, save_path):
                save_path + '/' + best_model_name)
 
     return best_model_name
+
+
+def get_faiss_knn(reps, k=1000, gpu=False, metric='cosine'):  # method "cosine" or "euclidean"
+    assert reps.dtype == np.float32
+    valid = False
+
+    D, I, self_D = None, None, None
+
+    d = reps.shape[1]
+    if metric == 'euclidean':
+        index_function = faiss.IndexFlatL2
+    elif metric == 'cosine':
+        index_function = faiss.IndexFlatIP
+    else:
+        raise Exception(f'get_faiss_knn unsupported method {metric}')
+
+    if gpu:
+        try:
+            index_flat = index_function(d)
+            res = faiss.StandardGpuResources()
+            index_flat = faiss.index_cpu_to_gpu(res, 0, index_flat)
+            index_flat.add(reps)  # add vectors to the index
+            print('Using GPU for KNN!!'
+                  ' Thanks FAISS! :)')
+        except:
+            print('Didn\'t fit it GPU, No gpus for faiss! :( ')
+            index_flat = index_function(d)
+            index_flat.add(reps)  # add vectors to the index
+    else:
+        print('No gpus for faiss! :( ')
+        index_flat = index_function(d)
+        index_flat.add(reps)  # add vectors to the index
+
+        assert (index_flat.ntotal == reps.shape[0])
+
+    while not valid:
+        print(f'get_faiss_knn metric is: {metric} for top {k}')
+
+        D, I = index_flat.search(reps, k)
+
+        D_notself = []
+        I_notself = []
+
+        self_distance = []
+
+        for i, (i_row, d_row) in enumerate(zip(I, D)):
+            self_distance.append(d_row[np.where(i_row == i)])
+            I_notself.append(np.delete(i_row, np.where(i_row == i)))
+            D_notself.append(np.delete(d_row, np.where(i_row == i)))
+
+        self_D = np.array(self_distance)
+        D = np.array(D_notself)
+        I = np.array(I_notself)
+        if len(self_D) == D.shape[0]:
+            valid = True
+        else:  # self was not found for all examples
+            print(f'self was not found for all examples, going from k={k} to k={k * 2}')
+            k *= 2
+
+    return D, I, self_D
+
+def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine'):
+    all_lbls = np.unique(img_lbls)
+
+    num = img_lbls.shape[0]
+
+    k_max = min(1000, img_lbls.shape[0])
+
+    if sim_matrix is None:
+        _, I, self_D = get_faiss_knn(img_feats, k=k_max, gpu=True, metric=metric)
+    else:
+        minval = np.min(sim_matrix) - 1.
+        self_D = -(np.diag(sim_matrix))
+        sim_matrix -= np.diag(np.diag(sim_matrix))
+        sim_matrix += np.diag(np.ones(num) * minval)
+        I = (-sim_matrix).argsort()[:, :-1]
+
+    recall_at_k = metrics.Accuracy_At_K(classes=np.array(all_lbls))
+
+    for idx, lbl in enumerate(img_lbls):
+        ret_lbls = img_lbls[I[idx]]
+        recall_at_k.update(lbl, ret_lbls)
+
+    total = recall_at_k.get_all_metrics()
+
+    return total
