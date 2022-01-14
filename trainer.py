@@ -38,7 +38,7 @@ class Trainer:
             self.save_path = None
         else:  # loading pretrained model mode
             assert os.path.exists(args.get('ckpt_path'))
-            assert force_new_dir
+            assert not force_new_dir
             sp, _ = os.path.split(args.get('ckpt_path'))  # returns save_path_with_model_name and checkpoint_name
             _, mn = os.path.split(sp)  # returns root save_path and model_name
             self.model_name = mn
