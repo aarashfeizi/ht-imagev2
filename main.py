@@ -57,8 +57,21 @@ def main():
     if not all_args.get('test'):
         trainer.train(net, val=True)
     else:
-        net = utils.load_model(net, os.path.join(all_args.get('ckpt_path')))
-        trainer.validate(net)
+        assert os.path.exists(all_args.get('ckpt_path'))
+        net, epoch = utils.load_model(net, os.path.join(all_args.get('ckpt_path')))
+
+        with torch.no_grad():
+            val_loss, val_acc, val_auroc_score = trainer.validate(net)
+            embeddings, classes = trainer.get_embeddings(net)
+
+            r_at_k_score = utils.get_recall_at_k(embeddings, classes,
+                                                 metric='cosine',
+                                                 sim_matrix=None)
+
+            print(f'VALIDATION from saved in epoch {epoch}-> val_loss: ', val_loss / len(trainer.val_loader),
+                  f', val_acc: ', val_acc,
+                  f', val_auroc: ', val_auroc_score,
+                  f', val_R@K: ', r_at_k_score)
 
 if __name__ == '__main__':
     main()

@@ -327,8 +327,9 @@ def balance_labels(pairwise_batch, k):
 def load_model(net, checkpoint_path):
     checkpoint = torch.load(checkpoint_path, map_location=next(net.parameters()).device)
     net.load_state_dict(checkpoint['model_state_dict'])
+    epoch = checkpoint.get("epoch", -1)
     print(f'Retrieving model {checkpoint_path} from epoch {checkpoint["epoch"]}...')
-    return net
+    return net, epoch
 
 
 def save_model(net, epoch, val_acc, save_path):
