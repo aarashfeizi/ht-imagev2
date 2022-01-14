@@ -32,8 +32,8 @@ class Global_Config_File:
         self.global_config_file['tensorboard_path'] = 'tensorboard_' + self.global_config_file.get('dataset')
         self.global_config_file['save_path'] = 'save_' + self.global_config_file.get('dataset')
 
-        self.global_config_file['tensorboard_path'] = make_dirs(self.global_config_file['tensorboard_path'])
-        self.global_config_file['save_path'] = make_dirs(self.global_config_file['save_path'])
+        make_dirs(self.global_config_file['tensorboard_path'])
+        make_dirs(self.global_config_file['save_path'])
 
     def __merge_config_files(self, args, config):
         for key, value in args.items():
@@ -152,15 +152,18 @@ def get_logger():  # params before: logname, env
     return logging.getLogger()
 
 
-def make_dirs(path):
+def make_dirs(path, force=False):
     i = 1
     if os.path.exists(path):
-        new_path = path
-        while os.path.exists(new_path):
-            new_path = path + f'_v{i}'
-            i += 1
-        os.makedirs(new_path)
-        return new_path
+        if force:
+            new_path = path
+            while os.path.exists(new_path):
+                new_path = path + f'_v{i}'
+                i += 1
+            os.makedirs(new_path)
+            return new_path
+        else:
+            return path
     else:
         os.makedirs(path)
         return path

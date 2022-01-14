@@ -35,11 +35,11 @@ class Trainer:
 
     def __set_tb_svdir(self):
         self.tensorboard_path = os.path.join(self.args.get('tensorboard_path'), f'{self.model_name}')
-        utils.make_dirs(self.tensorboard_path)
+        self.tensorboard_path = utils.make_dirs(self.tensorboard_path, force=True)
         self.tb_writer = SummaryWriter(self.tensorboard_path)
 
         self.save_path = os.path.join(self.args.get('save_path'), f'{self.model_name}')
-        utils.make_dirs(self.save_path)
+        self.save_path = utils.make_dirs(self.save_path, force=True)
 
     def set_train_loader(self, train_loader):
         self.train_loader = train_loader
