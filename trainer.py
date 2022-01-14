@@ -203,8 +203,8 @@ class Trainer:
             begin_idx = batch_id * self.batch_size
             end_idx = min(val_size, (batch_id + 1) * self.batch_size)
 
-            embeddings[begin_idx: end_idx, :] = img_embeddings.cpu().detach().numpy()
-            classes = lbls.cpu().detach().numpy()
+            embeddings[begin_idx:end_idx, :] = img_embeddings.cpu().detach().numpy()
+            classes[begin_idx:end_idx] = lbls.cpu().detach().numpy()
 
         return embeddings, classes
 
