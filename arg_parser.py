@@ -24,6 +24,7 @@ def get_args():
     parser.add_argument('--dataset', default='hotels_small', choices=DATASET_LIST)
 
     # learning
+    parser.add_argument('--ckpt_path', default=None, help="path to the checkpoint file")
     parser.add_argument('--learning_rate', type=float, default=0.001)
     parser.add_argument('--bb_learning_rate', type=float, default=0.00001)
     parser.add_argument('--weight_decay', type=float, default=0.0)
