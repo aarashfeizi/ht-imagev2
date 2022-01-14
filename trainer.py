@@ -57,7 +57,7 @@ class Trainer:
             self.save_path = os.path.join(self.args.get('save_path'), f'{self.model_name}')
             self.save_path = utils.make_dirs(self.save_path, force=self.force)
         else:
-            print(f'Save_path set to {self.save_path} and model name set to {self.model_name} from checkpoint}')
+            print(f'Save_path set to {self.save_path} and model name set to {self.model_name} from checkpoint')
 
 
     def set_train_loader(self, train_loader):
