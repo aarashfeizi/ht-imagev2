@@ -13,7 +13,7 @@ OPTIMIZERS = {'adam': torch.optim.Adam}
 
 
 class Trainer:
-    def __init__(self, args, loss, train_loader, val_loader, val_db_loader, optimizer='adam', current_epoch=1):
+    def __init__(self, args, loss, train_loader, val_loader, val_db_loader, optimizer='adam', current_epoch=0):
         self.batch_size = args.get('batch_size')
         self.emb_size = args.get('emb_size')
         self.args = args
@@ -190,7 +190,7 @@ class Trainer:
         return loss
 
     def get_embeddings(self, net):
-
+        net.eval()
         val_size = self.val_db_loader.dataset.__len__()
         embeddings = np.zeros((val_size, self.emb_size), dtype=np.float32)
         classes = np.zeros((val_size,), dtype=np.float32)
@@ -217,9 +217,38 @@ class Trainer:
         if self.optimizer is None:
             raise Exception(f'optimizer is not initialized in trainer')
 
-        starting_epoch = max(1, self.current_epoch)
+        starting_epoch = max(1, self.current_epoch + 1)
 
         best_val_acc = -1
+
+        # validate before training
+        if val:
+            with torch.no_grad():
+                val_loss, val_acc, val_auroc_score = self.validate(net)
+
+                embeddings, classes = self.get_embeddings(net)
+
+                r_at_k_score = utils.get_recall_at_k(embeddings, classes,
+                                                     metric='cosine',
+                                                     sim_matrix=None)
+
+                print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss / len(self.val_loader),
+                      f', val_acc: ', val_acc,
+                      f', val_auroc: ', val_auroc_score,
+                      f', val_R@K: ', r_at_k_score)
+
+                list_for_tb = [('Val/Loss', val_loss / len(self.val_loader)),
+                               ('Val/AUROC', val_auroc_score),
+                               ('Val/Accuracy', val_acc)]
+
+                for k, v in r_at_k_score.items():
+                    list_for_tb.append((f'Val/{k}', v))
+
+                self.__tb_update_value(list_for_tb)
+
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
+                utils.save_model(net, self.current_epoch, best_val_acc, self.save_path)
 
         for epoch in range(starting_epoch, self.epochs + 1):
 

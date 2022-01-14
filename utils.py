@@ -378,9 +378,9 @@ def get_faiss_knn(reps, k=1000, gpu=False, metric='cosine'):  # method "cosine" 
             I_notself.append(np.delete(i_row, np.where(i_row == i)))
             D_notself.append(np.delete(d_row, np.where(i_row == i)))
 
-        self_D = np.array(self_distance)
-        D = np.array(D_notself)
-        I = np.array(I_notself)
+        self_D = np.array(self_distance, dtype=object)
+        D = np.array(D_notself, dtype=object)
+        I = np.array(I_notself, dtype=object)
         if len(self_D) == D.shape[0]:
             valid = True
         else:  # self was not found for all examples
