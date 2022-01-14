@@ -13,7 +13,11 @@ OPTIMIZERS = {'adam': torch.optim.Adam}
 
 
 class Trainer:
-    def __init__(self, args, loss, train_loader, val_loader, val_db_loader, optimizer='adam', current_epoch=0):
+    """
+    Class for training and validating model
+    """
+    def __init__(self, args, loss, train_loader, val_loader,
+                 val_db_loader, optimizer='adam', current_epoch=0, force_new_dir=True):
         self.batch_size = args.get('batch_size')
         self.emb_size = args.get('emb_size')
         self.args = args
@@ -31,15 +35,16 @@ class Trainer:
         self.tensorboard_path = None
         self.save_path = None
         self.tb_writer = None
+        self.force = force_new_dir  # false if testing and the folder should already be there
         self.__set_tb_svdir()
 
     def __set_tb_svdir(self):
         self.tensorboard_path = os.path.join(self.args.get('tensorboard_path'), f'{self.model_name}')
-        self.tensorboard_path = utils.make_dirs(self.tensorboard_path, force=True)
+        self.tensorboard_path = utils.make_dirs(self.tensorboard_path, force=self.force)
         self.tb_writer = SummaryWriter(self.tensorboard_path)
 
         self.save_path = os.path.join(self.args.get('save_path'), f'{self.model_name}')
-        self.save_path = utils.make_dirs(self.save_path, force=True)
+        self.save_path = utils.make_dirs(self.save_path, force=self.force)
 
     def set_train_loader(self, train_loader):
         self.train_loader = train_loader
@@ -160,7 +165,7 @@ class Trainer:
                 balanced_preds = utils.balance_labels(preds.cpu().detach().numpy(), k=3)
                 balanced_bce_labels = utils.balance_labels(bce_labels.cpu().detach().numpy(), k=3)
 
-                predicted_links.extend(balanced_preds.numpy() >= 0.5)
+                predicted_links.extend(balanced_preds.numpy())
                 true_links.extend(balanced_bce_labels.numpy())
 
                 acc.update_acc(balanced_preds.flatten(), balanced_bce_labels.flatten(), sigmoid=False)

@@ -1,21 +1,18 @@
-import backbones
+import os
+
+import torch
+import torch.nn as nn
+
+import arg_parser
 import losses
 import model
 import utils
-import torch
-import os, sys
-import arg_parser
-
-import timm
-
 from trainer import Trainer
-import torch.nn as nn
 
 
 def main():
     args = arg_parser.get_args()
     dataset_config = utils.load_config(os.path.join(args.config_path, args.dataset + '.json'))
-
 
     all_args = utils.Global_Config_File(args=args, config_file=dataset_config)
     utils.seed_all(all_args.get('seed'))
@@ -53,11 +50,14 @@ def main():
         net.cuda()
         loss.cuda()
 
-    trainer = Trainer(all_args, loss=loss, train_loader=train_loader, val_loader=val_loader, val_db_loader=val_db_loader)
     if not all_args.get('test'):
+        trainer = Trainer(all_args, loss=loss, train_loader=train_loader, val_loader=val_loader,
+                          val_db_loader=val_db_loader, force_new_dir=True)
         trainer.train(net, val=True)
     else:
         assert os.path.exists(all_args.get('ckpt_path'))
+        trainer = Trainer(all_args, loss=loss, train_loader=None, val_loader=val_loader,
+                          val_db_loader=val_db_loader, force_new_dir=False)
         net, epoch = utils.load_model(net, os.path.join(all_args.get('ckpt_path')))
 
         with torch.no_grad():
@@ -72,6 +72,7 @@ def main():
                   f', val_acc: ', val_acc,
                   f', val_auroc: ', val_auroc_score,
                   f', val_R@K: ', r_at_k_score)
+
 
 if __name__ == '__main__':
     main()
