@@ -193,18 +193,20 @@ class Trainer:
 
         val_size = self.val_db_loader.dataset.__len__()
         embeddings = np.zeros((val_size, self.emb_size), dtype=np.float32)
-        for batch_id, (imgs, _) in enumerate(self.val_db_loader):
+        classes = np.zeros((val_size,), dtype=np.float32)
+        for batch_id, (imgs, lbls) in enumerate(self.val_db_loader):
             if self.cuda:
                 imgs = imgs.cuda()
 
             preds, similarities, img_embeddings = net(imgs)
 
-            begin_idx = (batch_id - 1) * self.batch_size
-            end_idx = min(val_size, batch_id * self.batch_size)
+            begin_idx = batch_id * self.batch_size
+            end_idx = min(val_size, (batch_id + 1) * self.batch_size)
 
             embeddings[begin_idx: end_idx, :] = img_embeddings.cpu().detach().numpy()
+            classes = lbls.cpu().detach().numpy()
 
-        return embeddings
+        return embeddings, classes
 
     def train(self, net, val=True):
         self.__set_optimizer(net)
