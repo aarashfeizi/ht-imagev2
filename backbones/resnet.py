@@ -145,8 +145,10 @@ class ResNet(tResNet):
         previous_output = self.layer4[-1].conv3.out_channels if type(self.layer4[-1]) == Bottleneck else self.layer4[
             -1].conv2.out_channels
 
-        if layer_norm:
-            self.layer_norm = nn.LayerNorm(previous_output, elementwise_affine=False)
+        if layer_norm and previous_output == 2048:
+            self.layer_norm = nn.LayerNorm([previous_output, 7, 7], elementwise_affine=False)
+        elif layer_norm:
+            raise Exception('Layer Norm not defined for outputs of size unequal to 2048 in ./backbones/resnet.py')
         else:
             self.layer_norm = None
 
