@@ -16,6 +16,7 @@ class Trainer:
     """
     Class for training and validating model
     """
+
     def __init__(self, args, loss, train_loader, val_loader,
                  val_db_loader, optimizer='adam', current_epoch=0, force_new_dir=True):
         self.batch_size = args.get('batch_size')
@@ -33,7 +34,16 @@ class Trainer:
         self.model_name = utils.get_model_name(self.args)
         self.optimizer = None
         self.tensorboard_path = None
-        self.save_path = None
+        if args.get('ckpt_path') is None:  # new model
+            self.save_path = None
+        else:  # loading pretrained model mode
+            assert os.path.exists(args.get('ckpt_path'))
+            assert force_new_dir
+            sp, _ = os.path.split(args.get('ckpt_path'))  # returns save_path_with_model_name and checkpoint_name
+            _, mn = os.path.split(sp)  # returns root save_path and model_name
+            self.model_name = mn
+            self.save_path = sp
+
         self.tb_writer = None
         self.force = force_new_dir  # false if testing and the folder should already be there
         self.__set_tb_svdir()
@@ -43,8 +53,12 @@ class Trainer:
         self.tensorboard_path = utils.make_dirs(self.tensorboard_path, force=self.force)
         self.tb_writer = SummaryWriter(self.tensorboard_path)
 
-        self.save_path = os.path.join(self.args.get('save_path'), f'{self.model_name}')
-        self.save_path = utils.make_dirs(self.save_path, force=self.force)
+        if self.save_path is None:
+            self.save_path = os.path.join(self.args.get('save_path'), f'{self.model_name}')
+            self.save_path = utils.make_dirs(self.save_path, force=self.force)
+        else:
+            print(f'Save_path set to {self.save_path} and model name set to {self.model_name} from checkpoint}')
+
 
     def set_train_loader(self, train_loader):
         self.train_loader = train_loader
