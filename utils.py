@@ -408,7 +408,7 @@ def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine'):
 
     num = img_lbls.shape[0]
 
-    k_max = min(1000, img_lbls.shape[0])
+    k_max = min(1500, img_lbls.shape[0])
 
     if sim_matrix is None:
         _, I, self_D = get_faiss_knn(img_feats, k=k_max, gpu=True, metric=metric)
