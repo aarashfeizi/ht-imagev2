@@ -194,6 +194,9 @@ class Trainer:
         val_size = self.val_db_loader.dataset.__len__()
         embeddings = np.zeros((val_size, self.emb_size), dtype=np.float32)
         for batch_id, (imgs, _) in enumerate(self.val_db_loader):
+            if self.cuda:
+                imgs = imgs.cuda()
+
             preds, similarities, img_embeddings = net(imgs)
 
             begin_idx = (batch_id - 1) * self.batch_size
