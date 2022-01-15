@@ -268,7 +268,7 @@ class Trainer:
             print(f'Epoch {self.current_epoch}-> loss: ', epoch_loss / len(self.train_loader),
                   f', acc: ', epoch_acc)
 
-            self.__tb_update_value([('Train/Loss', epoch_loss / len(self.train_loader)),
+            self.__tb_update_value([(f'Train/{self.loss_name}_Loss', epoch_loss / len(self.train_loader)),
                                     ('Train/Accuracy', epoch_acc)])
 
             if val:
@@ -291,7 +291,7 @@ class Trainer:
                           f', val_auroc: ', val_auroc_score,
                           f', val_R@K: ', r_at_k_score)
 
-                    list_for_tb = [('Val/Loss', val_loss / len(self.val_loader)),
+                    list_for_tb = [(f'Val/{self.loss_name}_Loss', val_loss / len(self.val_loader)),
                                    ('Val/AUROC', val_auroc_score),
                                    ('Val/Accuracy', val_acc)]
 
