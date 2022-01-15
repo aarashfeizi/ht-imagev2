@@ -126,7 +126,7 @@ class Trainer:
 
                 loss = self.get_loss_value(img_embeddings, preds, lbls)
 
-                if any(torch.isnan(loss)):
+                if torch.isnan(loss):
                     raise Exception(f'Loss became NaN on iteration {batch_id} of epoch {self.current_epoch}! :(')
 
                 acc.update_acc(preds.flatten(), bce_labels.flatten(), sigmoid=False)
