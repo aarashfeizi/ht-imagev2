@@ -189,7 +189,7 @@ class Trainer:
         if self.loss_name == 'bce':
             loss = self.loss_function(embeddings, lbls, output_pred=binary_predictions.flatten())
         else:
-            loss = self.loss_function(embeddings, lbls)
+            loss = self.loss_function(embeddings, lbls.type(torch.int64))
         # elif self.loss_name == 'trpl':
         #     loss = self.loss_function(embeddings, lbls)
         return loss
