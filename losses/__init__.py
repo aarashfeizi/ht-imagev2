@@ -42,7 +42,7 @@ def get_loss(args):
         input_kwargs = get_inputs(num_classes=args.get('nb_classes'),
                                   embedding_size=args.get('emb_size'),
                                   margin=args.get('LOSS_margin'),
-                                  scale=args.get('ARGFACE_scale'))
+                                  scale=args.get('ARCFACE_scale'))
     elif loss_name == 'angular':
         input_kwargs = get_inputs(alpha=args.get('LOSS_alpha'))
 
