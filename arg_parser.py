@@ -1,9 +1,23 @@
 import argparse
 
 DATASET_LIST = ['hotels', 'hotels_small', 'cub']
-LOSSES_LIST = ['pnpp', 'bce', 'trpl']
-BACKBONE_LIST = ['resnet50', 'deit', 'bninception']  # only implementing resnet50 :))
-METRIC_LIST = ['cosine', 'euclidean', 'mlp']
+
+LOSSES_LIST = ['pnpp',
+               'bce',
+               'trpl',
+               'proxy_nca',
+               'proxy_anchor',
+               'arcface',
+               'angular',
+               'circle']
+
+BACKBONE_LIST = ['resnet50',
+                 'deit',
+                 'bninception']  # only implementing resnet50 :))
+
+METRIC_LIST = ['cosine',
+               'euclidean',
+               'mlp']
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -35,10 +49,23 @@ def get_args():
     parser.add_argument('--loss', default='pnpp', choices=LOSSES_LIST)
     parser.add_argument('--temperature', type=float, default=1.0)
     parser.add_argument('--scale', type=float, default=3.0)
-    parser.add_argument('--proxypncapp_lr', type=float, default=None)
     parser.add_argument('--metric', default='cosine', choices=METRIC_LIST)
     parser.add_argument('--backbone', default='resnet50', choices=BACKBONE_LIST)
     parser.add_argument('--lnorm', default=False, action='store_true', help="Layer norm BEFORE creating embeddings")
+
+    # loss specific defaults
+    parser.add_argument('--PNPP_lr', type=float, default=None)
+    parser.add_argument('--LOSS_margin', type=float, default=None)
+    parser.add_argument('--NCA_scale', type=float, default=None)
+    parser.add_argument('--LOSS_alpha', type=float, default=None)
+    parser.add_argument('--ARCFACE_scale', type=float, default=None)
+    parser.add_argument('--CIR_m', type=float, default=None)
+    parser.add_argument('--CIR_gamma', type=float, default=None)
+    # 'proxy_nca': ProxyNCALoss,  # softmax_scale=1,
+    # 'proxy_anchor': ProxyAnchorLoss,  # num_classes, embedding_size, margin = 0.1, alpha = 32
+    # 'arcface': ArcFaceLoss,  # num_classes, embedding_size, margin=28.6, scale=64,
+    # 'angular': AngularLoss,  # alpha=40
+    # 'circle': CircleLoss,  # m=0.4, gamma=80,
 
 
     args = parser.parse_args()

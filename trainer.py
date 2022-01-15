@@ -82,10 +82,10 @@ class Trainer:
                                   'new': True}]
 
         if self.args.get('loss') == 'pnpp':
-            assert self.args.get('proxypncapp_lr') is not None
+            assert self.args.get('PNPP_lr') is not None
 
             learnable_params += [{'params': self.loss_function.parameters(),
-                                  'lr': self.args.get('proxypncapp_lr'),
+                                  'lr': self.args.get('PNPP_lr'),
                                   'new': True}]
 
         self.optimizer = OPTIMIZERS[self.optimizer_name](params=learnable_params,
@@ -107,18 +107,6 @@ class Trainer:
 
         self.tb_writer.flush()
 
-    def __make_bce_labels(self, labels):
-        """
-
-        :param labels: e.g. [0, 0, 1, 1, 1, 2, 1, 2, 2, 3, 3]
-        :return:
-        """
-        l_ = labels.repeat(len(labels)).reshape(-1, len(labels))
-        l__ = labels.repeat_interleave(len(labels)).reshape(-1, len(labels))
-
-        final_bce_labels = (l_ == l__).type(torch.float32)
-
-        return final_bce_labels
 
     def __train_one_epoch(self, net):
         net.train()
@@ -134,7 +122,7 @@ class Trainer:
                     lbls = lbls.cuda()
 
                 preds, similarities, img_embeddings = net(imgs)
-                bce_labels = self.__make_bce_labels(lbls)
+                bce_labels = utils.make_batch_bce_labels(lbls)
 
                 loss = self.get_loss_value(img_embeddings, preds, lbls)
 
@@ -147,9 +135,9 @@ class Trainer:
 
                 self.optimizer.step()
 
-                t.set_postfix(loss=f'{epoch_loss / (batch_id) :.4f}',
-                              train_acc=f'{acc.get_acc():.4f}'
-                              )
+                postfixes = {f'train_{self.loss_name}': f'{epoch_loss / (batch_id) :.4f}',
+                             'train_acc': f'{acc.get_acc():.4f}'}
+                t.set_postfix(**postfixes)
 
                 t.update()
 
@@ -172,7 +160,7 @@ class Trainer:
                     lbls = lbls.cuda()
 
                 preds, similarities, img_embeddings = net(imgs)
-                bce_labels = self.__make_bce_labels(lbls)
+                bce_labels = utils.make_batch_bce_labels(lbls)
                 loss = self.get_loss_value(img_embeddings, preds, lbls)
 
                 # equal numbers of positives and negatives
@@ -186,9 +174,9 @@ class Trainer:
 
                 val_loss += loss.item()
 
-                t.set_postfix(loss=f'{val_loss / (batch_id) :.4f}',
-                              val_acc=f'{acc.get_acc():.4f}'
-                              )
+                postfixes = {f'val_{self.loss_name}': f'{val_loss / (batch_id) :.4f}',
+                             'val_acc': f'{acc.get_acc():.4f}'}
+                t.set_postfix(**postfixes)
 
                 t.update()
 
@@ -199,13 +187,11 @@ class Trainer:
 
     def get_loss_value(self, embeddings, binary_predictions, lbls):
         if self.loss_name == 'bce':
-            binary_labels = self.__make_bce_labels(lbls)
-            loss = self.loss_function(binary_predictions.flatten(), binary_labels.flatten())
-        elif self.loss_name == 'pnpp':
-            loss = self.loss_function(embeddings, lbls)
+            loss = self.loss_function(embeddings, lbls, output_pred=binary_predictions.flatten())
         else:
-            raise Exception(f'Loss function "{self.loss_name}" not supported in Trainer')
-
+            loss = self.loss_function(embeddings, lbls)
+        # elif self.loss_name == 'trpl':
+        #     loss = self.loss_function(embeddings, lbls)
         return loss
 
     def get_embeddings(self, net):

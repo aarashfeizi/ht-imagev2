@@ -6,7 +6,6 @@ import sys
 
 import faiss
 import numpy as np
-import pandas as pd
 import torch
 from PIL import Image
 from torch.utils.data import DataLoader
@@ -204,15 +203,15 @@ def open_img(path):
     return img
 
 
-def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch'): # 'kbatch', 'balanced_triplet', 'db'
+def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch'):  # 'kbatch', 'balanced_triplet', 'db'
     SAMPLERS = {'kbatch': KBatchSampler,
                 'balanced_triplet': BalancedTripletSampler,
                 'db': DataBaseSampler}
 
     dataset = datasets.load_dataset(args, mode, file_name, transform=transform)
     sampler = SAMPLERS[sampler_mode](dataset=dataset,
-                             batch_size=args.get('batch_size'),
-                             num_instances=args.get('num_inst_per_class'))
+                                     batch_size=args.get('batch_size'),
+                                     num_instances=args.get('num_inst_per_class'))
 
     dataloader = DataLoader(dataset=dataset, shuffle=False, num_workers=args.get('workers'), batch_sampler=sampler,
                             pin_memory=args.get('pin_memory'), worker_init_fn=seed_worker)
@@ -288,25 +287,34 @@ def binarize_and_smooth_labels(T, nb_classes, smoothing_const=0):
 
 
 def get_model_name(args):
+    loss_specific_args = ['LOSS_margin',
+                          'NCA_scale',
+                          'LOSS_alpha',
+                          'ARCFACE_scale',
+                          'CIR_m',
+                          'CIR_gamma',
+                          'PNPP_lr']
+
     name = ''
 
     if args.get('cuda'):
         gpu_ids = args.get("gpu_ids").replace(',', '')
         name += f'gpu{gpu_ids}_'
 
-    name += 'model_%s_%s_lss%s_bs%d_k%d_lr%f_bblr%f' % (args.get('dataset'),
-                                                        args.get('metric'),
-                                                        args.get('loss'),
-                                                        args.get('batch_size'),
-                                                        args.get('num_inst_per_class'),
-                                                        args.get('learning_rate'),
-                                                        args.get('bb_learning_rate'))
+    name += 'model_%s_lss%s_bs%d_k%d_lr%f_bblr%f' % (args.get('dataset'),
+                                                     args.get('metric'),
+                                                     args.get('batch_size'),
+                                                     args.get('num_inst_per_class'),
+                                                     args.get('learning_rate'),
+                                                     args.get('bb_learning_rate'))
+
+    name += f"_{args.get('loss')}"
+    for n in loss_specific_args:
+        if args.get(n) is not None:
+            name += f'-{n}{args.get(n)}'
+
     if args.get('lnorm'):
         name += f"_n"
-
-    if args.get('loss') == 'pnpp':
-        name += '_prxlr%f' % (args.get('proxypncapp_lr'),
-                              )
 
     if args.get('metric') != 'cosine':
         name += f"_temp{args.get('temperature')}"
@@ -384,7 +392,7 @@ def get_faiss_knn(reps, k=1500, gpu=False, metric='cosine'):  # method "cosine" 
         self_distance = []
         max_dist = np.array(D.max(), dtype=np.float32)
         for i, (i_row, d_row) in enumerate(zip(I, D)):
-            if len(np.where(i_row == i)[0]) > 0: # own index in returned indices
+            if len(np.where(i_row == i)[0]) > 0:  # own index in returned indices
                 self_distance.append(d_row[np.where(i_row == i)])
                 I_notself.append(np.delete(i_row, np.where(i_row == i)))
                 D_notself.append(np.delete(d_row, np.where(i_row == i)))
@@ -403,6 +411,7 @@ def get_faiss_knn(reps, k=1500, gpu=False, metric='cosine'):  # method "cosine" 
             k *= 2
 
     return D, I, self_D
+
 
 def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine'):
     all_lbls = np.unique(img_lbls)
@@ -429,3 +438,16 @@ def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine'):
     total = recall_at_k.get_all_metrics()
 
     return total
+
+
+def make_batch_bce_labels(labels):
+    """
+    :param labels: e.g. tensor of size (N,1)
+    :return: binary matrix of labels of size (N, N)
+    """
+    l_ = labels.repeat(len(labels)).reshape(-1, len(labels))
+    l__ = labels.repeat_interleave(len(labels)).reshape(-1, len(labels))
+
+    final_bce_labels = (l_ == l__).type(torch.float32)
+
+    return final_bce_labels

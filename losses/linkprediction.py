@@ -8,8 +8,11 @@ class NormalBCELoss(nn.Module):
         super(NormalBCELoss, self).__init__()
         self.bce_loss = nn.BCELoss()
 
-    def forward(self, output, true_labels):
-        loss = self.bce_loss(output, true_labels)
+    def forward(self, batch, labels, output_pred=None):
+        assert output_pred is not None
+        batch_bce_labels = utils.make_batch_bce_labels(labels)
+        assert len(output_pred.flatten()) == len(batch_bce_labels.flatten())
+        loss = self.bce_loss(output_pred.flatten(), batch_bce_labels.flatten())
         return loss
 
 class BCE_Loss(nn.Module):

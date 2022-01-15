@@ -50,11 +50,12 @@ def main():
         net.cuda()
         loss.cuda()
 
-    if not all_args.get('test'):
+    if not all_args.get('test'):  # training
         trainer = Trainer(all_args, loss=loss, train_loader=train_loader, val_loader=val_loader,
                           val_db_loader=val_db_loader, force_new_dir=True)
         trainer.train(net, val=True)
-    else:
+
+    else:  # testing
         assert os.path.exists(all_args.get('ckpt_path'))
         trainer = Trainer(all_args, loss=loss, train_loader=None, val_loader=val_loader,
                           val_db_loader=val_db_loader, force_new_dir=False)
