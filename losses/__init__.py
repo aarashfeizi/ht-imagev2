@@ -38,7 +38,7 @@ def get_loss(args):
                                   embedding_size=args.get('emb_size'),
                                   margin=args.get('LOSS_margin'),
                                   alpha=args.get('LOSS_alpha'))
-    elif loss_name == 'argface':
+    elif loss_name == 'arcface':
         input_kwargs = get_inputs(num_classes=args.get('nb_classes'),
                                   embedding_size=args.get('emb_size'),
                                   margin=args.get('LOSS_margin'),
