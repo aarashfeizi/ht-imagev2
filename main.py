@@ -60,7 +60,7 @@ def main():
         trainer = Trainer(all_args, loss=loss, train_loader=None, val_loader=val_loader,
                           val_db_loader=val_db_loader, force_new_dir=False)
         net, epoch = utils.load_model(net, os.path.join(all_args.get('ckpt_path')))
-
+        net.encoder.set_to_eval()
         with torch.no_grad():
             val_loss, val_acc, val_auroc_score = trainer.validate(net)
             embeddings, classes = trainer.get_embeddings(net)

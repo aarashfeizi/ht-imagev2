@@ -301,7 +301,7 @@ def get_model_name(args):
         gpu_ids = args.get("gpu_ids").replace(',', '')
         name += f'gpu{gpu_ids}_'
 
-    name += '%dep_%s_%s_bs%d_k%d_lr%f_bblr%f' % (args.get('epochs'),
+    name += 'wbn_%dep_%s_%s_bs%d_k%d_lr%f_bblr%f' % (args.get('epochs'),
                                                        args.get('dataset'),
                                                        args.get('metric'),
                                                        args.get('batch_size'),

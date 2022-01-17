@@ -167,12 +167,14 @@ class ResNet(tResNet):
                                   self.layer3,
                                   self.layer4)
 
+    def activations_hook(self, grad):
+        self.gradients = grad.clone()
+
+    def set_to_eval(self):
         for module in filter(lambda m: type(m) == nn.BatchNorm2d, self.modules()):
             module.eval()
             module.train = lambda _: None
-
-    def activations_hook(self, grad):
-        self.gradients = grad.clone()
+        return True
 
     def forward(self, x, is_feat=False, hook=False):
 
