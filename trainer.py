@@ -125,8 +125,8 @@ class Trainer:
 
             org_img = utils.transform_only_img(paths[0])
 
-            utils.draw_entire_heatmaps([activations],
-                                       [org_img],
+            utils.draw_entire_heatmaps([activations, activations],
+                                       [org_img, org_img],
                                        path=os.path.join(self.save_path, f'heatmap_{img_name}.png'),
                                        supplot_title=f'Heatmap for {img_name}')
 
