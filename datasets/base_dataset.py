@@ -87,7 +87,6 @@ class BaseDataset(Dataset):
             img = self.transform(img)
 
         if self.get_paths:
-            img_path = torch.tensor(img_path)
             return img, lbl, img_path
         else:
             return img, lbl

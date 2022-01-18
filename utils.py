@@ -474,12 +474,11 @@ def transform_only_img(img_path):
 def draw_entire_heatmaps(actss, imgs, path, supplot_title):
     plt.rcParams.update({'font.size': 5})
     subplot_titles = ['l1', 'l2', 'l3', 'l4', 'all']
-    import pdb
-    pdb.set_trace()
     fig, axes = plt.subplots(len(actss), len(subplot_titles))
     for acts, img, ax_row in zip(actss, imgs, axes):
+        img = np.array(img)
         for layer_i, (act, plot_title, ax) in enumerate(zip(acts, subplot_titles[:-1], ax_row[:-1]), 1):
-            act = act.cpu().numpy()
+            act = act.detach().cpu().numpy()
             # acts = np.maximum(acts, 0)
             # plt.rcParams.update({'figure.figsize': (20, 10)})
             print(f'Begin drawing activations for {plot_title}')
