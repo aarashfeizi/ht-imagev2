@@ -31,6 +31,7 @@ def get_args():
 
 
     parser.add_argument('--test', default=False, action='store_true')
+    parser.add_argument('--draw_heatmaps', default=False, action='store_true')
     parser.add_argument('--workers', type=int, default=10, help="number of workers for data loading")
     parser.add_argument('--pin_memory', default=False, action='store_true', help="pinning memory for data loading")
 
