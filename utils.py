@@ -211,7 +211,10 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch'):  
                 'db': DataBaseSampler,
                 'heatmap': DrawHeatmapSampler}
 
-    dataset = datasets.load_dataset(args, mode, file_name, transform=transform)
+    dataset = datasets.load_dataset(args, mode, file_name,
+                                    transform=transform,
+                                    for_heatmap= sampler_mode == 'heatmap')
+
     sampler = SAMPLERS[sampler_mode](dataset=dataset,
                                      batch_size=args.get('batch_size'),
                                      num_instances=args.get('num_inst_per_class'))
