@@ -4,17 +4,19 @@ import re
 import pandas as pd
 import torch
 from torch.utils.data.dataset import Dataset
+from torchvision import transforms
 
 import utils
 
 class BaseDataset(Dataset):
-    def __init__(self, args, mode, filename='', transform=None):
+    def __init__(self, args, mode, filename='', transform=None, get_paths=False):
         if filename == '':
             self.data_file_path = args.get(f'{mode}_file')
         else:
             self.data_file_path = filename
 
         self.root = args.get('dataset_path')
+        self.get_paths = get_paths
         self.path_list = []
         self.label_list = []
         self.transform = transform
@@ -84,4 +86,8 @@ class BaseDataset(Dataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        return img, lbl
+        if self.get_paths:
+            img_path = torch.tensor(img_path)
+            return img, lbl, img_path
+        else:
+            return img, lbl

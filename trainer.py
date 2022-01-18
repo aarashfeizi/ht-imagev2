@@ -34,6 +34,7 @@ class Trainer:
         self.model_name = utils.get_model_name(self.args)
         self.optimizer = None
         self.tensorboard_path = None
+        self.heatmap_loader = None
         if args.get('ckpt_path') is None:  # new model
             self.save_path = None
         else:  # loading pretrained model mode
@@ -59,6 +60,8 @@ class Trainer:
         else:
             print(f'Save_path set to {self.save_path} and model name set to {self.model_name} from checkpoint')
 
+    def set_heatmap_loader(self, loader):
+        self.heatmap_loader = loader
 
     def set_train_loader(self, train_loader):
         self.train_loader = train_loader
@@ -106,6 +109,27 @@ class Trainer:
             self.tb_writer.add_scalar(name, value, self.current_epoch)
 
         self.tb_writer.flush()
+
+    def draw_heatmaps(self, net):
+        if self.heatmap_loader is None:
+            raise Exception('self.heatmap_loader is not set in trainer.py!!')
+
+        for i, (imgs, lbls, paths) in enumerate(self.heatmap_loader):
+            if self.cuda:
+                imgs = imgs.cuda()
+
+            embeddings, activations = net.encoder(imgs, is_feat=True) # returns embeddings, [f1, f2, f3, f4]
+            _, img_name = os.path.split(paths[0])
+
+            img_name = img_name[:img_name.find('.')]
+
+            org_img = utils.transform_only_img(paths[0])
+
+            utils.draw_entire_heatmaps([activations],
+                                       [org_img],
+                                       path=os.path.join(self.save_path, f'heatmap_{img_name}.png'),
+                                       supplot_title=f'Heatmap for {img_name}')
+
 
 
     def __train_one_epoch(self, net):

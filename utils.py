@@ -4,16 +4,18 @@ import os
 import random
 import sys
 
+import cv2
 import faiss
 import numpy as np
 import torch
 from PIL import Image
+from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
 import datasets
 import metrics
-from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseSampler
+from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseSampler, DrawHeatmapSampler
 
 
 class Global_Config_File:
@@ -206,7 +208,8 @@ def open_img(path):
 def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch'):  # 'kbatch', 'balanced_triplet', 'db'
     SAMPLERS = {'kbatch': KBatchSampler,
                 'balanced_triplet': BalancedTripletSampler,
-                'db': DataBaseSampler}
+                'db': DataBaseSampler,
+                'heatmap': DrawHeatmapSampler}
 
     dataset = datasets.load_dataset(args, mode, file_name, transform=transform)
     sampler = SAMPLERS[sampler_mode](dataset=dataset,
@@ -380,7 +383,7 @@ def get_faiss_knn(reps, k=1500, gpu=False, metric='cosine'):  # method "cosine" 
         index_flat = index_function(d)
         index_flat.add(reps)  # add vectors to the index
 
-        assert (index_flat.ntotal == reps.shape[0])
+    assert (index_flat.ntotal == reps.shape[0])
 
     while not valid:
         print(f'get_faiss_knn metric is: {metric} for top {k}')
@@ -452,3 +455,83 @@ def make_batch_bce_labels(labels):
     final_bce_labels = (l_ == l__).type(torch.float32)
 
     return final_bce_labels
+
+
+def transform_only_img(img_path):
+    transform_only_img_func = transforms.Compose([transforms.Resize((256, 256)),
+                                                       transforms.CenterCrop(224)])
+
+    img = open_img(img_path)
+
+    img = transform_only_img_func(img)
+
+    return img
+
+
+def draw_entire_heatmaps(actss, imgs, path, supplot_title):
+    plt.rcParams.update({'font.size': 5})
+    subplot_titles = ['l1', 'l2', 'l3', 'l4', 'all']
+    import pdb
+    pdb.set_trace()
+    fig, axes = plt.subplots(len(actss), len(subplot_titles))
+    for acts, img, ax_row in zip(actss, imgs, axes):
+        for layer_i, (act, plot_title, ax) in enumerate(zip(acts, subplot_titles[:-1], ax_row[:-1]), 1):
+            act = act.cpu().numpy()
+            # acts = np.maximum(acts, 0)
+            # plt.rcParams.update({'figure.figsize': (20, 10)})
+            print(f'Begin drawing activations for {plot_title}')
+
+            acts_pos = np.maximum(act, 0)  # todo fucking it up
+            acts_pos /= np.max(acts_pos)
+
+            rows = []
+            all = []
+            row = []
+
+            row_length = 1
+
+            max_act = acts_pos.max(axis=0).max(axis=0)
+
+            for i, agg_act in enumerate([max_act]):
+
+                heatmap = __post_create_heatmap(agg_act, (img.shape[0], img.shape[1]))
+                pic = merge_heatmap_img(img, heatmap)
+                row.append(pic)
+                if (i + 1) % row_length == 0:
+                    rows.append(row)
+                    row = []
+
+            for row in rows:
+                all.append(np.concatenate(row, axis=1))
+
+            all = np.concatenate(all, axis=0)
+
+            print(all.shape)
+            ax.imshow(all)
+            ax.set_title(plot_title)
+            ax.axis('off')
+            print(f'saving... {plot_title}')
+
+        # plt.show()
+    fig.suptitle(supplot_title)
+    fig.savefig(path, dpi=5000)
+    plt.close('all')
+
+
+def merge_heatmap_img(img, heatmap):
+    pic = img.copy()
+    cv2.addWeighted(heatmap, 0.4, img, 0.6, 0, pic)
+    pic = cv2.cvtColor(pic, cv2.COLOR_BGR2RGB)
+
+    return pic
+
+
+
+def __post_create_heatmap(heatmap, shape):
+    # draw the heatmap
+    plt.matshow(heatmap.squeeze())
+
+    heatmap = cv2.resize(np.float32(heatmap), shape)
+    heatmap = np.uint8(255 * heatmap)
+    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+    return heatmap

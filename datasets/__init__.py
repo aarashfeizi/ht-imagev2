@@ -8,5 +8,5 @@ DATASETS = {
 }
 
 
-def load_dataset(args, mode, filename, transform):
-    return DATASETS[args.get('dataset')](args, mode, filename, transform)
+def load_dataset(args, mode, filename, transform, for_heatmap=False):
+    return DATASETS[args.get('dataset')](args, mode, filename, transform, get_paths=for_heatmap)

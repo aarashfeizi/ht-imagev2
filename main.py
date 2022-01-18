@@ -29,6 +29,7 @@ def main():
 
     train_loader = utils.get_data(all_args, mode='train', transform=train_transforms, sampler_mode='kbatch')
     val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet')
+    val_loader_4heatmap = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='heatmap')
     val_db_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='db')
     test_loader = None
     if args.test:
@@ -61,6 +62,11 @@ def main():
                           val_db_loader=val_db_loader, force_new_dir=False)
         net, epoch = utils.load_model(net, os.path.join(all_args.get('ckpt_path')))
         net.encoder.set_to_eval()
+
+        if all_args.get('draw_heatmaps'):
+            trainer.set_heatmap_loader(val_loader_4heatmap)
+            trainer.draw_heatmaps(net)
+
         with torch.no_grad():
             val_loss, val_acc, val_auroc_score = trainer.validate(net)
             embeddings, classes = trainer.get_embeddings(net)

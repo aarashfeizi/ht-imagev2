@@ -28,11 +28,11 @@ class BalancedTripletSampler(RandomIdentitySampler):
     """
     Produce batches of [Anchor, Positive, Negative]
     """
-    def __init__(self, dataset, batch_size, num_instances):
-        super().__init__(dataset, batch_size, num_instances)
-        self.K = 2 # anchor and positive
-        self.max_iters = ((dataset.__len__() * 3) // batch_size)
 
+    def __init__(self, dataset, batch_size, num_instances, **kwargs):
+        super().__init__(dataset, batch_size, num_instances, **kwargs)
+        self.K = 2  # anchor and positive
+        self.max_iters = ((dataset.__len__() * 3) // batch_size)
 
     def prepare_batch(self):
         batch_idxs_dict = defaultdict(list)
@@ -58,9 +58,10 @@ class BalancedTripletSampler(RandomIdentitySampler):
         avai_labels = copy.deepcopy(self.labels)
         return batch_idxs_dict, avai_labels
 
+
 class DataBaseSampler(RandomIdentitySampler):
-    def __init__(self, dataset, batch_size, num_instances):
-        super().__init__(dataset, batch_size, num_instances)
+    def __init__(self, dataset, batch_size, num_instances, **kwargs):
+        super().__init__(dataset, batch_size, num_instances, **kwargs)
         self.batch_size = batch_size
 
     def prepare_batch(self):
@@ -76,6 +77,40 @@ class DataBaseSampler(RandomIdentitySampler):
             idx_to_add = all_idxs[i * self.batch_size: (i + 1) * self.batch_size]
             if len(idx_to_add) > 0:
                 batch_idxs_list.append(idx_to_add)
+
+        return batch_idxs_list, None
+
+    def __iter__(self):
+        batch_idxs_list, _ = self.prepare_batch()
+        for _ in range(len(batch_idxs_list)):
+            batch = batch_idxs_list.pop(0)
+            yield batch
+
+
+class DrawHeatmapSampler(RandomIdentitySampler):
+    def __init__(self, dataset, batch_size, num_instances, idxes=None, **kwargs):
+        super().__init__(dataset, batch_size, num_instances, **kwargs)
+        self.batch_size = 1
+        self.batch_idxes = idxes
+        if self.batch_idxes is None:
+            self.batch_idxes = [2] # in val1_small.csv is images/train/77/80534/travel_website/6997071.jpg
+
+    def prepare_batch(self):
+        batch_idxs_list = []
+        for b in self.batch_idxes:
+            batch_idxs_list.append([b])
+        # all_idxs = []
+        #
+        # for label in self.labels:
+        #     idxs = copy.deepcopy(self.data_dict[label])
+        #     all_idxs.extend(idxs)
+        #
+        # batch_idxs_list = []
+        #
+        # for i in range(self.max_iters + 1):
+        #     idx_to_add = all_idxs[i * self.batch_size: (i + 1) * self.batch_size]
+        #     if len(idx_to_add) > 0:
+        #         batch_idxs_list.append(idx_to_add)
 
         return batch_idxs_list, None
 

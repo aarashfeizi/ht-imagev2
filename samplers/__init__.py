@@ -23,7 +23,7 @@ class RandomIdentitySampler(Sampler):
     - batch_size (int): number of examples in a batch.
     """
 
-    def __init__(self, dataset, batch_size, num_instances):
+    def __init__(self, dataset, batch_size, num_instances, **kwargs):
         self.data_dict = dataset.data_dict
         self.batch_size = batch_size
         self.K = num_instances

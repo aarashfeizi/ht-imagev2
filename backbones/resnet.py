@@ -206,11 +206,10 @@ class ResNet(tResNet):
         f4 = x
         x = self.pool(x)
 
-        feat = x
         x = torch.flatten(x, 1)
 
         if is_feat:
-            return feat, [f1, f2, f3, f4]
+            return x, [f1, f2, f3, f4]
         else:
             return x
 
