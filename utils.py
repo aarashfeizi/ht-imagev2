@@ -476,14 +476,19 @@ def get_avg_activations(acts, size=None):
         for a in acts:
             if a.shape[0] > max_size:
                 max_size = a.shape[0]
+                print(max_size)
     else:
         max_size = size
 
     reshaped_activations = []
+
     for a in acts:
         if a.shape[0] != max_size:
-            new_a = cv2.resize(np.float32(a), (max_size, max_size))
-            reshaped_activations.append(new_a)
+            a = cv2.resize(np.float32(a), (max_size, max_size))
+
+        reshaped_activations.append(a)
+
+
 
     final_addition = reshaped_activations[0]
 
