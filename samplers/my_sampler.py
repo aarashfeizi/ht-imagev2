@@ -93,7 +93,7 @@ class DrawHeatmapSampler(RandomIdentitySampler):
         self.batch_size = 1
         self.batch_idxes = idxes
         if self.batch_idxes is None:
-            self.batch_idxes = [2] # in val1_small.csv is images/train/77/80534/travel_website/6997071.jpg
+            self.batch_idxes = [2, 100, 300, 500] # in val1_small.csv is images/train/77/80534/travel_website/6997071.jpg
 
     def prepare_batch(self):
         batch_idxs_list = []

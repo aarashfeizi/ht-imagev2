@@ -470,55 +470,70 @@ def transform_only_img(img_path):
 
     return img
 
+def get_avg_activations(acts, size=None):
+    if size is None:
+        max_size = 0
+        for a in acts:
+            if a.shape[0] > max_size:
+                max_size = a.shape[0]
+    else:
+        max_size = size
 
-def draw_entire_heatmaps(actss, imgs, path, supplot_title):
-    plt.rcParams.update({'font.size': 5})
-    subplot_titles = ['l1', 'l2', 'l3', 'l4', 'all']
-    fig, axes = plt.subplots(len(actss), len(subplot_titles))
-    for acts, img, ax_row in zip(actss, imgs, axes):
+    reshaped_activations = []
+    for a in acts:
+        if a.shape[0] != max_size:
+            new_a = cv2.resize(np.float32(a), (max_size, max_size))
+            reshaped_activations.append(new_a)
+
+    final_addition = reshaped_activations[0]
+
+    for fa in reshaped_activations[1:]:
+        final_addition += fa
+
+    final_addition /= len(reshaped_activations)
+
+    return final_addition
+
+
+def get_heatmaped_img(acts, img):
+    """
+    :param act: one activation layer (1, C, H, W)
+    :param img: ndarray e.g. (224, 224)
+    :return: merged_img
+    """
+
+    heatmap = __post_create_heatmap(acts, (img.shape[0], img.shape[1]))
+    pic = merge_heatmap_img(img, heatmap)
+
+    return pic
+
+
+
+def get_all_heatmaps(list_of_activationsets, imgs):
+
+    all_img_heatmaps = []
+    for acts, img in zip(list_of_activationsets, imgs):
         img = np.array(img)
-        for layer_i, (act, plot_title, ax) in enumerate(zip(acts, subplot_titles[:-1], ax_row[:-1]), 1):
-            act = act.detach().cpu().numpy()
-            # acts = np.maximum(acts, 0)
-            # plt.rcParams.update({'figure.figsize': (20, 10)})
-            print(f'Begin drawing activations for {plot_title}')
+        dict_of_activations = {}
+        for i, a in enumerate(acts, 1):
+            dict_of_activations[f'l{i}'] = a.detach().cpu().numpy()
 
-            acts_pos = np.maximum(act, 0)  # todo fucking it up
-            acts_pos /= np.max(acts_pos)
+        # todo size being None causes 2 resizes instead of one
+        dict_of_activations['all'] = get_avg_activations(acts, size=None)
 
-            rows = []
-            all = []
-            row = []
+        heatmaps_to_return = {}
+        for layer_i, (label, act) in enumerate(dict_of_activations.items(), 1):
 
-            row_length = 1
+            acts_pos = np.maximum(act, 0)
+            acts_pos /= np.max(acts_pos) # activations between 0 and 1
 
             max_act = acts_pos.max(axis=0).max(axis=0)
+            pic = get_heatmaped_img(max_act, img)
+            heatmaps_to_return[label] = pic
 
-            for i, agg_act in enumerate([max_act]):
+        all_img_heatmaps.append(heatmaps_to_return)
 
-                heatmap = __post_create_heatmap(agg_act, (img.shape[0], img.shape[1]))
-                pic = merge_heatmap_img(img, heatmap)
-                row.append(pic)
-                if (i + 1) % row_length == 0:
-                    rows.append(row)
-                    row = []
-
-            for row in rows:
-                all.append(np.concatenate(row, axis=1))
-
-            all = np.concatenate(all, axis=0)
-
-            print(all.shape)
-            ax.imshow(all)
-            ax.set_title(plot_title)
-            ax.axis('off')
-            print(f'saving... {plot_title}')
-
-        # plt.show()
-    fig.suptitle(supplot_title)
-    fig.savefig(path, dpi=5000)
-    plt.close('all')
-
+    return all_img_heatmaps
 
 def merge_heatmap_img(img, heatmap):
     pic = img.copy()

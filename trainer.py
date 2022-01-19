@@ -110,6 +110,13 @@ class Trainer:
 
         self.tb_writer.flush()
 
+    def __tb_draw_img(self, names_imgs):
+
+        for i, (name, img) in enumerate(names_imgs, 1):
+            self.tb_writer.add_image(f'{i}/{name}', img, global_step=self.current_epoch)
+
+        self.tb_writer.flush()
+
     def draw_heatmaps(self, net):
         if self.heatmap_loader is None:
             raise Exception('self.heatmap_loader is not set in trainer.py!!')
@@ -125,10 +132,12 @@ class Trainer:
 
             org_img = utils.transform_only_img(paths[0])
 
-            utils.draw_entire_heatmaps([activations, activations],
-                                       [org_img, org_img],
-                                       path=os.path.join(self.save_path, f'heatmap_{img_name}.png'),
-                                       supplot_title=f'Heatmap for {img_name}')
+            heatmaps = utils.get_all_heatmaps([activations], [org_img])
+
+            name_imgs = [(n, i) for n, i in heatmaps[0].items()]
+            self.__tb_draw_img(name_imgs)
+
+
 
 
 
