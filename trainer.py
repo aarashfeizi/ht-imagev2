@@ -51,14 +51,16 @@ class Trainer:
 
     def __set_tb_svdir(self):
         self.tensorboard_path = os.path.join(self.args.get('tensorboard_path'), f'{self.model_name}')
-        self.tensorboard_path = utils.make_dirs(self.tensorboard_path, force=self.force)
-        self.tb_writer = SummaryWriter(self.tensorboard_path)
 
         if self.save_path is None:
             self.save_path = os.path.join(self.args.get('save_path'), f'{self.model_name}')
+            self.tensorboard_path = utils.make_dirs(self.tensorboard_path, force=self.force)
             self.save_path = utils.make_dirs(self.save_path, force=self.force)
         else:
+            self.tensorboard_path = utils.make_dirs(self.tensorboard_path, force=False)
             print(f'Save_path set to {self.save_path} and model name set to {self.model_name} from checkpoint')
+
+        self.tb_writer = SummaryWriter(self.tensorboard_path)
 
     def set_heatmap_loader(self, loader):
         self.heatmap_loader = loader
