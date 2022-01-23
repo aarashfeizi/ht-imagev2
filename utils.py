@@ -536,10 +536,9 @@ def get_avg_activations(acts, size=None):
     for a in acts:
         if a.shape[0] != max_size:
             a = cv2.resize(np.float32(a), (max_size, max_size))
-
         reshaped_activations.append(a)
 
-    final_addition = reshaped_activations[0]
+    final_addition = copy.deepcopy(reshaped_activations[0])
 
     for i, fa in enumerate(reshaped_activations[1:], 2):
         final_addition += fa * i
@@ -563,7 +562,7 @@ def get_heatmaped_img(acts, img):
     return pic
 
 
-def reduce_activation(t, mode='avg'):
+def reduce_normalize_activation(t, mode='avg'):
     """
     :param t: an ndarray of size (B, C, H, W)
     :param mode: ['avg', 'max']
@@ -598,7 +597,7 @@ def get_all_heatmaps(list_of_activationsets, imgs):
         dict_of_activations = {}
         for i, a in enumerate(acts, 1):
             a = a.detach().cpu().numpy()
-            dict_of_activations[f'l{i}'] = reduce_activation(a, mode='max')
+            dict_of_activations[f'l{i}'] = reduce_normalize_activation(a, mode='max')
 
         # todo size being None causes 2 resizes instead of one
         dict_of_activations['all'] = get_avg_activations(dict_of_activations.values(), size=None)
