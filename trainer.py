@@ -115,7 +115,7 @@ class Trainer:
     def __tb_draw_img(self, names_imgs):
 
         for i, (name, img) in enumerate(names_imgs, 1):
-            self.tb_writer.add_image(f'{i}/{name}', img, global_step=self.current_epoch)
+            self.tb_writer.add_image(f'{name}', img, global_step=self.current_epoch, dataformats='HWC')
 
         self.tb_writer.flush()
 
