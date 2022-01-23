@@ -541,10 +541,11 @@ def get_avg_activations(acts, size=None):
 
     final_addition = reshaped_activations[0]
 
-    for fa in reshaped_activations[1:]:
-        final_addition += fa
+    for i, fa in enumerate(reshaped_activations[1:], 2):
+        final_addition += fa * i
 
-    final_addition /= len(reshaped_activations)
+    # final_addition /= len(reshaped_activations)
+    final_addition /= 10  # (1 + 2 + 3 + 4)
 
     return final_addition
 
