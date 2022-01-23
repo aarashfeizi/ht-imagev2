@@ -538,12 +538,14 @@ def get_avg_activations(acts, size=None):
         reshaped_activations.append(a)
 
     final_addition = copy.deepcopy(reshaped_activations[0])
-
-    for i, fa in enumerate(reshaped_activations[1:], 2):
-        final_addition += fa * i
+    w_sum = 1
+    for i, fa in enumerate(reshaped_activations[1:], 1):
+        w = pow(2, i)
+        final_addition += fa * w
+        w_sum += w
 
     # final_addition /= len(reshaped_activations)
-    final_addition /= 10  # (1 + 2 + 3 + 4)
+    final_addition /= w_sum  # (1 + 2 + 3 + 4)
 
     return final_addition
 
@@ -607,6 +609,7 @@ def get_all_heatmaps(list_of_activationsets, imgs):
             pic = get_heatmaped_img(act, img)
             heatmaps_to_return[label] = pic
 
+        heatmaps_to_return['org'] = img[:, :, :3]
         all_img_heatmaps.append(heatmaps_to_return)
 
     return all_img_heatmaps
