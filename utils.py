@@ -600,7 +600,7 @@ def get_all_heatmaps(list_of_activationsets, imgs):
             dict_of_activations[f'l{i}'] = reduce_activation(a, mode='max')
 
         # todo size being None causes 2 resizes instead of one
-        dict_of_activations['all'] = get_avg_activations(acts, size=None)
+        dict_of_activations['all'] = get_avg_activations(dict_of_activations.values(), size=None)
 
         heatmaps_to_return = {}
         for layer_i, (label, act) in enumerate(dict_of_activations.items(), 1):
