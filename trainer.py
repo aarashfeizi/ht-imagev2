@@ -120,23 +120,34 @@ class Trainer:
     def draw_heatmaps(self, net):
         if self.heatmap_loader is None:
             raise Exception('self.heatmap_loader is not set in trainer.py!!')
-
+        
         for i, (imgs, lbls, paths) in enumerate(self.heatmap_loader):
             if self.cuda:
                 imgs = imgs.cuda()
 
             embeddings, activations = net.encoder(imgs, is_feat=True) # returns embeddings, [f1, f2, f3, f4]
-            _, img_name = os.path.split(paths[0])
 
-            img_name = img_name[:img_name.find('.')]
+            img_names = []
 
-            org_img = utils.transform_only_img(paths[0])
+            for path in paths:
 
-            heatmaps = utils.get_all_heatmaps([activations], [org_img])
+                _, img_name = os.path.split(path)
+                img_name = img_name[:img_name.find('.')]
+                img_names.append(img_name)
 
-            name_imgs = [(n, i) for n, i in heatmaps[0].items()]
+            org_imgs = []
+
+            for path in paths:
+                org_imgs.append(utils.transform_only_img(path))
+
+            heatmaps = utils.get_all_heatmaps([activations], org_imgs)
+
+            name_imgs = []
+            for name, heatmap in zip(img_names, heatmaps):
+                name_imgs.extend([(f'{name}/{n}', i) for n, i in heatmap.items()])
+
             self.__tb_draw_img(name_imgs)
-
+            
 
 
 

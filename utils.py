@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import os
@@ -10,6 +11,7 @@ import numpy as np
 import torch
 from PIL import Image
 from matplotlib import pyplot as plt
+from sklearn.metrics.pairwise import cosine_similarity
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
@@ -213,7 +215,7 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch'):  
 
     dataset = datasets.load_dataset(args, mode, file_name,
                                     transform=transform,
-                                    for_heatmap= sampler_mode == 'heatmap')
+                                    for_heatmap=sampler_mode == 'heatmap')
 
     sampler = SAMPLERS[sampler_mode](dataset=dataset,
                                      batch_size=args.get('batch_size'),
@@ -308,12 +310,12 @@ def get_model_name(args):
         name += f'gpu{gpu_ids}_'
 
     name += 'wbn_%dep_%s_%s_bs%d_k%d_lr%f_bblr%f' % (args.get('epochs'),
-                                                       args.get('dataset'),
-                                                       args.get('metric'),
-                                                       args.get('batch_size'),
-                                                       args.get('num_inst_per_class'),
-                                                       args.get('learning_rate'),
-                                                       args.get('bb_learning_rate'))
+                                                     args.get('dataset'),
+                                                     args.get('metric'),
+                                                     args.get('batch_size'),
+                                                     args.get('num_inst_per_class'),
+                                                     args.get('learning_rate'),
+                                                     args.get('bb_learning_rate'))
 
     name += f"_{args.get('loss')}"
     for n in loss_specific_args:
@@ -452,23 +454,72 @@ def make_batch_bce_labels(labels):
     :param labels: e.g. tensor of size (N,1)
     :return: binary matrix of labels of size (N, N)
     """
+
     l_ = labels.repeat(len(labels)).reshape(-1, len(labels))
     l__ = labels.repeat_interleave(len(labels)).reshape(-1, len(labels))
 
     final_bce_labels = (l_ == l__).type(torch.float32)
 
+    # final_bce_labels.fill_diagonal_(0)
+
     return final_bce_labels
+
+
+def get_samples(l, k):
+    if len(l) < k:
+        to_ret = np.random.choice(l, k, replace=True)
+    else:
+        to_ret = np.random.choice(l, k, replace=False)
+
+    return to_ret
+
+
+def get_xs_ys(bce_labels, k=1):
+    """
+
+    :param bce_labels: tensor of (N, N) with 0s and 1s
+    :param k: number of pos and neg samples per anch
+    :return:
+
+    """
+    xs = []
+    ys = []
+    bce_labels_copy = copy.deepcopy(bce_labels)
+    bce_labels_copy.fill_diagonal_(-1)
+    for i, row in enumerate(bce_labels_copy):
+        neg_idx = torch.where(row == 0)[0]
+        pos_idx = torch.where(row == 1)[0]
+
+        ys.extend(get_samples(neg_idx, k))
+        ys.extend(get_samples(pos_idx, k))
+        xs.extend(get_samples([i], 2 * k))
+
+    return xs, ys
+
+
+def calc_auroc(embeddings, labels):
+    from sklearn.metrics import roc_auc_score
+    bce_labels = make_batch_bce_labels(labels)
+    similarities = cosine_similarity(embeddings)
+
+    xs, ys = get_xs_ys(bce_labels)
+
+    true_labels = bce_labels[xs, ys]
+    predicted_labels = similarities[xs, ys]
+
+    return roc_auc_score(true_labels, predicted_labels)
 
 
 def transform_only_img(img_path):
     transform_only_img_func = transforms.Compose([transforms.Resize((256, 256)),
-                                                       transforms.CenterCrop(224)])
+                                                  transforms.CenterCrop(224)])
 
     img = open_img(img_path)
 
     img = transform_only_img_func(img)
 
     return img
+
 
 def get_avg_activations(acts, size=None):
     if size is None:
@@ -488,8 +539,6 @@ def get_avg_activations(acts, size=None):
 
         reshaped_activations.append(a)
 
-
-
     final_addition = reshaped_activations[0]
 
     for fa in reshaped_activations[1:]:
@@ -502,7 +551,7 @@ def get_avg_activations(acts, size=None):
 
 def get_heatmaped_img(acts, img):
     """
-    :param act: one activation layer (1, C, H, W)
+    :param act: one activation layer (H, W)
     :param img: ndarray e.g. (224, 224)
     :return: merged_img
     """
@@ -513,15 +562,42 @@ def get_heatmaped_img(acts, img):
     return pic
 
 
+def reduce_activation(t, mode='avg'):
+    """
+    :param t: an ndarray of size (B, C, H, W)
+    :param mode: ['avg', 'max']
+    :return: a normalized and reduced ndarray of size (H, W) ndarray if B == 1, else (B, H, W)
+    """
+
+    B, C, H, W = t.shape
+    t = np.maximum(t, 0)
+    t_max = t.max(axis=-1).max(axis=-1).max(axis=-1)  # activations between 0 and 1
+
+    t_max = t_max.repeat(H * W).reshape((B, H, W))
+
+    if mode == 'avg':
+        ret = t.mean(axis=1)
+    elif mode == 'max':
+        ret = t.max(axis=1)
+    else:
+        raise Exception('Not supported in reduce_activation in utils.py')
+
+    ret /= t_max
+
+    if B == 1:
+        ret = ret.squeeze(axis=0)
+
+    return ret
+
 
 def get_all_heatmaps(list_of_activationsets, imgs):
-
     all_img_heatmaps = []
     for acts, img in zip(list_of_activationsets, imgs):
         img = np.array(img)
         dict_of_activations = {}
         for i, a in enumerate(acts, 1):
-            dict_of_activations[f'l{i}'] = a.detach().cpu().numpy()
+            a = a.detach().cpu().numpy()
+            dict_of_activations[f'l{i}'] = reduce_activation(a, mode='max')
 
         # todo size being None causes 2 resizes instead of one
         dict_of_activations['all'] = get_avg_activations(acts, size=None)
@@ -529,16 +605,13 @@ def get_all_heatmaps(list_of_activationsets, imgs):
         heatmaps_to_return = {}
         for layer_i, (label, act) in enumerate(dict_of_activations.items(), 1):
 
-            acts_pos = np.maximum(act, 0)
-            acts_pos /= np.max(acts_pos) # activations between 0 and 1
-
-            max_act = acts_pos.max(axis=0).max(axis=0)
-            pic = get_heatmaped_img(max_act, img)
+            pic = get_heatmaped_img(act, img)
             heatmaps_to_return[label] = pic
 
         all_img_heatmaps.append(heatmaps_to_return)
 
     return all_img_heatmaps
+
 
 def merge_heatmap_img(img, heatmap):
     pic = img.copy()
@@ -546,7 +619,6 @@ def merge_heatmap_img(img, heatmap):
     pic = cv2.cvtColor(pic, cv2.COLOR_BGR2RGB)
 
     return pic
-
 
 
 def __post_create_heatmap(heatmap, shape):
