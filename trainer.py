@@ -146,7 +146,7 @@ class Trainer:
 
             name_imgs = []
             for name, heatmap in zip(img_names, heatmaps):
-                name_imgs.extend([(f'{name}/{n}', i) for n, i in heatmap.items()])
+                name_imgs.extend([(f'img_{name}/{n}', i) for n, i in heatmap.items()])
 
             self.__tb_draw_img(name_imgs)
             
