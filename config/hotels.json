@@ -1,0 +1,31 @@
+{
+  "dataset_path": "../../datasets/hotels50k/",
+  "nb_classes": 17281,
+  "train_file": "v5_splits/train.csv",
+  "val_file": "v5_splits/val1.csv",
+  "test_file": "v5_splits/test1.csv",
+  "all_val_files": [
+    "v5_splits/val1.txt",
+    "v5_splits/val2.txt",
+    "v5_splits/val3.txt",
+    "v5_splits/val4.txt"
+  ],
+  "all_test_files": [
+    "v5_splits/test1_small.txt",
+    "v5_splits/test2_small.txt",
+    "v5_splits/test3_small.txt",
+    "v5_splits/test4_small.txt"
+  ],
+  "loss_mode": "metric",
+  "normalize_param": {
+    "mean": [0.5805, 0.5247, 0.4683],
+    "std": [0.2508, 0.2580, 0.2701]
+  },
+  "color_jitter_param": {
+    "brightness": 0.5,
+    "hue": 0.5,
+    "contrast": 0.5,
+    "saturation": 0.5
+  }
+}
+
