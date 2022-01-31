@@ -36,7 +36,7 @@ class HardBCELoss(NormalBCELoss):
         :return: mask of indecies, with equal positives and negatives, negatives are the most difficult ones
         """
         batch_size = batch_bce_labels.shape[0]
-        col_index = sims.argsort(dim=1, descending=False)
+        col_index = sims.argsort(dim=1, descending=True)
 
         row_index = torch.tensor([[i for _ in range(batch_size)] for i in range(batch_size)])
 
