@@ -282,11 +282,11 @@ def main():
         # eval_datasets = []
         eval_ldrs = []
 
-        if args.get('num_of_dataset') > len(all_args.get('all_val_files')):
+        if all_args.get('num_of_dataset') > len(all_args.get('all_val_files')):
             raise Exception(
-                f"num_of_dataset ({args.get('num_of_dataset')}) is greater than all_val_files in specified in json file")
+                f"num_of_dataset ({all_args.get('num_of_dataset')}) is greater than all_val_files in specified in json file")
 
-        for i in range(0, args.get('num_of_dataset')):
+        for i in range(0, all_args.get('num_of_dataset')):
             eval_ldrs.append(utils.get_data(all_args, mode='val',
                                             file_name=all_args.get('all_val_files')[i],
                                             transform=val_transforms,
