@@ -331,6 +331,10 @@ def get_model_name(args):
 
     if args.get('metric') != 'cosine':
         name += f"_temp{args.get('temperature')}"
+
+    if args.get('xname') != '':
+        name += f"_{args.get('xname')}"
+
     return name
 
 
