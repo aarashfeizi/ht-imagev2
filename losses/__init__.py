@@ -5,6 +5,7 @@ from losses import linkprediction, proxynca, triplet
 LOSSES = {
     'pnpp': proxynca.ProxyNCA_prob,
     'bce': linkprediction.NormalBCELoss,
+    'hardbce': linkprediction.HardBCELoss,
     'trpl': triplet.TripletMargin_Loss,
     'proxy_nca': ProxyNCALoss,  # num_classes, embedding_size, softmax_scale=1,
     'proxy_anchor': ProxyAnchorLoss,  # num_classes, embedding_size, margin = 0.1, alpha = 32
@@ -12,6 +13,8 @@ LOSSES = {
     'angular': AngularLoss,  # alpha=40
     'circle': CircleLoss,  # m=0.4, gamma=80,
 }
+
+IMPLEMENTED_LOSSES = ['pnpp', 'bce', 'hardbce', 'trpl']
 
 
 def get_inputs(**kwargs):
@@ -26,7 +29,7 @@ def get_inputs(**kwargs):
 def get_loss(args):
     loss_name = args.get('loss')
     input_kwargs = None
-    if loss_name == 'pnpp' or loss_name == 'bce' or loss_name == 'trpl':
+    if loss_name in IMPLEMENTED_LOSSES:
         input_kwargs = get_inputs(args=args)
     elif loss_name == 'proxy_nca':
         input_kwargs = get_inputs(num_classes=args.get('nb_classes'),

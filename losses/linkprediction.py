@@ -4,6 +4,9 @@ import torch
 import utils
 
 class NormalBCELoss(nn.Module):
+    """
+    Do BCE loss on all possible pairs in batch
+    """
     def __init__(self, args):
         super(NormalBCELoss, self).__init__()
         self.bce_loss = nn.BCELoss()
@@ -13,6 +16,59 @@ class NormalBCELoss(nn.Module):
         batch_bce_labels = utils.make_batch_bce_labels(labels)
         assert len(output_pred.flatten()) == len(batch_bce_labels.flatten())
         loss = self.bce_loss(output_pred.flatten(), batch_bce_labels.flatten())
+        return loss
+
+class HardBCELoss(nn.Module):
+    """
+        If batch has k instances of each class, for each sample do BCE loss on (k - 1) hardest pairs
+         (this causes the number of positive and negative pairs to be the same)
+    """
+    def __init__(self, args):
+        super(HardBCELoss, self).__init__()
+        self.bce_loss = nn.BCELoss()
+
+
+    def __get_sims(self, batch):
+        norm_embeddings = F.normalize(batch, p=2)
+        sims = torch.matmul(norm_embeddings, norm_embeddings.T)
+        return sims
+
+    def __get_mask(self, sims, batch_bce_labels):
+        """
+
+        :param sims: similarities
+        :param batch_bce_labels: 0s and 1s, with -1s on the diagonal (should not choose itself as positive or negative)
+        :return: mask of indecies, with equal positives and negatives, negatives are the most difficult ones
+        """
+        batch_size = batch_bce_labels.shape[0]
+        col_index = sims.argsort(dim=1, descending=False)
+
+        row_index = torch.tensor([[i for _ in range(batch_size)] for i in range(batch_size)])
+
+        batch_bce_labels_reordered = batch_bce_labels[row_index, col_index]
+
+        pos_index = col_index[batch_bce_labels_reordered == 1].reshape(batch_size, -1)
+        neg_index = col_index[batch_bce_labels_reordered == 0].reshape(batch_size, -1)[:, :pos_index.shape[1]]
+
+        mask_index = torch.cat([pos_index, neg_index], dim=1)
+
+        return mask_index
+
+
+    def forward(self, batch, labels, output_pred=None):
+        assert output_pred is not None
+        batch_bce_labels = utils.make_batch_bce_labels(labels, diagonal_fill=-1)
+
+        sims = self.__get_sims(batch)
+        col_index = self.__get_mask(sims, batch_bce_labels)
+        row_index = torch.tensor([[i for _ in range(len(col_index.shape[1])) for i in range(len(labels))]])
+
+        batch_bce_labels_chosen = batch_bce_labels[row_index, col_index]
+        output_pred_chosen = output_pred[row_index, col_index]
+
+        assert len(output_pred_chosen.flatten()) == len(batch_bce_labels_chosen.flatten())
+
+        loss = self.bce_loss(output_pred_chosen.flatten(), batch_bce_labels_chosen.flatten())
         return loss
 
 class BCE_Loss(nn.Module):

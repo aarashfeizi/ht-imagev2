@@ -449,7 +449,7 @@ def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine', Kset=
     return total
 
 
-def make_batch_bce_labels(labels):
+def make_batch_bce_labels(labels, diagonal_fill=None):
     """
     :param labels: e.g. tensor of size (N,1)
     :return: binary matrix of labels of size (N, N)
@@ -460,7 +460,8 @@ def make_batch_bce_labels(labels):
 
     final_bce_labels = (l_ == l__).type(torch.float32)
 
-    # final_bce_labels.fill_diagonal_(0)
+    if diagonal_fill:
+        final_bce_labels.fill_diagonal_(diagonal_fill)
 
     return final_bce_labels
 

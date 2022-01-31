@@ -236,7 +236,7 @@ class Trainer:
         return val_loss, acc.get_acc(), auroc_score
 
     def get_loss_value(self, embeddings, binary_predictions, lbls):
-        if self.loss_name == 'bce':
+        if self.loss_name == 'bce' or self.loss_name == 'hardbce':
             loss = self.loss_function(embeddings, lbls, output_pred=binary_predictions.flatten())
         else:
             loss = self.loss_function(embeddings, lbls.type(torch.int64))

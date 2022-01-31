@@ -4,6 +4,7 @@ DATASET_LIST = ['hotels', 'hotels_small', 'cub']
 
 LOSSES_LIST = ['pnpp',
                'bce',
+               'hardbce',
                'trpl',
                'proxy_nca',
                'proxy_anchor',
