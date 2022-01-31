@@ -264,7 +264,6 @@ def main():
 
     parser.add_argument('-chk', '--checkpoint', default=None, help='Path to checkpoint')
     parser.add_argument('--kset', nargs='+', default=[1, 2, 4, 8, 16, 32, 100])
-    parser.add_argument('--roc_n', default=0, type=int)
 
     parser.add_argument('-elp', '--eval_log_path', default='./eval_logs')
     parser.add_argument('-name', '--name', default=None, type=str)
@@ -417,7 +416,7 @@ def main():
 
         print('*' * 10)
         print(f'{idx}: Calc AUC_ROC')
-        auc = utils.calc_auroc(features, labels)
+        auc = utils.calc_auroc(features, torch.tensor(labels))
         print(f'{idx}: AUC_ROC:', auc)
         results += f'\n\n{idx}: AUC_ROC: {auc}\n\n'
         results += '*' * 20
