@@ -32,14 +32,18 @@ DATASET_SIZES = {'cars': {'test': 8131},
                                   'val2_small': 2397,
                                   'val3_small': 2207,
                                   'val4_small': 2348,
-                                  'test1_small': 3060,
-                                  'test2_small': 2397,
-                                  'test3_small': 2207,
-                                  'test4_small': 2348},
+                                  'test1_small': 1, # 7390 is wrong
+                                  'test2_small': 4944,
+                                  'test3_small': 5146,
+                                  'test4_small': 5919},
                  'hotels': {'val1': 22121,
                             'val2': 16095,
                             'val3': 15970,
-                            'val4': 17981}
+                            'val4': 17981,
+                            'test1': 51294,
+                            'test2': 36537,
+                            'test3': 35693,
+                            'test4': 41437}
                  }
 
 DATASET_MEANS = {'hotels': [0.5805, 0.5247, 0.4683],
@@ -225,6 +229,8 @@ def main():
 
     parser.add_argument('-cuda', '--cuda', default=False, action='store_true')
     parser.add_argument('-trained_with_mltp_gpu', '--trained_with_mltp_gpu', default=False, action='store_true')
+    parser.add_argument('--eval_mode', default='val', help="val or test", choices=['val', 'test'])
+
 
     parser.add_argument('-gpu', '--gpu_ids', default='', help="gpu ids used to train")  # before: default="0,1,2,3"
 
@@ -275,6 +281,8 @@ def main():
 
     all_args = utils.Global_Config_File(args=args, config_file=dataset_config)
 
+    print(str(all_args))
+
     if all_args.get('name') is None:
         raise Exception('Provide --name')
 
@@ -293,7 +301,7 @@ def main():
                 f"num_of_dataset ({all_args.get('num_of_dataset')}) is greater than all_val_files in specified in json file")
 
         for i in range(0, all_args.get('num_of_dataset')):
-            eval_ldrs.append(utils.get_data(all_args, mode='val',
+            eval_ldrs.append(utils.get_data(all_args, mode=all_args.get('eval_mode'),
                                             file_name=all_args.get('all_val_files')[i],
                                             transform=val_transforms,
                                             sampler_mode='db'))
