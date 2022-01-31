@@ -240,6 +240,9 @@ def main():
     parser.add_argument('--pin_memory', default=False, action='store_true')
 
     parser.add_argument('-d', '--dataset', default=None, choices=dataset_choices)
+    parser.add_argument('--config_path', default='config/', help="config_path for datasets")
+
+
     parser.add_argument('-num_of_dataset', '--num_of_dataset', type=int, default=4,
                         help="number of hotels val_datasets to go through")
     parser.add_argument('--baseline', default='proxy-anchor', choices=BASELINE_MODELS)
