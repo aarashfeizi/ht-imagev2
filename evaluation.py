@@ -244,8 +244,7 @@ def main():
     # parser.add_argument('-Y_desc', '--Y_desc', nargs='+', default=[],
     #                     help="Different labels desc for datasets (order important)")  # for h5 or npz files
 
-    parser.add_argument('-emb', '--'
-                                '_size', default=512, type=int)
+    parser.add_argument('-emb', '--emb_size', default=512, type=int)
     parser.add_argument('-b', '--batch_size', default=32, type=int)
     parser.add_argument('-w', '--workers', default=10, type=int)
     parser.add_argument('--pin_memory', default=False, action='store_true')
