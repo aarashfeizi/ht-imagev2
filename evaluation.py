@@ -67,7 +67,7 @@ def get_features_and_labels(args, model, loader):
             else:
                 f = model(img)
 
-            if args.baseline == 'softtriple':
+            if args.get('baseline') == 'softtriple':
                 f = F.normalize(f, p=2, dim=1)
 
             features.append(f.cpu().detach().numpy())
@@ -84,7 +84,7 @@ def proxyanchor_load_model_resnet50(save_path, args):
     else:
         checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
 
-    net = pa.Resnet50(embedding_size=args.sz_embedding,
+    net = pa.Resnet50(embedding_size=args.get('sz_embedding'),
                       pretrained=True,
                       is_norm=1,
                       bn_freeze=1)
@@ -126,7 +126,7 @@ def softtriple_load_model_resnet50(save_path, args):
     else:
         checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
 
-    net = timm.create_model('resnet50', num_classes=args.sz_embedding)
+    net = timm.create_model('resnet50', num_classes=args.get('sz_embedding'))
 
     net.load_state_dict(checkpoint)
 
@@ -142,9 +142,9 @@ def proxyncapp_load_model_resnet50(save_path, args):
     else:
         checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
 
-    net = pnpp.get_model(args.sz_embedding)
+    net = pnpp.get_model(args.get('sz_embedding'))
 
-    if args.trained_with_mltp_gpu:
+    if args.get('trained_with_mltp_gpu'):
         net = torch.nn.DataParallel(net)
 
     net.load_state_dict(checkpoint)
@@ -163,7 +163,7 @@ def htv2_load_model_resnet50(save_path, args):
 
     net = htv2.get_top_module(args)
 
-    if args.trained_with_mltp_gpu:
+    if args.get('trained_with_mltp_gpu'):
         net = torch.nn.DataParallel(net)
 
     net.load_state_dict(checkpoint['model_state_dict'])
@@ -180,7 +180,7 @@ def softtriple_load_model_inception(save_path, args):
     else:
         checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
 
-    net = st.bninception(args.sz_embedding)
+    net = st.bninception(args.get('sz_embedding'))
 
     net.load_state_dict(checkpoint)
 
