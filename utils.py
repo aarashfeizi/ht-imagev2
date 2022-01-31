@@ -422,7 +422,7 @@ def get_faiss_knn(reps, k=1500, gpu=False, metric='cosine'):  # method "cosine" 
     return D, I, self_D
 
 
-def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine'):
+def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine', Kset=[1, 2, 4, 8]):
     all_lbls = np.unique(img_lbls)
 
     num = img_lbls.shape[0]
@@ -438,7 +438,7 @@ def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine'):
         sim_matrix += np.diag(np.ones(num) * minval)
         I = (-sim_matrix).argsort()[:, :-1]
 
-    recall_at_k = metrics.Accuracy_At_K(classes=np.array(all_lbls))
+    recall_at_k = metrics.Accuracy_At_K(classes=np.array(all_lbls), ks=Kset)
 
     for idx, lbl in enumerate(img_lbls):
         ret_lbls = img_lbls[I[idx]]
@@ -497,12 +497,18 @@ def get_xs_ys(bce_labels, k=1):
     return xs, ys
 
 
-def calc_auroc(embeddings, labels):
+def calc_auroc(embeddings, labels, k=1):
+    """
+
+    :param embeddings: all embeddings of a set to be tested
+    :param labels: all labels of the set to be tested
+    :return: the AUROC score, where random would score 1/(k + 1)
+    """
     from sklearn.metrics import roc_auc_score
     bce_labels = make_batch_bce_labels(labels)
     similarities = cosine_similarity(embeddings)
 
-    xs, ys = get_xs_ys(bce_labels)
+    xs, ys = get_xs_ys(bce_labels, k=k)
 
     true_labels = bce_labels[xs, ys]
     predicted_labels = similarities[xs, ys]
