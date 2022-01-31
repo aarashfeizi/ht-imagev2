@@ -32,6 +32,7 @@ class BalancedTripletSampler(RandomIdentitySampler):
     def __init__(self, dataset, batch_size, num_instances, **kwargs):
         super().__init__(dataset, batch_size, num_instances, **kwargs)
         self.K = 2  # anchor and positive
+        self.num_labels_per_batch = self.batch_size // 3 # batch of triplets
         self.max_iters = ((dataset.__len__() * 3) // batch_size)
 
     def prepare_batch(self):

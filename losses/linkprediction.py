@@ -11,23 +11,18 @@ class NormalBCELoss(nn.Module):
         super(NormalBCELoss, self).__init__()
         self.bce_loss = nn.BCELoss()
 
-    def forward(self, batch, labels, output_pred=None):
+    def forward(self, batch, labels, output_pred=None, train=True):
         assert output_pred is not None
         batch_bce_labels = utils.make_batch_bce_labels(labels)
         assert len(output_pred.flatten()) == len(batch_bce_labels.flatten())
         loss = self.bce_loss(output_pred.flatten(), batch_bce_labels.flatten())
         return loss
 
-class HardBCELoss(nn.Module):
+class HardBCELoss(NormalBCELoss):
     """
         If batch has k instances of each class, for each sample do BCE loss on (k - 1) hardest pairs
          (this causes the number of positive and negative pairs to be the same)
     """
-    def __init__(self, args):
-        super(HardBCELoss, self).__init__()
-        self.bce_loss = nn.BCELoss()
-
-
     def __get_sims(self, batch):
         norm_embeddings = F.normalize(batch, p=2)
         sims = torch.matmul(norm_embeddings, norm_embeddings.T)
@@ -54,17 +49,20 @@ class HardBCELoss(nn.Module):
 
         return mask_index
 
-
-    def forward(self, batch, labels, output_pred=None):
+    def forward(self, batch, labels, output_pred=None, train=True):
         assert output_pred is not None
-        batch_bce_labels = utils.make_batch_bce_labels(labels, diagonal_fill=-1)
 
-        sims = self.__get_sims(batch)
-        col_index = self.__get_mask(sims, batch_bce_labels)
-        row_index = torch.tensor([[i for _ in range(len(col_index.shape[1])) for i in range(len(labels))]])
+        if train:
+            batch_bce_labels = utils.make_batch_bce_labels(labels, diagonal_fill=-1)
+            sims = self.__get_sims(batch)
+            col_index = self.__get_mask(sims, batch_bce_labels)
+            row_index = torch.tensor([[i for _ in range(len(col_index.shape[1])) for i in range(len(labels))]])
 
-        batch_bce_labels_chosen = batch_bce_labels[row_index, col_index]
-        output_pred_chosen = output_pred[row_index, col_index]
+            batch_bce_labels_chosen = batch_bce_labels[row_index, col_index]
+            output_pred_chosen = output_pred[row_index, col_index]
+        else: # normal bce
+            batch_bce_labels_chosen = utils.make_batch_bce_labels(labels)
+            output_pred_chosen = output_pred
 
         assert len(output_pred_chosen.flatten()) == len(batch_bce_labels_chosen.flatten())
 

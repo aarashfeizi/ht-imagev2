@@ -211,7 +211,7 @@ class Trainer:
 
                 preds, similarities, img_embeddings = net(imgs)
                 bce_labels = utils.make_batch_bce_labels(lbls)
-                loss = self.get_loss_value(img_embeddings, preds, lbls)
+                loss = self.get_loss_value(img_embeddings, preds, lbls, train=False)
 
                 # equal numbers of positives and negatives
                 balanced_preds = utils.balance_labels(preds.cpu().detach().numpy(), k=3)
@@ -235,9 +235,9 @@ class Trainer:
 
         return val_loss, acc.get_acc(), auroc_score
 
-    def get_loss_value(self, embeddings, binary_predictions, lbls):
+    def get_loss_value(self, embeddings, binary_predictions, lbls, train=True):
         if self.loss_name == 'bce' or self.loss_name == 'hardbce':
-            loss = self.loss_function(embeddings, lbls, output_pred=binary_predictions.flatten())
+            loss = self.loss_function(embeddings, lbls, output_pred=binary_predictions.flatten(), train=train)
         else:
             loss = self.loss_function(embeddings, lbls.type(torch.int64))
         # elif self.loss_name == 'trpl':
