@@ -5,16 +5,16 @@
   "val_file": "v5_splits/val1.csv",
   "test_file": "v5_splits/test1.csv",
   "all_val_files": [
-    "v5_splits/val1.txt",
-    "v5_splits/val2.txt",
-    "v5_splits/val3.txt",
-    "v5_splits/val4.txt"
+    "v5_splits/val1.csv",
+    "v5_splits/val2.csv",
+    "v5_splits/val3.csv",
+    "v5_splits/val4.csv"
   ],
   "all_test_files": [
-    "v5_splits/test1_small.txt",
-    "v5_splits/test2_small.txt",
-    "v5_splits/test3_small.txt",
-    "v5_splits/test4_small.txt"
+    "v5_splits/test1_small.csv",
+    "v5_splits/test2_small.csv",
+    "v5_splits/test3_small.csv",
+    "v5_splits/test4_small.csv"
   ],
   "loss_mode": "metric",
   "normalize_param": {
