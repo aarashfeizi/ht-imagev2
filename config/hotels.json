@@ -11,10 +11,10 @@
     "v5_splits/val4.csv"
   ],
   "all_test_files": [
-    "v5_splits/test1_small.csv",
-    "v5_splits/test2_small.csv",
-    "v5_splits/test3_small.csv",
-    "v5_splits/test4_small.csv"
+    "v5_splits/test1.csv",
+    "v5_splits/test2.csv",
+    "v5_splits/test3.csv",
+    "v5_splits/test4.csv"
   ],
   "loss_mode": "metric",
   "normalize_param": {
