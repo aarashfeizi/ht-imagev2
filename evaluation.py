@@ -31,7 +31,11 @@ DATASET_SIZES = {'cars': {'test': 8131},
                  'hotels_small': {'val1_small': 3060,
                                   'val2_small': 2397,
                                   'val3_small': 2207,
-                                  'val4_small': 2348},
+                                  'val4_small': 2348,
+                                  'test1_small': 3060,
+                                  'test2_small': 2397,
+                                  'test3_small': 2207,
+                                  'test4_small': 2348},
                  'hotels': {'val1': 22121,
                             'val2': 16095,
                             'val3': 15970,
@@ -240,6 +244,8 @@ def main():
     parser.add_argument('--pin_memory', default=False, action='store_true')
 
     parser.add_argument('-d', '--dataset', default=None, choices=dataset_choices)
+    parser.add_argument('--num_inst_per_class', default=5, type=int)
+
     parser.add_argument('--config_path', default='config/', help="config_path for datasets")
 
 
