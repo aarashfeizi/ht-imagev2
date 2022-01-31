@@ -19,6 +19,9 @@ import datasets
 import metrics
 from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseSampler, DrawHeatmapSampler
 
+SHARING_STRATEGY = "file_system"
+torch.multiprocessing.set_sharing_strategy(SHARING_STRATEGY)
+
 
 class Global_Config_File:
     def __init__(self, config_file, args):
@@ -179,6 +182,7 @@ def load_config(config_name):
 
 
 def seed_worker(worker_id):
+    torch.multiprocessing.set_sharing_strategy(SHARING_STRATEGY)
     worker_seed = torch.initial_seed() % 2 ** 32
     np.random.seed(worker_seed)
     random.seed(worker_seed)

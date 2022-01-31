@@ -258,7 +258,7 @@ def main():
     parser.add_argument('-num_of_dataset', '--num_of_dataset', type=int, default=4,
                         help="number of hotels val_datasets to go through")
     parser.add_argument('--baseline', default='proxy-anchor', choices=BASELINE_MODELS)
-    parser.add_argument('--model_type', default='resnet50', choices=['bninception', 'resnet50'])
+    parser.add_argument('--backbone', default='resnet50', choices=['bninception', 'resnet50'])
 
     parser.add_argument('--pca_to_dim', action='store_true')
 
@@ -330,9 +330,9 @@ def main():
         elif all_args.get('baseline') == 'supcontrastive':
             net = supcontrastive_load_model_resnet50(all_args.get('checkpoint'), all_args)
         elif all_args.get('baseline') == 'softtriple':
-            if all_args.get('model_type') == 'resnet50':
+            if all_args.get('backbone') == 'resnet50':
                 net = softtriple_load_model_resnet50(all_args.get('checkpoint'), all_args)
-            elif all_args.get('model_type') == 'bninception':
+            elif all_args.get('backbone') == 'bninception':
                 net = softtriple_load_model_inception(all_args.get('checkpoint'), all_args)
         elif all_args.get('baseline') == 'resnet50':
             net = resnet_load_model(all_args.get('checkpoint'), all_args)
