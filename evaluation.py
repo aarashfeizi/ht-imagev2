@@ -170,6 +170,7 @@ def htv2_load_model_resnet50(save_path, args):
 
     if args.get('cuda'):
         net = net.cuda()
+    net = net.encoder
 
     return net
 
