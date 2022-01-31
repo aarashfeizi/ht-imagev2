@@ -84,7 +84,7 @@ def proxyanchor_load_model_resnet50(save_path, args):
     else:
         checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
 
-    net = pa.Resnet50(embedding_size=args.get('sz_embedding'),
+    net = pa.Resnet50(embedding_size=args.get('emb_size'),
                       pretrained=True,
                       is_norm=1,
                       bn_freeze=1)
@@ -126,7 +126,7 @@ def softtriple_load_model_resnet50(save_path, args):
     else:
         checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
 
-    net = timm.create_model('resnet50', num_classes=args.get('sz_embedding'))
+    net = timm.create_model('resnet50', num_classes=args.get('emb_size'))
 
     net.load_state_dict(checkpoint)
 
@@ -142,7 +142,7 @@ def proxyncapp_load_model_resnet50(save_path, args):
     else:
         checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
 
-    net = pnpp.get_model(args.get('sz_embedding'))
+    net = pnpp.get_model(args.get('emb_size'))
 
     if args.get('trained_with_mltp_gpu'):
         net = torch.nn.DataParallel(net)
@@ -180,7 +180,7 @@ def softtriple_load_model_inception(save_path, args):
     else:
         checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
 
-    net = st.bninception(args.get('sz_embedding'))
+    net = st.bninception(args.get('emb_size'))
 
     net.load_state_dict(checkpoint)
 
@@ -204,10 +204,10 @@ def resnet_load_model(save_path, args):
     return net
 
 
-def pca(features, sz_embedding):
-    pca_model = PCA(n_components=sz_embedding)
+def pca(features, emb_size):
+    pca_model = PCA(n_components=emb_size)
 
-    print(f'Performing PCA to reduce dim from {features.shape[1]} to {sz_embedding}')
+    print(f'Performing PCA to reduce dim from {features.shape[1]} to {emb_size}')
     new_features = pca_model.fit_transform(features)
 
     return new_features
@@ -244,15 +244,19 @@ def main():
     # parser.add_argument('-Y_desc', '--Y_desc', nargs='+', default=[],
     #                     help="Different labels desc for datasets (order important)")  # for h5 or npz files
 
-    parser.add_argument('-emb', '--sz_embedding', default=512, type=int)
+    parser.add_argument('-emb', '--'
+                                '_size', default=512, type=int)
     parser.add_argument('-b', '--batch_size', default=32, type=int)
     parser.add_argument('-w', '--workers', default=10, type=int)
     parser.add_argument('--pin_memory', default=False, action='store_true')
 
     parser.add_argument('-d', '--dataset', default=None, choices=dataset_choices)
     parser.add_argument('--num_inst_per_class', default=5, type=int)
+    parser.add_argument('--lnorm', default=False, action='store_true')
+
 
     parser.add_argument('--config_path', default='config/', help="config_path for datasets")
+    parser.add_argument('--project_path', default='./', help="current project path")
 
 
     parser.add_argument('-num_of_dataset', '--num_of_dataset', type=int, default=4,
@@ -397,12 +401,12 @@ def main():
     results = f'{all_args.get("dataset")}\n'
     for idx, (features, labels) in enumerate(all_data, 1):
 
-        if features.shape[1] != all_args.get('sz_embedding'):
+        if features.shape[1] != all_args.get('emb_size'):
             if all_args.get('pca_to_dim'):
-                features = pca(features, all_args.get('sz_embedding'))
+                features = pca(features, all_args.get('emb_size'))
             else:
                 raise Exception(
-                    f'--pca_to_dim is set to False and feature dim {features.shape[1]} not equal to expected dim {all_args.get("sz_embedding")}')
+                    f'--pca_to_dim is set to False and feature dim {features.shape[1]} not equal to expected dim {all_args.get("emb_size")}')
 
         print(f'{idx}: Calc Recall at {kset}')
         rec = utils.get_recall_at_k(features, labels,
