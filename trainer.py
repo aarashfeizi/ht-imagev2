@@ -22,6 +22,7 @@ class Trainer:
         self.batch_size = args.get('batch_size')
         self.emb_size = args.get('emb_size')
         self.args = args
+        self.k_inc_freq = args.get('k_inc_freq')
         self.cuda = args.get('cuda')
         self.epochs = args.get('epochs')
         self.current_epoch = current_epoch
@@ -354,6 +355,16 @@ class Trainer:
 
             if self.loss_name == 'pnpp':
                 self.__tb_draw_histograms(self.loss_function)
+
+            if (self.k_inc_freq != 0) and \
+                    epoch % self.k_inc_freq == 0:
+
+                self.args.set('num_inst_per_class', 2 * self.args.get('num_inst_per_class'))
+
+                train_transforms, _ = utils.TransformLoader(self.args).get_composed_transform(
+                    mode='train')
+                train_loader = utils.get_data(self.args, mode='train', transform=train_transforms, sampler_mode='kbatch')
+                self.train_loader = train_loader
 
             # if self.scheduler:
             #     self.scheduler.step()
