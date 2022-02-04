@@ -332,6 +332,9 @@ def get_model_name(args):
     if args.get('metric') != 'cosine':
         name += f"_temp{args.get('temperature')}"
 
+    if args.get('k_inc_freq') != 0:
+        name += f"_Kinc{args.get('k_inc_freq')}"
+
     if args.get('xname') != '':
         name += f"_{args.get('xname')}"
 
