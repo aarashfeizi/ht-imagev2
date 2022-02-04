@@ -313,13 +313,14 @@ def get_model_name(args):
         gpu_ids = args.get("gpu_ids").replace(',', '')
         name += f'gpu{gpu_ids}_'
 
-    name += 'wbn_%dep_%s_%s_bs%d_k%d_lr%f_bblr%f' % (args.get('epochs'),
-                                                     args.get('dataset'),
-                                                     args.get('metric'),
-                                                     args.get('batch_size'),
-                                                     args.get('num_inst_per_class'),
-                                                     args.get('learning_rate'),
-                                                     args.get('bb_learning_rate'))
+    name += f"wbn_{args.get('epochs')}ep_" \
+            f"{args.get('dataset')}_" \
+            f"{args.get('metric')}_" \
+            f"bs{args.get('batch_size')}_" \
+            f"k{args.get('num_inst_per_class')}_" \
+            f"lr{args.get('learning_rate'):.2}_" \
+            f"bblr{args.get('bb_learning_rate'):.2}"
+
 
     name += f"_{args.get('loss')}"
     for n in loss_specific_args:
