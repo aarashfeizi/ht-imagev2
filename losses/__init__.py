@@ -13,6 +13,7 @@ LOSSES = {
     'arcface': pml_losses.ArcFaceLoss,  # num_classes, embedding_size, margin=28.6, scale=64,
     'angular': pml_losses.AngularLoss,  # alpha=40
     'circle': pml_losses.CircleLoss,  # m=0.4, gamma=80,
+    'supcon': pml_losses.SupConLoss, # temperature=0.1
 }
 
 IMPLEMENTED_LOSSES = ['pnpp', 'bce', 'hardbce'] # 'trpl'
@@ -32,6 +33,8 @@ def get_loss(args):
     input_kwargs = None
     if loss_name in IMPLEMENTED_LOSSES:
         input_kwargs = get_inputs(args=args)
+    elif loss_name == 'supcon':
+        input_kwargs = get_inputs(temperature=args.get('LOSS_temp'))
     elif loss_name == 'trpl':
         input_kwargs = get_inputs(margin=args.get('LOSS_margin'))
     elif loss_name == 'proxy_nca':

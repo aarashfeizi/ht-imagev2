@@ -61,6 +61,7 @@ def get_args():
     # loss specific defaults
     parser.add_argument('--PNPP_lr', type=float, default=None)
     parser.add_argument('--LOSS_margin', type=float, default=None)
+    parser.add_argument('--LOSS_temp', type=float, default=None)
     parser.add_argument('--NCA_scale', type=float, default=None)
     parser.add_argument('--LOSS_alpha', type=float, default=None)
     parser.add_argument('--ARCFACE_scale', type=float, default=None)
@@ -72,6 +73,7 @@ def get_args():
     # 'angular': AngularLoss,  # alpha=40
     # 'circle': CircleLoss,  # m=0.4, gamma=80,
     # 'trpl': TripletMargin, # margin=0.05
+    # 'supcon': SupConLoss, # temperature=0.1
 
 
     args = parser.parse_args()
