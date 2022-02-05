@@ -19,12 +19,20 @@ import baseline_model_loaders.pnpp_models as pnpp
 import baseline_model_loaders.proxy_anchor_models as pa
 import baseline_model_loaders.softtriple_models as st
 import baseline_model_loaders.sup_contrastive_models as sc
+import baseline_model_loaders.ms_models as mm
 # on hlr:
 # python evaluation.py -chk ../SupContrast/save/SupCon/hotels_models/SupCon_hotels_resnet50_lr_0.01_decay_0.0001_bsz_32_temp_0.1_trial_0_cosine/last.pth -name SupCon_hotels_resnet50_lr_0.01_decay_0.0001_bsz_32_temp_0.1_trial_0_cosine/ --kset 1 2 4 8 10 100 1000 --model_type resnet50 -d hotels -dr ../../datasets/ --baseline supcontrastive --gpu_ids 6
 import utils
 
 dataset_choices = ['cars', 'cub', 'hotels', 'hotels_small']
-BASELINE_MODELS = ['ours', 'softtriple', 'proxy-anchor', 'supcontrastive', 'proxyncapp', 'htv2', 'resnet50']
+BASELINE_MODELS = ['ours',
+                   'softtriple',
+                   'proxy-anchor',
+                   'supcontrastive',
+                   'proxyncapp',
+                   'htv2',
+                   'ms',
+                   'resnet50']
 
 DATASET_SIZES = {'cars': {'test': 8131},
                  'cub': {'test': 5924},
@@ -191,6 +199,22 @@ def softtriple_load_model_inception(save_path, args):
     return net
 
 
+def ms_load_model_resnet50(save_path, args):
+    if args.get('cuda'):
+        checkpoint = torch.load(save_path, map_location=torch.device(0))
+    else:
+        checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
+
+    net = mm.build_model()
+
+    net.load_state_dict(checkpoint['model'])
+
+    if args.get('cuda'):
+        net = net.cuda()
+
+    return net
+
+
 def resnet_load_model(save_path, args):
     # if args.get('cuda'):
     #     checkpoint = torch.load(save_path, map_location=torch.device(0))
@@ -344,6 +368,8 @@ def main():
             net = proxyncapp_load_model_resnet50(all_args.get('checkpoint'), all_args)
         elif all_args.get('baseline') == 'htv2':
             net = htv2_load_model_resnet50(all_args.get('checkpoint'), all_args)
+        elif all_args.get('baseline') == 'ms':
+            net = ms_load_model_resnet50(all_args.get('checkpoint'), all_args)
 
         assert net is not None
         net.eval()
