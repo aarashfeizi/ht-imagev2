@@ -71,6 +71,7 @@ def get_args():
     # 'arcface': ArcFaceLoss,  # num_classes, embedding_size, margin=28.6, scale=64,
     # 'angular': AngularLoss,  # alpha=40
     # 'circle': CircleLoss,  # m=0.4, gamma=80,
+    # 'trpl': TripletMargin, # margin=0.05
 
 
     args = parser.parse_args()
