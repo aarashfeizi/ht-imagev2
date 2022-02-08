@@ -443,6 +443,8 @@ def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine', Kset=
     k_max = min(1500, img_lbls.shape[0])
 
     if sim_matrix is None:
+        if not img_feats.flags['C_CONTIGUOUS']:
+            img_feats = np.ascontiguousarray(img_feats)
         _, I, self_D = get_faiss_knn(img_feats, k=k_max, gpu=True, metric=metric)
     else:
         minval = np.min(sim_matrix) - 1.
