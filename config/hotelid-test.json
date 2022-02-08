@@ -1,20 +1,20 @@
 {
   "dataset_path": "../../datasets/hotelid-2021/",
   "nb_classes": 4406,
-  "train_file": "my_list/trainval.csv",
-  "val_file": "my_list/test1.csv",
-  "test_file": "my_list/test1.csv",
+  "train_file": "my_splits/trainval.csv",
+  "val_file": "my_splits/test1.csv",
+  "test_file": "my_splits/test1.csv",
   "all_val_files": [
-    "my_list/test1.csv",
-    "my_list/test2.csv",
-    "my_list/test3.csv",
-    "my_list/test4.csv"
+    "my_splits/test1.csv",
+    "my_splits/test2.csv",
+    "my_splits/test3.csv",
+    "my_splits/test4.csv"
   ],
   "all_test_files": [
-    "my_list/test1.csv",
-    "my_list/test2.csv",
-    "my_list/test3.csv",
-    "my_list/test4.csv"
+    "my_splits/test1.csv",
+    "my_splits/test2.csv",
+    "my_splits/test3.csv",
+    "my_splits/test4.csv"
   ],
   "loss_mode": "metric",
   "normalize_param": {
