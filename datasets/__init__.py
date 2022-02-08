@@ -4,6 +4,8 @@ from datasets.hotels_dataset import HotelsDataset
 DATASETS = {
     'hotels': HotelsDataset,
     'hotels_small': HotelsDataset,
+    'hotelid-val': HotelsDataset,
+    'hotelid-test': HotelsDataset,
     'cub': BaseDataset
 }
 

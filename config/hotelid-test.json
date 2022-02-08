@@ -1,0 +1,31 @@
+{
+  "dataset_path": "../../datasets/hotelid-2021/",
+  "nb_classes": 4406,
+  "train_file": "my_list/trainval.csv",
+  "val_file": "my_list/test1.csv",
+  "test_file": "my_list/test1.csv",
+  "all_val_files": [
+    "my_list/test1.csv",
+    "my_list/test2.csv",
+    "my_list/test3.csv",
+    "my_list/test4.csv"
+  ],
+  "all_test_files": [
+    "my_list/test1.csv",
+    "my_list/test2.csv",
+    "my_list/test3.csv",
+    "my_list/test4.csv"
+  ],
+  "loss_mode": "metric",
+  "normalize_param": {
+    "mean": [0.5805, 0.5247, 0.4683],
+    "std": [0.2508, 0.2580, 0.2701]
+  },
+  "color_jitter_param": {
+    "brightness": 0.5,
+    "hue": 0.5,
+    "contrast": 0.5,
+    "saturation": 0.5
+  }
+}
+
