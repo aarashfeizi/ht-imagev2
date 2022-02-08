@@ -386,6 +386,8 @@ def main():
 
         for ldr in eval_ldrs:
             with torch.no_grad():
+                if not X.flags['C_CONTIGUOUS']:
+                    X = np.ascontiguousarray(X)
                 features, labels = get_features_and_labels(all_args, net, ldr)
                 all_data.append((features, labels))
 
