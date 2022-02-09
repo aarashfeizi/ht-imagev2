@@ -77,9 +77,9 @@ if __name__ == '__main__':
                                                                     cuda=all_args.get('cuda'))
 
             np.save(os.path.join(all_args.get('project_path'),
-                                 f'{all_args.get("backbone")}_{name.replace("/", "_").split(".")[0]}_labels'), label_orderings)
+                                 f'{all_args.get("dataset")}_{name.replace("/", "_").split(".")[0]}_{all_args.get("backbone")}_labels'), label_orderings)
             np.save(os.path.join(all_args.get('project_path'),
-                                 f'{all_args.get("backbone")}_{name.replace("/", "_").split(".")[0]}_idxs'), idx_orderings)
+                                 f'{all_args.get("dataset")}_{name.replace("/", "_").split(".")[0]}_{all_args.get("backbone")}_idxs'), idx_orderings)
 
 
 
