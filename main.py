@@ -36,12 +36,12 @@ def main():
         ordered_lbls = None
 
     train_loader = utils.get_data(all_args, mode='train', transform=train_transforms, sampler_mode='kbatch')
-    # val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet')
-    val_loader = utils.get_data(all_args, mode='val',
-                                transform=val_transforms,
-                                sampler_mode='hard_triplet',
-                                ordered_idxs=ordered_idxs,
-                                ordered_lbls=ordered_lbls)
+    val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet')
+    # val_loader = utils.get_data(all_args, mode='val',
+    #                             transform=val_transforms,
+    #                             sampler_mode='hard_triplet',
+    #                             ordered_idxs=ordered_idxs,
+    #                             ordered_lbls=ordered_lbls)
 
     val_loader_4heatmap = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='heatmap')
     val_db_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='db')
