@@ -81,11 +81,12 @@ class HardTripletSampler(RandomIdentitySampler):
         self.max_iters = ((dataset.__len__() * 3) // batch_size)
         self.ordered_idxs = ordered_idxs
         self.ordered_lbls = ordered_lbls
+        self.all_labels = np.array(dataset.label_list)
         self.__prepare_negs()
 
     def __prepare_negs(self):
         N, K = self.ordered_idxs.shape
-        all_labels = self.labels.repeat(K).reshape(N, K)
+        all_labels = self.all_labels.repeat(K).reshape(N, K)
         self.pos_mask = (all_labels == self.ordered_lbls).astype(np.int64)
         negative_idxs_of_idxs = self.pos_mask.argmin(axis=1)
         y_idxs = np.array([i for i in range(N)])
