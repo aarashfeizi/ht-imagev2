@@ -467,7 +467,11 @@ def main():
         results += f'{idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
 
 
-    with open(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + ".txt"), 'w') as f:
+    if all_args.get('hard_neg'):
+        hard_neg_string = '_HN'
+    else:
+        hard_neg_string = ''
+    with open(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
         f.write(results)
 
 
