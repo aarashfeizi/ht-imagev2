@@ -95,6 +95,10 @@ def get_args_for_ordered_distance():
     parser.add_argument('--backbone', choices=['resnet50', 'resnet18'])
 
     parser.add_argument('--dataset', choices=DATASET_LIST)
+    parser.add_argument('--workers', type=int, default=10, help="number of workers for data loading")
+    parser.add_argument('--pin_memory', default=False, action='store_true', help="pinning memory for data loading")
+
+
     parser.add_argument('--batch_size', type=int, default=20)
     parser.add_argument('--num_inst_per_class', type=int, default=5)
 
