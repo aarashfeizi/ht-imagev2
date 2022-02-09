@@ -59,24 +59,27 @@ if __name__ == '__main__':
             net = nn.DataParallel(net)
         net.cuda()
 
+    net.eval()
     val_transforms, val_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='val')
 
     eval_ldrs = []
-    for i in range(0, all_args.get('num_of_dataset')):
-        name = all_args.get(f'all_{all_args.get("eval_mode")}_files')[i]
-        val_ldr = utils.get_data(all_args, mode=all_args.get('eval_mode'),
-                                        file_name=name,
-                                        transform=val_transforms,
-                                        sampler_mode='db')
+    with torch.no_grad():
+        for i in range(0, all_args.get('num_of_dataset')):
 
-        label_orderings, idx_orderings = get_label_idx_orderings(net, val_ldr,
-                                                                name=name,
-                                                                cuda=all_args.get('cuda'))
+            name = all_args.get(f'all_{all_args.get("eval_mode")}_files')[i]
+            val_ldr = utils.get_data(all_args, mode=all_args.get('eval_mode'),
+                                            file_name=name,
+                                            transform=val_transforms,
+                                            sampler_mode='db')
 
-        np.save(os.path.join(all_args.get('project_path'),
-                             f'{all_args.get("backbone")}_{name.replace("/", "_").split(".")[0]}_labels'), label_orderings)
-        np.save(os.path.join(all_args.get('project_path'),
-                             f'{all_args.get("backbone")}_{name.replace("/", "_").split(".")[0]}_idxs'), idx_orderings)
+            label_orderings, idx_orderings = get_label_idx_orderings(net, val_ldr,
+                                                                    name=name,
+                                                                    cuda=all_args.get('cuda'))
+
+            np.save(os.path.join(all_args.get('project_path'),
+                                 f'{all_args.get("backbone")}_{name.replace("/", "_").split(".")[0]}_labels'), label_orderings)
+            np.save(os.path.join(all_args.get('project_path'),
+                                 f'{all_args.get("backbone")}_{name.replace("/", "_").split(".")[0]}_idxs'), idx_orderings)
 
 
 
