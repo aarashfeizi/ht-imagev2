@@ -105,15 +105,15 @@ class HardTripletSampler(RandomIdentitySampler):
             batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
 
         for label in self.labels:
-        triplets = []
-        for pair in batch_idxs_dict[label]:
-            reversed_pair = pair[::-1]
+            triplets = []
+            for pair in batch_idxs_dict[label]:
+                reversed_pair = pair[::-1]
 
-            pair.extend([self.negative_idxs[pair[0]]])
-            reversed_pair.extend([self.negative_idxs[reversed_pair[0]]])
+                pair.extend([self.negative_idxs[pair[0]]])
+                reversed_pair.extend([self.negative_idxs[reversed_pair[0]]])
 
-            triplets.append(pair)
-            triplets.append(reversed_pair)
+                triplets.append(pair)
+                triplets.append(reversed_pair)
 
             batch_idxs_dict[label] = triplets
 
