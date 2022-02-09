@@ -498,7 +498,7 @@ def get_xs_ys(bce_labels, k=1):
 
     :param bce_labels: tensor of (N, N) with 0s and 1s
     :param k: number of pos and neg samples per anch
-    :return:
+    :return: an equal number of positive and negative pairs chosen randomly
 
     """
     xs = []
@@ -516,7 +516,31 @@ def get_xs_ys(bce_labels, k=1):
     return xs, ys
 
 
-def calc_auroc(embeddings, labels, k=1):
+def get_hard_xs_ys(bce_labels, a2n, k):
+    """
+
+    :param bce_labels: tensor of (N, N) with 0s and 1s
+    :param a2n: dict, mapping every anchor idx to hard neg idxs
+    :param k: number of pos and neg samples per anch
+    :return:
+
+    """
+    xs = []
+    ys = []
+    bce_labels_copy = copy.deepcopy(bce_labels)
+    bce_labels_copy.fill_diagonal_(-1)
+    for i, row in enumerate(bce_labels_copy):
+        neg_idx_chosen = a2n[i][:k]
+        pos_idx = torch.where(row == 1)[0]
+
+        ys.extend(neg_idx_chosen)
+        ys.extend(get_samples(pos_idx, k))
+        xs.extend(get_samples([i], 2 * k))
+
+    return xs, ys
+
+
+def calc_auroc(embeddings, labels, k=1, anch_2_hardneg_idx=None):
     """
 
     :param embeddings: all embeddings of a set to be tested
@@ -527,7 +551,10 @@ def calc_auroc(embeddings, labels, k=1):
     bce_labels = make_batch_bce_labels(labels)
     similarities = cosine_similarity(embeddings)
 
-    xs, ys = get_xs_ys(bce_labels, k=k)
+    if anch_2_hardneg_idx is None:  # random
+        xs, ys = get_xs_ys(bce_labels, k=k)
+    else:
+        xs, ys = get_hard_xs_ys(bce_labels, anch_2_hardneg_idx, k=k)
 
     true_labels = bce_labels[xs, ys]
     predicted_labels = similarities[xs, ys]
@@ -656,3 +683,17 @@ def __post_create_heatmap(heatmap, shape):
     heatmap = np.uint8(255 * heatmap)
     heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
     return heatmap
+
+
+def get_a2n(ordered_lbls, ordered_idxs, all_labels):
+    N, K = ordered_idxs.shape
+
+    all_labels = all_labels.repeat(K).reshape(N, K)
+    pos_mask = (all_labels == ordered_lbls).astype(np.int64)
+    negative_idxs_of_idxs = pos_mask.argmin(axis=1)
+    y_idxs = np.array([i for i in range(N)])
+    negative_idxs = ordered_idxs[y_idxs, negative_idxs_of_idxs]
+
+    a2n = {i: [row] for i, row in enumerate(negative_idxs)}
+
+    return a2n

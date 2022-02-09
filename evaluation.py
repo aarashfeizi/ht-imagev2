@@ -296,6 +296,8 @@ def main():
     parser.add_argument('-elp', '--eval_log_path', default='./eval_logs')
     parser.add_argument('-name', '--name', default=None, type=str)
 
+    parser.add_argument('--hard_neg', default=False, action='store_true')
+
     parser.add_argument('--metric', default='cosine', choices=['cosine', 'euclidean'])
 
     args = parser.parse_args()
@@ -322,16 +324,23 @@ def main():
         val_transforms, val_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='val')
         # eval_datasets = []
         eval_ldrs = []
+        ordered_lbls_idxs = []
 
         if all_args.get('num_of_dataset') > len(all_args.get(f'all_{all_args.get("eval_mode")}_files')):
             raise Exception(
                 f"num_of_dataset ({all_args.get('num_of_dataset')}) is greater than all_val_files in specified in json file")
 
         for i in range(0, all_args.get('num_of_dataset')):
+            val_set_name = all_args.get(f'all_{all_args.get("eval_mode")}_files')[i]
             eval_ldrs.append(utils.get_data(all_args, mode=all_args.get('eval_mode'),
-                                            file_name=all_args.get(f'all_{all_args.get("eval_mode")}_files')[i],
+                                            file_name=val_set_name,
                                             transform=val_transforms,
                                             sampler_mode='db'))
+            if all_args.get('hard_neg'):
+                o_l = np.load(all_args.get('all_ordered_lbls')[val_set_name])
+                o_i = np.load(all_args.get('all_ordered_idxs')[val_set_name])
+                ordered_lbls_idxs.append([o_l, o_i])
+
 
         # if 'hotels' in all_args.get('dataset'):
         #     for i in range(1, args.num_of_dataset + 1):
@@ -434,6 +443,19 @@ def main():
                 raise Exception(
                     f'--pca_to_dim is set to False and feature dim {features.shape[1]} not equal to expected dim {all_args.get("emb_size")}')
 
+
+        print('*' * 10)
+        print(f'{idx}: Calc AUC_ROC')
+        if all_args.get('hard_neg'):
+            a2n = utils.get_a2n(ordered_lbls_idxs[idx - 1][0], ordered_lbls_idxs[idx - 1][1], labels)
+        else:
+            a2n = None
+        auc = utils.calc_auroc(features, torch.tensor(labels), anch_2_hardneg_idx=a2n)
+        print(f'{idx}: AUC_ROC:', auc)
+        results += f'\n\n{idx}: AUC_ROC: {auc}\n\n'
+        results += '*' * 20
+
+
         print(f'{idx}: Calc Recall at {kset}')
         rec = utils.get_recall_at_k(features, labels,
                                     metric='cosine',
@@ -444,12 +466,6 @@ def main():
         print(rec)
         results += f'{idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
 
-        print('*' * 10)
-        print(f'{idx}: Calc AUC_ROC')
-        auc = utils.calc_auroc(features, torch.tensor(labels))
-        print(f'{idx}: AUC_ROC:', auc)
-        results += f'\n\n{idx}: AUC_ROC: {auc}\n\n'
-        results += '*' * 20
 
     with open(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + ".txt"), 'w') as f:
         f.write(results)
