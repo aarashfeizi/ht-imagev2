@@ -28,20 +28,23 @@ def main():
     print('Train transforms: ', train_transforms_names)
     print('Val transforms: ', val_transforms_names)
 
-    if all_args.get('ordered_idxs') is not None:
-        ordered_idxs = np.load(all_args.get('ordered_idxs'))
-        ordered_lbls = np.load(all_args.get('ordered_lbls'))
-    else:
-        ordered_idxs = None
-        ordered_lbls = None
-
     train_loader = utils.get_data(all_args, mode='train', transform=train_transforms, sampler_mode='kbatch')
-    val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet')
-    # val_loader = utils.get_data(all_args, mode='val',
-    #                             transform=val_transforms,
-    #                             sampler_mode='hard_triplet',
-    #                             ordered_idxs=ordered_idxs,
-    #                             ordered_lbls=ordered_lbls)
+    if not all_args.get('hard_triplet'):
+        val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet')
+
+    else:
+        if all_args.get('ordered_idxs') is not None:
+            ordered_idxs = np.load(all_args.get('ordered_idxs'))
+            ordered_lbls = np.load(all_args.get('ordered_lbls'))
+        else:
+            ordered_idxs = None
+            ordered_lbls = None
+
+        val_loader = utils.get_data(all_args, mode='val',
+                                    transform=val_transforms,
+                                    sampler_mode='hard_triplet',
+                                    ordered_idxs=ordered_idxs,
+                                    ordered_lbls=ordered_lbls)
 
     val_loader_4heatmap = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='heatmap')
     val_db_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='db')

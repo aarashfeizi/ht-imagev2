@@ -41,6 +41,7 @@ def get_args():
 
     # data
     parser.add_argument('--dataset', default='hotels_small', choices=DATASET_LIST)
+    parser.add_argument('--hard_triplet', default=False, action='store_true')
 
     # learning
     parser.add_argument('--ckpt_path', default=None, help="path to the checkpoint file")
