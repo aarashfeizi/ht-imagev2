@@ -123,19 +123,18 @@ class DataBaseSampler(RandomIdentitySampler):
     def __init__(self, dataset, batch_size, num_instances, **kwargs):
         super().__init__(dataset, batch_size, num_instances, **kwargs)
         self.batch_size = batch_size
+        self.dataset_size = dataset.__len__()
 
     def prepare_batch(self):
 
-        all_idxs = [i for i in range(len(self.labels))]
+        all_idxs = [i for i in range(self.dataset_size)]
 
         batch_idxs_list = []
         i = 0
-        while (i * self.batch_size) < len(all_idxs):
+        for i in range(self.max_iters + 1):
             idx_to_add = all_idxs[i * self.batch_size: (i + 1) * self.batch_size]
             if len(idx_to_add) > 0:
                 batch_idxs_list.append(idx_to_add)
-
-            i += 1
 
         return batch_idxs_list, None
 
