@@ -26,6 +26,23 @@
     "hue": 0.5,
     "contrast": 0.5,
     "saturation": 0.5
+  },
+
+  "ordered_idxs": "./hotels_small_v5_splits_val1_small_resnet50_idxs.npy",
+  "ordered_lbls": "./hotels_small_v5_splits_val1_small_resnet50_labels.npy",
+
+  "all_ordered_idxs": {
+    "v5_splits/val1_small.csv": "./hotels_small_v5_splits_val1_small_resnet50_idxs.npy",
+    "v5_splits/val2_small.csv": "./hotels_small_v5_splits_val2_small_resnet50_idxs.npy",
+    "v5_splits/val3_small.csv": "./hotels_small_v5_splits_val3_small_resnet50_idxs.npy",
+    "v5_splits/val4_small.csv": "./hotels_small_v5_splits_val4_small_resnet50_idxs.npy"
+  },
+
+  "all_ordered_lbls": {
+    "v5_splits/val1_small.csv": "./hotels_small_v5_splits_val1_small_resnet50_labels.npy",
+    "v5_splits/val2_small.csv": "./hotels_small_v5_splits_val2_small_resnet50_labels.npy",
+    "v5_splits/val3_small.csv": "./hotels_small_v5_splits_val3_small_resnet50_labels.npy",
+    "v5_splits/val4_small.csv": "./hotels_small_v5_splits_val4_small_resnet50_labels.npy"
   }
 }
 

@@ -66,12 +66,12 @@ class HardTripletSampler(RandomIdentitySampler):
     for each anch, have the max sim(anch, neg)
     """
 
-    def __init__(self, dataset, batch_size, num_instances, sim_indices=None, sim_labels=None, **kwargs):
+    def __init__(self, dataset, batch_size, num_instances, ordered_idxs=None, ordered_lbls=None, **kwargs):
         """
 
-        :param sim_indices: ndarray, given a Dataset of size N, sim_indices is a ndarray of size N * K, representing the
+        :param ordered_idxs: ndarray, given a Dataset of size N, sim_indices is a ndarray of size N * K, representing the
          K nearest neighbors to each sample
-        :param sim_labels: ndarray, given a Dataset of size N, sim_indices is a ndarray of size N * K, representing the
+        :param ordered_lbls: ndarray, given a Dataset of size N, sim_indices is a ndarray of size N * K, representing the
          labels of the K nearest neighbors to each sample
         """
 
@@ -79,17 +79,17 @@ class HardTripletSampler(RandomIdentitySampler):
         self.K = 2  # anchor and positive
         self.num_labels_per_batch = self.batch_size // 3 # batch of triplets
         self.max_iters = ((dataset.__len__() * 3) // batch_size)
-        self.sim_indices = sim_indices
-        self.sim_labels = sim_labels
+        self.ordered_idxs = ordered_idxs
+        self.ordered_lbls = ordered_lbls
         self.__prepare_negs()
 
     def __prepare_negs(self):
-        N, K = self.sim_labels.shape
+        N, K = self.ordered_lbls.shape
         all_labels = self.labels.repeat(K).reshape(N, K)
-        self.pos_mask = (all_labels == self.sim_labels).astype(np.int64)
+        self.pos_mask = (all_labels == self.ordered_lbls).astype(np.int64)
         negative_idxs_of_idxs = self.pos_mask.argmin(axis=1)
         y_idxs = np.array([i for i in range(N)])
-        self.negative_idxs = self.sim_indices[y_idxs, negative_idxs_of_idxs]
+        self.negative_idxs = self.ordered_idxs[y_idxs, negative_idxs_of_idxs]
 
     def prepare_batch(self):
         batch_idxs_dict = defaultdict(list)

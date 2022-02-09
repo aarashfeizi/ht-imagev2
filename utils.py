@@ -17,7 +17,7 @@ from torchvision.transforms import transforms
 
 import datasets
 import metrics
-from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseSampler, DrawHeatmapSampler
+from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseSampler, DrawHeatmapSampler, HardTripletSampler
 
 SHARING_STRATEGY = "file_system"
 torch.multiprocessing.set_sharing_strategy(SHARING_STRATEGY)
@@ -212,9 +212,10 @@ def open_img(path):
     return img
 
 
-def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch'):  # 'kbatch', 'balanced_triplet', 'db'
+def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch', **kwargs):  # 'kbatch', 'balanced_triplet', 'db'
     SAMPLERS = {'kbatch': KBatchSampler,
                 'balanced_triplet': BalancedTripletSampler,
+                'hard_triplet': HardTripletSampler,
                 'db': DataBaseSampler,
                 'heatmap': DrawHeatmapSampler}
 
@@ -224,7 +225,8 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch'):  
 
     sampler = SAMPLERS[sampler_mode](dataset=dataset,
                                      batch_size=args.get('batch_size'),
-                                     num_instances=args.get('num_inst_per_class'))
+                                     num_instances=args.get('num_inst_per_class'),
+                                     **kwargs)
 
     dataloader = DataLoader(dataset=dataset, shuffle=False, num_workers=args.get('workers'), batch_sampler=sampler,
                             pin_memory=args.get('pin_memory'), worker_init_fn=seed_worker)
