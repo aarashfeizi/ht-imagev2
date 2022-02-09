@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
     all_args = utils.Global_Config_File(args=args, config_file=dataset_config, init_tb=False)
 
-    net = timm.create_model(all_args.get('backbone'), pretrained=True, nun_classes=0)
+    net = timm.create_model(all_args.get('backbone'), pretrained=True, num_classes=0)
 
     if all_args.get('cuda'):
         if all_args.get('gpu_ids') != '':
