@@ -86,6 +86,7 @@ class HardTripletSampler(RandomIdentitySampler):
 
     def __prepare_negs(self):
         N, K = self.ordered_idxs.shape
+        assert len(self.all_labels) == N
         all_labels = self.all_labels.repeat(K).reshape(N, K)
         self.pos_mask = (all_labels == self.ordered_lbls).astype(np.int64)
         negative_idxs_of_idxs = self.pos_mask.argmin(axis=1)
