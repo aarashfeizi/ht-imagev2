@@ -9,6 +9,8 @@ import arg_parser
 import numpy as np
 from tqdm import tqdm
 
+# python get_ordered_distances.py --cuda --gpu_ids 1 --backbone resnet50 --dataset hotels --eval_mode val --batch_size 100 --pin_memory
+
 def get_label_idx_orderings(net, loader, name, cuda=True):
     all_embs = []
     all_lbls = []
@@ -71,8 +73,8 @@ if __name__ == '__main__':
                                                                 name=name,
                                                                 cuda=all_args.get('cuda'))
 
-        np.save(os.path.join(all_args.get('project_path'), f'{all_args.get("backbone")}_{name}_labels'), label_orderings)
-        np.save(os.path.join(all_args.get('project_path'), f'{all_args.get("backbone")}_{name}_idxs'), idx_orderings)
+        np.save(os.path.join(all_args.get('project_path').replace('/', '_').split('.')[0], f'{all_args.get("backbone")}_{name}_labels'), label_orderings)
+        np.save(os.path.join(all_args.get('project_path').replace('/', '_').split('.')[0], f'{all_args.get("backbone")}_{name}_idxs'), idx_orderings)
 
 
 
