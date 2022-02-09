@@ -96,6 +96,8 @@ def get_args_for_ordered_distance():
 
     parser.add_argument('--dataset', choices=DATASET_LIST)
     parser.add_argument('--batch_size', type=int, default=20)
+    parser.add_argument('--num_inst_per_class', type=int, default=5)
+
 
     parser.add_argument('--eval_mode', choices=['val', 'test'])
     parser.add_argument('--num_of_dataset', default=4, type=int)
