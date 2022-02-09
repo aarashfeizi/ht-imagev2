@@ -36,7 +36,7 @@ def get_label_idx_orderings(net, loader, name, cuda=True):
         ret_lbls = all_lbls[ordered_idxs[idx]]
         ordered_labels.append(ret_lbls)
 
-    ordered_labels = np.concatenate(ordered_labels)
+    ordered_labels = np.concatenate(ordered_labels).reshape(ordered_idxs.shape[0], ordered_idxs.shape[1])
 
     return ordered_labels, ordered_idxs
 
