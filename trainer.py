@@ -195,6 +195,8 @@ class Trainer:
         return epoch_loss, acc.get_acc()
 
     def validate(self, net):
+        if self.val_loader is None:
+            raise Exception('val_loader is not set in trainer!')
         net.eval()
 
         val_loss = 0

@@ -60,17 +60,73 @@ class BalancedTripletSampler(RandomIdentitySampler):
         return batch_idxs_dict, avai_labels
 
 
+class HardTripletSampler(RandomIdentitySampler):
+    """
+    Produce batches of [Anchor, Positive, Negative]
+    for each anch, have the max sim(anch, neg)
+    """
+
+    def __init__(self, dataset, batch_size, num_instances, sim_indices=None, sim_labels=None, **kwargs):
+        """
+
+        :param sim_indices: ndarray, given a Dataset of size N, sim_indices is a ndarray of size N * K, representing the
+         K nearest neighbors to each sample
+        :param sim_labels: ndarray, given a Dataset of size N, sim_indices is a ndarray of size N * K, representing the
+         labels of the K nearest neighbors to each sample
+        """
+
+        super().__init__(dataset, batch_size, num_instances, **kwargs)
+        self.K = 2  # anchor and positive
+        self.num_labels_per_batch = self.batch_size // 3 # batch of triplets
+        self.max_iters = ((dataset.__len__() * 3) // batch_size)
+        self.sim_indices = sim_indices
+        self.sim_labels = sim_labels
+        self.__prepare_negs()
+
+    def __prepare_negs(self):
+        N, K = self.sim_labels.shape
+        all_labels = self.labels.repeat(K).reshape(N, K)
+        self.pos_mask = (all_labels == self.sim_labels).astype(np.int64)
+        negative_idxs_of_idxs = self.pos_mask.argmin(axis=1)
+        y_idxs = np.array([i for i in range(N)])
+        self.negative_idxs = self.sim_indices[y_idxs, negative_idxs_of_idxs]
+
+    def prepare_batch(self):
+        batch_idxs_dict = defaultdict(list)
+
+        for label in self.labels:
+            idxs = copy.deepcopy(self.data_dict[label])
+            if len(idxs) < self.K:
+                idxs.extend(np.random.choice(idxs, size=self.K - len(idxs), replace=True))
+            random.shuffle(idxs)
+
+            batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
+
+        for label in self.labels:
+            triplets = []
+            for pair in batch_idxs_dict[label]:
+                reversed_pair = pair[::-1]
+
+                pair.extend(self.negative_idxs[pair[0]])
+                reversed_pair.extend(self.negative_idxs[reversed_pair[0]])
+
+                triplets.append(pair)
+                triplets.append(reversed_pair)
+
+            batch_idxs_dict[label] = triplets
+
+        avai_labels = copy.deepcopy(self.labels)
+        return batch_idxs_dict, avai_labels
+
+
 class DataBaseSampler(RandomIdentitySampler):
     def __init__(self, dataset, batch_size, num_instances, **kwargs):
         super().__init__(dataset, batch_size, num_instances, **kwargs)
         self.batch_size = batch_size
 
     def prepare_batch(self):
-        all_idxs = []
 
-        for label in self.labels:
-            idxs = copy.deepcopy(self.data_dict[label])
-            all_idxs.extend(idxs)
+        all_idxs = [i for i in range(len(self.labels))]
 
         batch_idxs_list = []
 

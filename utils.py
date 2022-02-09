@@ -24,7 +24,7 @@ torch.multiprocessing.set_sharing_strategy(SHARING_STRATEGY)
 
 
 class Global_Config_File:
-    def __init__(self, config_file, args):
+    def __init__(self, config_file, args, init_tb=True):
         config_file = config_file
         args = vars(args)
 
@@ -32,7 +32,8 @@ class Global_Config_File:
 
         self.__merge_config_files(args=args, config=config_file)
 
-        self.__initialize_env()
+        if init_tb:
+            self.__initialize_env()
 
     def __initialize_env(self):
         self.global_config_file['tensorboard_path'] = 'tensorboard_' + self.global_config_file.get('dataset')

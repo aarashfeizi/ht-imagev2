@@ -198,3 +198,5 @@ class MAPR():
         return df
 
         # self.r1, self.r5, self.r10, self.r100
+
+

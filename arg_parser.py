@@ -80,3 +80,26 @@ def get_args():
     args = parser.parse_args()
 
     return args
+
+
+def get_args_for_ordered_distance():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--cuda', default=False, action='store_true')
+    parser.add_argument('--gpu_ids', default='', help="gpu ids used to train")  # before: default="0,1,2,3"
+    parser.add_argument('--config_path', default='config/', help="config_path for datasets")
+    parser.add_argument('--project_path', default='./', help="project_path")
+
+
+
+    parser.add_argument('--backbone', choices=['resnet50', 'resnet18'])
+
+    parser.add_argument('--dataset', choices=DATASET_LIST)
+    parser.add_argument('--batch_size', type=int, default=20)
+
+    parser.add_argument('--eval_mode', choices=['val', 'test'])
+    parser.add_argument('--num_of_dataset', default=4, type=int)
+
+    args = parser.parse_args()
+
+    return args
