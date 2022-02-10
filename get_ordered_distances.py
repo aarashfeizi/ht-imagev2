@@ -1,4 +1,3 @@
-import argparse
 import os
 import timm
 import torch
@@ -8,10 +7,21 @@ import utils
 import arg_parser
 import numpy as np
 from tqdm import tqdm
+import os
+
+import numpy as np
+import timm
+import torch
+from torch import nn
+from tqdm import tqdm
+
+import arg_parser
+import utils
+
 
 # python get_ordered_distances.py --cuda --gpu_ids 1 --backbone resnet50 --dataset hotels --eval_mode val --batch_size 100 --pin_memory
 
-def get_label_idx_orderings(net, loader, name, cuda=True):
+def get_label_idx_orderings(net, loader, name, cuda=True, k=1000):
     all_embs = []
     all_lbls = []
 
@@ -29,7 +39,7 @@ def get_label_idx_orderings(net, loader, name, cuda=True):
     all_embs = np.concatenate(all_embs)
     all_lbls = np.concatenate(all_lbls)
 
-    _, ordered_idxs, _ = utils.get_faiss_knn(all_embs, k=1000, gpu=cuda, metric='cosine')
+    _, ordered_idxs, _ = utils.get_faiss_knn(all_embs, k=k, gpu=cuda, metric='cosine')
 
     ordered_labels = []
     for idx, lbl in enumerate(all_lbls):
@@ -39,8 +49,6 @@ def get_label_idx_orderings(net, loader, name, cuda=True):
     ordered_labels = np.concatenate(ordered_labels).reshape(ordered_idxs.shape[0], ordered_idxs.shape[1])
 
     return ordered_labels, ordered_idxs
-
-
 
 
 if __name__ == '__main__':
@@ -65,22 +73,20 @@ if __name__ == '__main__':
     eval_ldrs = []
     with torch.no_grad():
         for i in range(0, all_args.get('num_of_dataset')):
-
             name = all_args.get(f'all_{all_args.get("eval_mode")}_files')[i]
             val_ldr = utils.get_data(all_args, mode=all_args.get('eval_mode'),
-                                            file_name=name,
-                                            transform=val_transforms,
-                                            sampler_mode='db')
+                                     file_name=name,
+                                     transform=val_transforms,
+                                     sampler_mode='db')
 
             label_orderings, idx_orderings = get_label_idx_orderings(net, val_ldr,
-                                                                    name=name,
-                                                                    cuda=all_args.get('cuda'))
+                                                                     name=name,
+                                                                     cuda=all_args.get('cuda'),
+                                                                     k=all_args.get('top_k'))
 
             np.save(os.path.join(all_args.get('project_path'),
-                                 f'{all_args.get("dataset")}_{name.replace("/", "_").split(".")[0]}_{all_args.get("backbone")}_labels'), label_orderings)
+                                 f'{all_args.get("dataset")}_{name.replace("/", "_").split(".")[0]}_{all_args.get("backbone")}_labels'),
+                    label_orderings)
             np.save(os.path.join(all_args.get('project_path'),
-                                 f'{all_args.get("dataset")}_{name.replace("/", "_").split(".")[0]}_{all_args.get("backbone")}_idxs'), idx_orderings)
-
-
-
-
+                                 f'{all_args.get("dataset")}_{name.replace("/", "_").split(".")[0]}_{all_args.get("backbone")}_idxs'),
+                    idx_orderings)

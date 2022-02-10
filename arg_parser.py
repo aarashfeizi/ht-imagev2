@@ -98,6 +98,7 @@ def get_args_for_ordered_distance():
     parser.add_argument('--dataset', choices=DATASET_LIST)
     parser.add_argument('--workers', type=int, default=10, help="number of workers for data loading")
     parser.add_argument('--pin_memory', default=False, action='store_true', help="pinning memory for data loading")
+    parser.add_argument('--top_k', type=int, default=1000, help="number of top returns to save")
 
 
     parser.add_argument('--batch_size', type=int, default=20)
