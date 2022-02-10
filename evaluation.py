@@ -249,6 +249,9 @@ def check(args, all_data):
     return True
 
 
+def fix_name(path: str):
+    return path.replace('/', '_').split('.')[0]
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -288,7 +291,8 @@ def main():
     parser.add_argument('--baseline', default='proxy-anchor', choices=BASELINE_MODELS)
     parser.add_argument('--backbone', default='resnet50', choices=['bninception', 'resnet50'])
 
-    parser.add_argument('--pca_to_dim', action='store_true')
+    parser.add_argument('--pca_to_dim', default=False, action='store_true')
+    parser.add_argument('--force_update', default=False, action='store_true')
 
     parser.add_argument('-chk', '--checkpoint', default=None, help='Path to checkpoint')
     parser.add_argument('--kset', nargs='+', default=[1, 2, 4, 8, 16, 32, 100])
@@ -315,88 +319,101 @@ def main():
     if all_args.get('name') is None:
         raise Exception('Provide --name')
 
+    utils.make_dirs(all_args.get('eval_log_path'), 'cache/')
+
+    cache_path = os.path.join(all_args.get('eval_log_path'), 'cache', all_args.get('name'))
+
     # provide model and extract embeddings here
     if len(all_args.get('X')) == 0:
 
-        if all_args.get('gpu_ids') != '':
-            os.environ["CUDA_VISIBLE_DEVICES"] = all_args.get('gpu_ids')
+        if os.path.exists(cache_path) and \
+                not all_args.get('force_update'):
 
-        val_transforms, val_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='val')
-        # eval_datasets = []
-        eval_ldrs = []
-        ordered_lbls_idxs = []
+            for i in range(0, all_args.get('num_of_dataset')):
+                val_set_name = fix_name(all_args.get(f'all_{all_args.get("eval_mode")}_files')[i])
 
-        if all_args.get('num_of_dataset') > len(all_args.get(f'all_{all_args.get("eval_mode")}_files')):
-            raise Exception(
-                f"num_of_dataset ({all_args.get('num_of_dataset')}) is greater than all_val_files in specified in json file")
+                emb_data_path = os.path.join(cache_path, val_set_name + "_embs.npy")
 
-        for i in range(0, all_args.get('num_of_dataset')):
-            val_set_name = all_args.get(f'all_{all_args.get("eval_mode")}_files')[i]
-            eval_ldrs.append(utils.get_data(all_args, mode=all_args.get('eval_mode'),
-                                            file_name=val_set_name,
-                                            transform=val_transforms,
-                                            sampler_mode='db'))
-            if all_args.get('hard_neg'):
-                o_l = np.load(all_args.get('all_ordered_lbls')[val_set_name])
-                o_i = np.load(all_args.get('all_ordered_idxs')[val_set_name])
-                ordered_lbls_idxs.append([o_l, o_i])
+                lbl_data_path = os.path.join(cache_path, val_set_name + "_lbls.npy")
 
+                emb_data = np.load(emb_data_path)
+                lbl_data = np.load(lbl_data_path)
 
-        # if 'hotels' in all_args.get('dataset'):
-        #     for i in range(1, args.num_of_dataset + 1):
-        #         eval_loaders.append(utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='db'))
-        #         eval_datasets.append(dataset.load(
-        #             name=all_args.get('dataset'),
-        #             root=all_args.get('data_root'),
-        #             transform=dataset_loaders.utils.make_transform(
-        #                 is_train=False, std=DATASET_STDS.get(all_args.get('dataset')),
-        #                 mean=DATASET_MEANS.get(all_args.get('dataset'))),
-        #             valset=i,
-        #             small=('small' in all_args.get('dataset'))))
-        # else:
-        #     eval_datasets = [dataset_loaders.load(
-        #         name=all_args.get('dataset'),
-        #         root=all_args.get('data_root'),
-        #         transform=dataset_loaders.utils.make_transform(
-        #             is_train=False, std=DATASET_STDS.get(all_args.get('dataset')),
-        #             mean=DATASET_MEANS.get(all_args.get('dataset'))
-        #         ))]
-        net = None
-        if all_args.get('baseline') == 'proxy-anchor':
-            net = proxyanchor_load_model_resnet50(all_args.get('checkpoint'), all_args)
-        elif all_args.get('baseline') == 'supcontrastive':
-            net = supcontrastive_load_model_resnet50(all_args.get('checkpoint'), all_args)
-        elif all_args.get('baseline') == 'softtriple':
-            if all_args.get('backbone') == 'resnet50':
-                net = softtriple_load_model_resnet50(all_args.get('checkpoint'), all_args)
-            elif all_args.get('backbone') == 'bninception':
-                net = softtriple_load_model_inception(all_args.get('checkpoint'), all_args)
-        elif all_args.get('baseline') == 'resnet50':
-            net = resnet_load_model(all_args.get('checkpoint'), all_args)
-        elif all_args.get('baseline') == 'proxyncapp':
-            net = proxyncapp_load_model_resnet50(all_args.get('checkpoint'), all_args)
-        elif all_args.get('baseline') == 'htv2':
-            net = htv2_load_model_resnet50(all_args.get('checkpoint'), all_args)
-        elif all_args.get('baseline') == 'ms':
-            net = ms_load_model_resnet50(all_args.get('checkpoint'), all_args)
+                all_data.append((emb_data, lbl_data))
+        else:
+            if all_args.get('gpu_ids') != '':
+                os.environ["CUDA_VISIBLE_DEVICES"] = all_args.get('gpu_ids')
 
-        assert net is not None
-        net.eval()
-        # eval_ldrs = []
-        # for dtset in eval_datasets:
-        #     eval_ldrs.append(torch.utils.data.DataLoader(
-        #         dtset,
-        #         batch_size=all_args.get('sz_batch'),
-        #         shuffle=False,
-        #         num_workers=all_args.get('nb_workers'),
-        #         drop_last=False,
-        #         pin_memory=True
-        #     ))
+            val_transforms, val_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='val')
+            # eval_datasets = []
+            eval_ldrs = []
 
-        for ldr in eval_ldrs:
-            with torch.no_grad():
-                features, labels = get_features_and_labels(all_args, net, ldr)
-                all_data.append((features, labels))
+            if all_args.get('num_of_dataset') > len(all_args.get(f'all_{all_args.get("eval_mode")}_files')):
+                raise Exception(
+                    f"num_of_dataset ({all_args.get('num_of_dataset')}) is greater than all_val_files in specified in json file")
+
+            for i in range(0, all_args.get('num_of_dataset')):
+                val_set_name = all_args.get(f'all_{all_args.get("eval_mode")}_files')[i]
+                eval_ldrs.append(utils.get_data(all_args, mode=all_args.get('eval_mode'),
+                                                file_name=val_set_name,
+                                                transform=val_transforms,
+                                                sampler_mode='db'))
+
+            # if 'hotels' in all_args.get('dataset'):
+            #     for i in range(1, args.num_of_dataset + 1):
+            #         eval_loaders.append(utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='db'))
+            #         eval_datasets.append(dataset.load(
+            #             name=all_args.get('dataset'),
+            #             root=all_args.get('data_root'),
+            #             transform=dataset_loaders.utils.make_transform(
+            #                 is_train=False, std=DATASET_STDS.get(all_args.get('dataset')),
+            #                 mean=DATASET_MEANS.get(all_args.get('dataset'))),
+            #             valset=i,
+            #             small=('small' in all_args.get('dataset'))))
+            # else:
+            #     eval_datasets = [dataset_loaders.load(
+            #         name=all_args.get('dataset'),
+            #         root=all_args.get('data_root'),
+            #         transform=dataset_loaders.utils.make_transform(
+            #             is_train=False, std=DATASET_STDS.get(all_args.get('dataset')),
+            #             mean=DATASET_MEANS.get(all_args.get('dataset'))
+            #         ))]
+            net = None
+            if all_args.get('baseline') == 'proxy-anchor':
+                net = proxyanchor_load_model_resnet50(all_args.get('checkpoint'), all_args)
+            elif all_args.get('baseline') == 'supcontrastive':
+                net = supcontrastive_load_model_resnet50(all_args.get('checkpoint'), all_args)
+            elif all_args.get('baseline') == 'softtriple':
+                if all_args.get('backbone') == 'resnet50':
+                    net = softtriple_load_model_resnet50(all_args.get('checkpoint'), all_args)
+                elif all_args.get('backbone') == 'bninception':
+                    net = softtriple_load_model_inception(all_args.get('checkpoint'), all_args)
+            elif all_args.get('baseline') == 'resnet50':
+                net = resnet_load_model(all_args.get('checkpoint'), all_args)
+            elif all_args.get('baseline') == 'proxyncapp':
+                net = proxyncapp_load_model_resnet50(all_args.get('checkpoint'), all_args)
+            elif all_args.get('baseline') == 'htv2':
+                net = htv2_load_model_resnet50(all_args.get('checkpoint'), all_args)
+            elif all_args.get('baseline') == 'ms':
+                net = ms_load_model_resnet50(all_args.get('checkpoint'), all_args)
+
+            assert net is not None
+            net.eval()
+            # eval_ldrs = []
+            # for dtset in eval_datasets:
+            #     eval_ldrs.append(torch.utils.data.DataLoader(
+            #         dtset,
+            #         batch_size=all_args.get('sz_batch'),
+            #         shuffle=False,
+            #         num_workers=all_args.get('nb_workers'),
+            #         drop_last=False,
+            #         pin_memory=True
+            #     ))
+
+            for ldr in eval_ldrs:
+                with torch.no_grad():
+                    features, labels = get_features_and_labels(all_args, net, ldr)
+                    all_data.append((features, labels))
 
     else:  # X and Y should be provided
         for idx, (x, y) in enumerate(zip(all_args.get('X'), all_args.get('Y'))):
@@ -434,6 +451,16 @@ def main():
         print('Assertion completed!')
 
     results = f'{all_args.get("dataset")}\n'
+
+    ordered_lbls_idxs = []
+    if all_args.get('hard_neg'):
+        for i in range(0, all_args.get('num_of_dataset')):
+            val_set_name = all_args.get(f'all_{all_args.get("eval_mode")}_files')[i]
+
+            o_l = np.load(all_args.get('all_ordered_lbls')[val_set_name])
+            o_i = np.load(all_args.get('all_ordered_idxs')[val_set_name])
+            ordered_lbls_idxs.append([o_l, o_i])
+
     for idx, (features, labels) in enumerate(all_data, 1):
 
         if features.shape[1] != all_args.get('emb_size'):
@@ -473,6 +500,20 @@ def main():
         hard_neg_string = ''
     with open(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
         f.write(results)
+
+    if all_args.get('force') or \
+        not os.path.exists(cache_path):
+
+        for i in range(0, all_args.get('num_of_dataset')):
+
+            val_set_name = fix_name(all_args.get(f'all_{all_args.get("eval_mode")}_files')[i])
+            emb_data, lbl_data = all_data[i]
+
+            emb_data_path = os.path.join(cache_path, val_set_name + "_embs.npy")
+            lbl_data_path = os.path.join(cache_path, val_set_name + "_lbls.npy")
+
+            np.save(emb_data_path, emb_data)
+            np.save(lbl_data_path, lbl_data)
 
 
 if __name__ == '__main__':
