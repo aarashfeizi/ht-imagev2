@@ -688,6 +688,9 @@ def __post_create_heatmap(heatmap, shape):
 def get_a2n(ordered_lbls, ordered_idxs, all_labels):
     N, K = ordered_idxs.shape
 
+    if ordered_lbls.shape != ordered_idxs.shape:
+        ordered_lbls = ordered_lbls.reshape(ordered_idxs.shape)
+
     all_labels = all_labels.repeat(K).reshape(N, K)
     pos_mask = (all_labels == ordered_lbls).astype(np.int64)
     negative_idxs_of_idxs = pos_mask.argmin(axis=1)
