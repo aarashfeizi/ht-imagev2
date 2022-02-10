@@ -319,7 +319,7 @@ def main():
     if all_args.get('name') is None:
         raise Exception('Provide --name')
 
-    utils.make_dirs(all_args.get('eval_log_path'), 'cache/')
+    utils.make_dirs(os.path.join(all_args.get('eval_log_path'), 'cache/'))
 
     cache_path = os.path.join(all_args.get('eval_log_path'), 'cache', all_args.get('name'))
 
