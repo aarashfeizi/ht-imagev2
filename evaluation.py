@@ -503,7 +503,7 @@ def main():
 
     if all_args.get('force') or \
         not os.path.exists(cache_path):
-
+        utils.make_dirs(cache_path)
         for i in range(0, all_args.get('num_of_dataset')):
 
             val_set_name = fix_name(all_args.get(f'all_{all_args.get("eval_mode")}_files')[i])
