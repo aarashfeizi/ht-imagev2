@@ -365,8 +365,12 @@ def load_model(net, checkpoint_path):
     return net, epoch
 
 
-def save_model(net, epoch, val_acc, save_path):
-    best_model_name = 'model-epoch-' + str(epoch) + '-val-acc-' + str(val_acc) + '.pt'
+def save_model(net, epoch, val_auc, save_path):
+    best_model_name = 'model-epoch-' + str(epoch) + '-val-auroc-' + str(val_auc) + '.pt'
+    torch.save({'epoch': epoch, 'model_state_dict': net.state_dict()},
+               save_path + '/' + best_model_name)
+
+    best_model_name = 'best_model_auc.pt'
     torch.save({'epoch': epoch, 'model_state_dict': net.state_dict()},
                save_path + '/' + best_model_name)
 

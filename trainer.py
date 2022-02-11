@@ -277,7 +277,8 @@ class Trainer:
 
         starting_epoch = max(1, self.current_epoch + 1)
 
-        best_val_acc = -1
+        # best_val_acc = -1
+        best_val_auroc_score = -1
 
         # validate before training
         if val:
@@ -304,9 +305,10 @@ class Trainer:
 
                 self.__tb_update_value(list_for_tb)
 
-            if val_acc > best_val_acc:
-                best_val_acc = val_acc
-                utils.save_model(net, self.current_epoch, best_val_acc, self.save_path)
+            if val_auroc_score > best_val_auroc_score:
+                # best_val_acc = val_acc
+                best_val_auroc_score = val_auroc_score
+                utils.save_model(net, self.current_epoch, best_val_auroc_score, self.save_path)
 
         for epoch in range(starting_epoch, self.epochs + 1):
 
@@ -349,9 +351,10 @@ class Trainer:
 
                     self.__tb_update_value(list_for_tb)
 
-                if val_acc > best_val_acc:
-                    best_val_acc = val_acc
-                    utils.save_model(net, self.current_epoch, best_val_acc, self.save_path)
+                if val_auroc_score > best_val_auroc_score:
+                    # best_val_acc = val_acc
+                    best_val_auroc_score = val_auroc_score
+                    utils.save_model(net, self.current_epoch, best_val_auroc_score, self.save_path)
 
             self.__tb_draw_histograms(net)
 
