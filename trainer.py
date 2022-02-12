@@ -77,7 +77,7 @@ class Trainer:
 
     def __set_optimizer(self, net):
 
-        if type(net) == torch.nn.parallel.data_parallel.DataParallel:
+        if type(net) == torch.nn.DataParallel:
             netmod = net.module
         else:
             netmod = net
