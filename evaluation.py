@@ -1,25 +1,21 @@
 import argparse
 import os
 import pickle
-import time
 
-import faiss
 import h5py
 import numpy as np
 import timm
 import torch
 import torch.nn.functional as F
 from sklearn.decomposition import PCA
-from sklearn.metrics import roc_auc_score
-from sklearn.metrics.pairwise import cosine_similarity
 from tqdm import tqdm
 
-import model as htv2
+import baseline_model_loaders.ms_models as mm
 import baseline_model_loaders.pnpp_models as pnpp
 import baseline_model_loaders.proxy_anchor_models as pa
 import baseline_model_loaders.softtriple_models as st
 import baseline_model_loaders.sup_contrastive_models as sc
-import baseline_model_loaders.ms_models as mm
+import model as htv2
 # on hlr:
 # python evaluation.py -chk ../SupContrast/save/SupCon/hotels_models/SupCon_hotels_resnet50_lr_0.01_decay_0.0001_bsz_32_temp_0.1_trial_0_cosine/last.pth -name SupCon_hotels_resnet50_lr_0.01_decay_0.0001_bsz_32_temp_0.1_trial_0_cosine/ --kset 1 2 4 8 10 100 1000 --model_type resnet50 -d hotels -dr ../../datasets/ --baseline supcontrastive --gpu_ids 6
 import utils
@@ -40,7 +36,7 @@ DATASET_SIZES = {'cars': {'test': 8131},
                                   'val2_small': 2397,
                                   'val3_small': 2207,
                                   'val4_small': 2348,
-                                  'test1_small': 1, # 7390 is wrong
+                                  'test1_small': 1,  # 7390 is wrong
                                   'test2_small': 4944,
                                   'test3_small': 5146,
                                   'test4_small': 5919},
@@ -51,15 +47,27 @@ DATASET_SIZES = {'cars': {'test': 8131},
                             'test1': 51294,
                             'test2': 36537,
                             'test3': 35693,
-                            'test4': 41437}
+                            'test4': 41437},
+                 'hotelid-val': {'val1': 3704,
+                                 'val2': 6612,
+                                 'val3': 6595},
+
+                 'hotelid-test': {'test1': 9013,
+                                  'test2': 11110,
+                                  'test3': 10973,
+                                  'test4': 20220}
                  }
 
 DATASET_MEANS = {'hotels': [0.5805, 0.5247, 0.4683],
                  'hotels_small': [0.5805, 0.5247, 0.4683],
+                 'hotelid-val': [0.4620, 0.3980, 0.3292],
+                 "hotelid-test": [0.4620, 0.3980, 0.3292],
                  'cub': None}
 
 DATASET_STDS = {'hotels': [0.2508, 0.2580, 0.2701],
                 'hotels_small': [0.2508, 0.2580, 0.2701],
+                'hotelid-val': [0.2619, 0.2529, 0.2460],
+                'hotelid-test': [0.2619, 0.2529, 0.2460],
                 'cub': None}
 
 
@@ -252,13 +260,13 @@ def check(args, all_data):
 def fix_name(path: str):
     return path.replace('/', '_').split('.')[0]
 
+
 def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-cuda', '--cuda', default=False, action='store_true')
     parser.add_argument('-trained_with_mltp_gpu', '--trained_with_mltp_gpu', default=False, action='store_true')
     parser.add_argument('--eval_mode', default='val', help="val or test", choices=['val', 'test'])
-
 
     parser.add_argument('-gpu', '--gpu_ids', default='', help="gpu ids used to train")  # before: default="0,1,2,3"
 
@@ -281,10 +289,8 @@ def main():
     parser.add_argument('--num_inst_per_class', default=5, type=int)
     parser.add_argument('--lnorm', default=False, action='store_true')
 
-
     parser.add_argument('--config_path', default='config/', help="config_path for datasets")
     parser.add_argument('--project_path', default='./', help="current project path")
-
 
     parser.add_argument('-num_of_dataset', '--num_of_dataset', type=int, default=4,
                         help="number of hotels val_datasets to go through")
@@ -470,7 +476,6 @@ def main():
                 raise Exception(
                     f'--pca_to_dim is set to False and feature dim {features.shape[1]} not equal to expected dim {all_args.get("emb_size")}')
 
-
         print('*' * 10)
         print(f'{idx}: Calc AUC_ROC')
         if all_args.get('hard_neg'):
@@ -482,7 +487,6 @@ def main():
         results += f'\n\n{idx}: AUC_ROC: {auc}\n\n'
         results += '*' * 20
 
-
         print(f'{idx}: Calc Recall at {kset}')
         rec = utils.get_recall_at_k(features, labels,
                                     metric='cosine',
@@ -493,7 +497,6 @@ def main():
         print(rec)
         results += f'{idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
 
-
     if all_args.get('hard_neg'):
         hard_neg_string = '_HN'
     else:
@@ -502,10 +505,9 @@ def main():
         f.write(results)
 
     if all_args.get('force') or \
-        not os.path.exists(cache_path):
+            not os.path.exists(cache_path):
         utils.make_dirs(cache_path)
         for i in range(0, all_args.get('num_of_dataset')):
-
             val_set_name = fix_name(all_args.get(f'all_{all_args.get("eval_mode")}_files')[i])
             emb_data, lbl_data = all_data[i]
 
