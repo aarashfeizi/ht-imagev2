@@ -76,13 +76,19 @@ class Trainer:
         self.val_db_loader = val_db_loader
 
     def __set_optimizer(self, net):
-        learnable_params = [{'params': net.encoder.rest.parameters(),
+
+        if type(net) == torch.nn.parallel.data_parallel.DataParallel:
+            netmod = net.module
+        else:
+            netmod = net
+
+        learnable_params = [{'params': netmod.encoder.rest.parameters(),
                              'lr': self.args.get('bb_learning_rate'),
                              'weight_decay': self.args.get('weight_decay'),
                              'new': False}]
 
-        if net.encoder.last_conv is not None:
-            learnable_params += [{'params': net.encoder.last_conv.parameters(),
+        if netmod.encoder.last_conv is not None:
+            learnable_params += [{'params': netmod.encoder.last_conv.parameters(),
                                   'lr': self.args.get('learning_rate'),
                                   'weight_decay': self.args.get('weight_decay'),
                                   'new': True}]
@@ -267,6 +273,7 @@ class Trainer:
         return embeddings, classes
 
     def train(self, net, val=True):
+
         self.__set_optimizer(net)
 
         if self.train_loader is None:
