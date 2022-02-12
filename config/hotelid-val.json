@@ -41,7 +41,7 @@
   "all_ordered_idxs": {
     "v5_splits/val1.csv": "./hotelid-val_my_splits_val1_resnet50_idxs.npy",
     "v5_splits/val2.csv": "./hotelid-val_my_splits_val2_resnet50_idxs.npy",
-    "v5_splits/val3.csv": "./hotelid-val_my_splits_val3_resnet50_idxs.npy",
+    "v5_splits/val3.csv": "./hotelid-val_my_splits_val3_resnet50_idxs.npy"
   },
 
   "all_ordered_lbls": {
