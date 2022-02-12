@@ -421,6 +421,17 @@ def main():
                     features, labels = get_features_and_labels(all_args, net, ldr)
                     all_data.append((features, labels))
 
+            utils.make_dirs(cache_path)
+            for i in range(0, all_args.get('num_of_dataset')):
+                val_set_name = fix_name(all_args.get(f'all_{all_args.get("eval_mode")}_files')[i])
+                emb_data, lbl_data = all_data[i]
+
+                emb_data_path = os.path.join(cache_path, val_set_name + "_embs.npy")
+                lbl_data_path = os.path.join(cache_path, val_set_name + "_lbls.npy")
+
+                np.save(emb_data_path, emb_data)
+                np.save(lbl_data_path, lbl_data)
+
     else:  # X and Y should be provided
         for idx, (x, y) in enumerate(zip(all_args.get('X'), all_args.get('Y'))):
             if x.endswith('.pkl'):
@@ -503,19 +514,6 @@ def main():
         hard_neg_string = ''
     with open(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
         f.write(results)
-
-    if all_args.get('force') or \
-            not os.path.exists(cache_path):
-        utils.make_dirs(cache_path)
-        for i in range(0, all_args.get('num_of_dataset')):
-            val_set_name = fix_name(all_args.get(f'all_{all_args.get("eval_mode")}_files')[i])
-            emb_data, lbl_data = all_data[i]
-
-            emb_data_path = os.path.join(cache_path, val_set_name + "_embs.npy")
-            lbl_data_path = os.path.join(cache_path, val_set_name + "_lbls.npy")
-
-            np.save(emb_data_path, emb_data)
-            np.save(lbl_data_path, lbl_data)
 
 
 if __name__ == '__main__':
