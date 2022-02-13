@@ -65,8 +65,8 @@ def get_loss(args):
                                   beta=args.get('MS_beta'),
                                   base=args.get('MS_base'))
     elif loss_name == 'lifted':
-        input_kwargs = get_inputs(negmargin=args.get('LIFT_negmargin'),
-                                  posmargin=args.get('LIFT_posmargin'))
+        input_kwargs = get_inputs(neg_margin=args.get('LIFT_negmargin'),
+                                  pos_margin=args.get('LIFT_posmargin'))
     if input_kwargs is None:
         raise Exception('Loss no supported on losses/__init__.py')
 
