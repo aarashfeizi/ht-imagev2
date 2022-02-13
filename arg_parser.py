@@ -11,7 +11,9 @@ LOSSES_LIST = ['pnpp',
                'proxy_anchor',
                'arcface',
                'angular',
-               'circle']
+               'circle',
+               'multisim',
+               'lifted']
 
 BACKBONE_LIST = ['resnet50',
                  'deit',
@@ -66,6 +68,10 @@ def get_args():
     parser.add_argument('--LOSS_temp', type=float, default=None)
     parser.add_argument('--NCA_scale', type=float, default=None)
     parser.add_argument('--LOSS_alpha', type=float, default=None)
+    parser.add_argument('--MS_beta', type=float, default=None)
+    parser.add_argument('--MS_base', type=float, default=None)
+    parser.add_argument('--LIFT_negmargin', type=float, default=None)
+    parser.add_argument('--LIFT_posmargin', type=float, default=None)
     parser.add_argument('--ARCFACE_scale', type=float, default=None)
     parser.add_argument('--CIR_m', type=float, default=None)
     parser.add_argument('--CIR_gamma', type=float, default=None)
@@ -76,6 +82,8 @@ def get_args():
     # 'circle': CircleLoss,  # m=0.4, gamma=80,
     # 'trpl': TripletMargin, # margin=0.05
     # 'supcon': SupConLoss, # temperature=0.1
+    #     'multisim': pml_losses.MultiSimilarityLoss, # alpha=2, beta=50, base=0.5
+    #     'lifted': pml_losses.LiftedStructureLoss # neg_margin=1, pos_margin=0,
 
 
     args = parser.parse_args()

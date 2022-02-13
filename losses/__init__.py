@@ -14,6 +14,8 @@ LOSSES = {
     'angular': pml_losses.AngularLoss,  # alpha=40
     'circle': pml_losses.CircleLoss,  # m=0.4, gamma=80,
     'supcon': pml_losses.SupConLoss, # temperature=0.1
+    'multisim': pml_losses.MultiSimilarityLoss, # alpha=2, beta=50, base=0.5
+    'lifted': pml_losses.LiftedStructureLoss # neg_margin=1, pos_margin=0,
 }
 
 IMPLEMENTED_LOSSES = ['pnpp', 'bce', 'hardbce'] # 'trpl'
@@ -58,7 +60,13 @@ def get_loss(args):
     elif loss_name == 'circle':
         input_kwargs = get_inputs(m=args.get('CIR_m'),
                                   gamma=args.get('CIR_gamma'))
-
+    elif loss_name == 'multisim':
+        input_kwargs = get_inputs(alpha=args.get('LOSS_alpha'),
+                                  beta=args.get('MS_beta'),
+                                  base=args.get('MS_base'))
+    elif loss_name == 'lifted':
+        input_kwargs = get_inputs(negmargin=args.get('LIFT_negmargin'),
+                                  posmargin=args.get('LIFT_posmargin'))
     if input_kwargs is None:
         raise Exception('Loss no supported on losses/__init__.py')
 
