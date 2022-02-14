@@ -13,7 +13,8 @@ LOSSES_LIST = ['pnpp',
                'angular',
                'circle',
                'multisim',
-               'lifted']
+               'lifted',
+               'softtriple']
 
 BACKBONE_LIST = ['resnet50',
                  'deit',
@@ -76,6 +77,10 @@ def get_args():
     parser.add_argument('--ARCFACE_scale', type=float, default=None)
     parser.add_argument('--CIR_m', type=float, default=None)
     parser.add_argument('--CIR_gamma', type=float, default=None)
+    parser.add_argument('--SOFTTRPL_cpc', type=float, default=None)
+    parser.add_argument('--SOFTTRPL_lambda', type=float, default=None)
+    parser.add_argument('--SOFTTRPL_gamma', type=float, default=None)
+
     # 'proxy_nca': ProxyNCALoss,  # softmax_scale=1,
     # 'proxy_anchor': ProxyAnchorLoss,  # num_classes, embedding_size, margin = 0.1, alpha = 32
     # 'arcface': ArcFaceLoss,  # num_classes, embedding_size, margin=28.6, scale=64,
@@ -85,6 +90,7 @@ def get_args():
     # 'supcon': SupConLoss, # temperature=0.1
     #     'multisim': pml_losses.MultiSimilarityLoss, # alpha=2, beta=50, base=0.5
     #     'lifted': pml_losses.LiftedStructureLoss # neg_margin=1, pos_margin=0,
+    # 'softtriple': centers_per_class = 10, la = 20, gamma = 0.1, margin = 0.01
 
 
     args = parser.parse_args()
