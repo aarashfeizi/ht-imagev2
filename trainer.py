@@ -315,7 +315,10 @@ class Trainer:
             if val_auroc_score > best_val_auroc_score:
                 # best_val_acc = val_acc
                 best_val_auroc_score = val_auroc_score
-                utils.save_model(net, self.current_epoch, best_val_auroc_score, self.save_path)
+                if self.args.get('save_model'):
+                    utils.save_model(net, self.current_epoch, best_val_auroc_score, self.save_path)
+                else:
+                    print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
         for epoch in range(starting_epoch, self.epochs + 1):
 
@@ -361,7 +364,10 @@ class Trainer:
                 if val_auroc_score > best_val_auroc_score:
                     # best_val_acc = val_acc
                     best_val_auroc_score = val_auroc_score
-                    utils.save_model(net, self.current_epoch, best_val_auroc_score, self.save_path)
+                    if self.args.get('save_model'):
+                        utils.save_model(net, self.current_epoch, best_val_auroc_score, self.save_path)
+                    else:
+                        print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
             self.__tb_draw_histograms(net)
 
