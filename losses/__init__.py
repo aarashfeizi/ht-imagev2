@@ -70,7 +70,7 @@ def get_loss(args):
                                   pos_margin=args.get('LIFT_posmargin'))
     elif loss_name == 'softtriple':
         input_kwargs = get_inputs(num_classes=args.get('nb_classes'),
-                    embedding_size=args.get('emb_size'),
+                    embedding_size=int(args.get('emb_size')),
                     centers_per_class=args.get('SOFTTRPL_cpc'),
                     la=args.get('SOFTTRPL_lambda'),
                     gamma=args.get('SOFTTRPL_gamma'),
