@@ -77,7 +77,7 @@ def get_args():
     parser.add_argument('--ARCFACE_scale', type=float, default=None)
     parser.add_argument('--CIR_m', type=float, default=None)
     parser.add_argument('--CIR_gamma', type=float, default=None)
-    parser.add_argument('--SOFTTRPL_cpc', type=float, default=None)
+    parser.add_argument('--SOFTTRPL_cpc', type=int, default=None)
     parser.add_argument('--SOFTTRPL_lambda', type=float, default=None)
     parser.add_argument('--SOFTTRPL_gamma', type=float, default=None)
 
