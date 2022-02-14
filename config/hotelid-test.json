@@ -34,6 +34,21 @@
     "hue": 0.5,
     "contrast": 0.5,
     "saturation": 0.5
+  },
+  "ordered_idxs": "./hotelid-test_my_splits_test1_resnet50_idxs.npy",
+  "ordered_lbls": "./hotelid-test_my_splits_test1_resnet50_labels.npy",
+  "all_ordered_idxs": {
+    "my_splits/test1.csv": "./hotelid-test_my_splits_test1_resnet50_idxs.npy",
+    "my_splits/test2.csv": "./hotelid-test_my_splits_test2_resnet50_idxs.npy",
+    "my_splits/test3.csv": "./hotelid-test_my_splits_test3_resnet50_idxs.npy",
+    "my_splits/test4.csv": "./hotelid-test_my_splits_test3_resnet50_idxs.npy"
+  },
+  "all_ordered_lbls": {
+    "my_splits/test1.csv": "./hotelid-test_my_splits_test1_resnet50_labels.npy",
+    "my_splits/test2.csv": "./hotelid-test_my_splits_test2_resnet50_labels.npy",
+    "my_splits/test3.csv": "./hotelid-test_my_splits_test3_resnet50_labels.npy",
+    "my_splits/test4.csv": "./hotelid-test_my_splits_test3_resnet50_labels.npy"
+
   }
 }
 
