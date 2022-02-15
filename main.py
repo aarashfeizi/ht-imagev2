@@ -71,7 +71,7 @@ def main():
     if not all_args.get('test'):  # training
         trainer = Trainer(all_args, loss=loss, train_loader=train_loader, val_loader=val_loader,
                           val_db_loader=val_db_loader, force_new_dir=True)
-        trainer.train(net, val=True)
+        trainer.train(net, val=(not all_args.get('no_validation')))
 
     else:  # testing
         assert os.path.exists(all_args.get('ckpt_path'))
