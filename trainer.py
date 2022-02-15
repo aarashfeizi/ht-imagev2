@@ -286,6 +286,7 @@ class Trainer:
 
         # best_val_acc = -1
         best_val_auroc_score = -1
+        val_auroc_score = 0
 
         # validate before training
         if val:
