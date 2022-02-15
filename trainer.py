@@ -361,13 +361,14 @@ class Trainer:
 
                     self.__tb_update_value(list_for_tb)
 
-                if val_auroc_score > best_val_auroc_score:
-                    # best_val_acc = val_acc
-                    best_val_auroc_score = val_auroc_score
-                    if self.args.get('save_model'):
-                        utils.save_model(net, self.current_epoch, best_val_auroc_score, self.save_path)
-                    else:
-                        print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            if (val and val_auroc_score > best_val_auroc_score) or \
+                    epoch == self.epochs:
+                # best_val_acc = val_acc
+                best_val_auroc_score = val_auroc_score
+                if self.args.get('save_model'):
+                    utils.save_model(net, self.current_epoch, best_val_auroc_score, self.save_path)
+                else:
+                    print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
             self.__tb_draw_histograms(net)
 
