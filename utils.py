@@ -308,7 +308,7 @@ def get_model_name(args):
                           'ARCFACE_scale',
                           'CIR_m',
                           'CIR_gamma',
-                          'PNPP_lr',
+                          'LOSS_lr',
                           'LOSS_temp',
                           'SOFTTRPL_cpc']
 

@@ -93,12 +93,9 @@ class Trainer:
                                   'weight_decay': self.args.get('weight_decay'),
                                   'new': True}]
 
-        if self.args.get('loss') == 'pnpp':
-            assert self.args.get('PNPP_lr') is not None
-
-            learnable_params += [{'params': self.loss_function.parameters(),
-                                  'lr': self.args.get('PNPP_lr'),
-                                  'new': True}]
+        learnable_params += [{'params': self.loss_function.parameters(),
+                              'lr': self.args.get('LOSS_lr'),
+                              'new': True}]
 
         self.optimizer = OPTIMIZERS[self.optimizer_name](params=learnable_params,
                                                          lr=self.args.get('learning_rate'),

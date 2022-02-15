@@ -67,7 +67,7 @@ def get_args():
     parser.add_argument('--lnorm', default=False, action='store_true', help="Layer norm BEFORE creating embeddings")
 
     # loss specific defaults
-    parser.add_argument('--PNPP_lr', type=float, default=None)
+    parser.add_argument('--LOSS_lr', type=float, default=None)
     parser.add_argument('--LOSS_margin', type=float, default=None)
     parser.add_argument('--LOSS_temp', type=float, default=None)
     parser.add_argument('--NCA_scale', type=float, default=None)
