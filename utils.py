@@ -309,7 +309,8 @@ def get_model_name(args):
                           'CIR_m',
                           'CIR_gamma',
                           'PNPP_lr',
-                          'LOSS_temp']
+                          'LOSS_temp',
+                          'SOFTTRPL_cpc']
 
     name = ''
 
