@@ -1,6 +1,6 @@
 import argparse
 
-DATASET_LIST = ['hotels', 'hotels_small', 'cub', 'hotelid-val', 'hotelid-test']
+DATASET_LIST = ['cub', 'hotels', 'hotels_small', 'cub', 'hotelid-val', 'hotelid-test']
 
 LOSSES_LIST = ['pnpp',
                'bce',
