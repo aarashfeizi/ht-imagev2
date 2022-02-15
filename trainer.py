@@ -370,8 +370,7 @@ class Trainer:
 
             self.__tb_draw_histograms(net)
 
-            if self.loss_name == 'pnpp':
-                self.__tb_draw_histograms(self.loss_function)
+            self.__tb_draw_histograms(self.loss_function)
 
             if (self.k_inc_freq != 0) and \
                     epoch % self.k_inc_freq == 0:
