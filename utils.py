@@ -367,15 +367,15 @@ def load_model(net, checkpoint_path):
 
 
 def save_model(net, epoch, val_auc, save_path):
-    best_model_name = 'model-epoch-' + str(epoch) + '-val-auroc-' + str(val_auc) + '.pt'
+    # best_model_name = 'model-epoch-' + str(epoch) + '-val-auroc-' + str(val_auc) + '.pt'
 
     if type(net) == torch.nn.DataParallel:
         netmod = net.module
     else:
         netmod = net
 
-    torch.save({'epoch': epoch, 'model_state_dict': netmod.state_dict()},
-               save_path + '/' + best_model_name)
+    # torch.save({'epoch': epoch, 'model_state_dict': netmod.state_dict()},
+    #            save_path + '/' + best_model_name)
 
     best_model_name = 'best_model_auc.pt'
     torch.save({'epoch': epoch, 'model_state_dict': netmod.state_dict()},
