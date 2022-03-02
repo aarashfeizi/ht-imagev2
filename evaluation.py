@@ -3,6 +3,7 @@ import os
 import pickle
 
 import h5py
+import matplotlib.pyplot as plt
 import numpy as np
 import timm
 import torch
@@ -493,10 +494,20 @@ def main():
             a2n = utils.get_a2n(ordered_lbls_idxs[idx - 1][0], ordered_lbls_idxs[idx - 1][1], labels)
         else:
             a2n = None
-        auc = utils.calc_auroc(features, torch.tensor(labels), anch_2_hardneg_idx=a2n)
+        auc, t_and_p_labels = utils.calc_auroc(features, torch.tensor(labels), anch_2_hardneg_idx=a2n)
         print(f'{idx}: AUC_ROC:', auc)
         results += f'\n\n{idx}: AUC_ROC: {auc}\n\n'
         results += '*' * 20
+
+        if all_args.get('hard_neg'):
+            hard_neg_string = '_HN'
+        else:
+            hard_neg_string = ''
+
+        plt.hist(t_and_p_labels['pred_labels'][t_and_p_labels['true_labels'] == 1], bins=100, color='g')
+        plt.hist(t_and_p_labels['pred_labels'][t_and_p_labels['true_labels'] == 0], bins=100,  color='r')
+        plt.savefig(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
+        plt.clf()
 
         print(f'{idx}: Calc Recall at {kset}')
         rec = utils.get_recall_at_k(features, labels,
@@ -508,10 +519,7 @@ def main():
         print(rec)
         results += f'{idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
 
-    if all_args.get('hard_neg'):
-        hard_neg_string = '_HN'
-    else:
-        hard_neg_string = ''
+
     with open(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
         f.write(results)
 

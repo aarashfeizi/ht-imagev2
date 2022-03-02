@@ -570,7 +570,8 @@ def calc_auroc(embeddings, labels, k=1, anch_2_hardneg_idx=None):
     true_labels = bce_labels[xs, ys]
     predicted_labels = similarities[xs, ys]
 
-    return roc_auc_score(true_labels, predicted_labels)
+    return roc_auc_score(true_labels, predicted_labels), {'true_labels': true_labels,
+                                                          'pred_labels': predicted_labels}
 
 
 def transform_only_img(img_path):
