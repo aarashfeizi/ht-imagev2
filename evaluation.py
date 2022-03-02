@@ -504,8 +504,8 @@ def main():
         else:
             hard_neg_string = ''
 
-        plt.hist(t_and_p_labels['pred_labels'][t_and_p_labels['true_labels'] == 1], bins=100, color='g')
-        plt.hist(t_and_p_labels['pred_labels'][t_and_p_labels['true_labels'] == 0], bins=100,  color='r')
+        plt.hist(t_and_p_labels['pred_labels'][t_and_p_labels['true_labels'] == 1], bins=100, color='g', alpha=0.5)
+        plt.hist(t_and_p_labels['pred_labels'][t_and_p_labels['true_labels'] == 0], bins=100,  color='r', alpha=0.5)
         plt.savefig(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
         plt.clf()
 
