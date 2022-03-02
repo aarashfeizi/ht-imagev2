@@ -478,6 +478,12 @@ def main():
             o_l = np.load(all_args.get('all_ordered_lbls')[val_set_name])
             o_i = np.load(all_args.get('all_ordered_idxs')[val_set_name])
             ordered_lbls_idxs.append([o_l, o_i])
+    auc_predictions = {}
+
+    if all_args.get('hard_neg'):
+        hard_neg_string = '_HN'
+    else:
+        hard_neg_string = ''
 
     for idx, (features, labels) in enumerate(all_data, 1):
 
@@ -495,19 +501,12 @@ def main():
         else:
             a2n = None
         auc, t_and_p_labels = utils.calc_auroc(features, torch.tensor(labels), anch_2_hardneg_idx=a2n)
+        auc_predictions[idx] = t_and_p_labels
         print(f'{idx}: AUC_ROC:', auc)
         results += f'\n\n{idx}: AUC_ROC: {auc}\n\n'
         results += '*' * 20
 
-        if all_args.get('hard_neg'):
-            hard_neg_string = '_HN'
-        else:
-            hard_neg_string = ''
 
-        plt.hist(t_and_p_labels['pred_labels'][t_and_p_labels['true_labels'] == 1], bins=100, color='g', alpha=0.5)
-        plt.hist(t_and_p_labels['pred_labels'][t_and_p_labels['true_labels'] == 0], bins=100,  color='r', alpha=0.5)
-        plt.savefig(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
-        plt.clf()
 
         print(f'{idx}: Calc Recall at {kset}')
         rec = utils.get_recall_at_k(features, labels,
@@ -519,6 +518,21 @@ def main():
         print(rec)
         results += f'{idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
 
+    if len(auc_predictions) > 1:
+        fig, axes = plt.subplots(2, 2)
+        for ax, (key, value) in zip([axes[0][0], axes[0][1], axes[1][0], axes[1][1]], auc_predictions.items()):
+            ax.hist(value['pred_labels'][value['true_labels'] == 1], bins=100, color='g', alpha=0.5)
+            ax.hist(value['pred_labels'][value['true_labels'] == 0], bins=100, color='r', alpha=0.5)
+            ax.set_title(f'Test {key}')
+    else:
+        title_name = list(auc_predictions.keys())[0]
+        t_and_p_labels = auc_predictions[title_name]
+        plt.hist(t_and_p_labels['pred_labels'][t_and_p_labels['true_labels'] == 1], bins=100, color='g', alpha=0.5)
+        plt.hist(t_and_p_labels['pred_labels'][t_and_p_labels['true_labels'] == 0], bins=100,  color='r', alpha=0.5)
+        plt.title(f'Test {title_name}')
+
+    plt.savefig(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
+    plt.clf()
 
     with open(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
         f.write(results)
