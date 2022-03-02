@@ -501,7 +501,7 @@ def main():
         else:
             a2n = None
         auc, t_and_p_labels = utils.calc_auroc(features, torch.tensor(labels), anch_2_hardneg_idx=a2n)
-        auc_predictions[idx] = t_and_p_labels
+        auc_predictions[idx] = (t_and_p_labels, auc)
         print(f'{idx}: AUC_ROC:', auc)
         results += f'\n\n{idx}: AUC_ROC: {auc}\n\n'
         results += '*' * 20
@@ -522,15 +522,15 @@ def main():
         fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
         fig.suptitle(f'{all_args.get("name")} {hard_neg_string}')
         for ax, (key, value) in zip([axes[0][0], axes[0][1], axes[1][0], axes[1][1]], auc_predictions.items()):
-            ax.hist(value['pred_labels'][value['true_labels'] == 1], bins=100, color='g', alpha=0.5)
-            ax.hist(value['pred_labels'][value['true_labels'] == 0], bins=100, color='r', alpha=0.5)
-            ax.set_title(f'Test {key}')
+            ax.hist(value[0]['pred_labels'][value[0]['true_labels'] == 1], bins=100, color='g', alpha=0.5)
+            ax.hist(value[0]['pred_labels'][value[0]['true_labels'] == 0], bins=100, color='r', alpha=0.5)
+            ax.set_title(f'Test {key}: {value[1]}')
     else:
         title_name = list(auc_predictions.keys())[0]
         t_and_p_labels = auc_predictions[title_name]
-        plt.hist(t_and_p_labels['pred_labels'][t_and_p_labels['true_labels'] == 1], bins=100, color='g', alpha=0.5)
-        plt.hist(t_and_p_labels['pred_labels'][t_and_p_labels['true_labels'] == 0], bins=100,  color='r', alpha=0.5)
-        plt.title(f'{all_args.get("name")} {hard_neg_string}\nTest {title_name}')
+        plt.hist(t_and_p_labels[0]['pred_labels'][t_and_p_labels[0]['true_labels'] == 1], bins=100, color='g', alpha=0.5)
+        plt.hist(t_and_p_labels[0]['pred_labels'][t_and_p_labels[0]['true_labels'] == 0], bins=100,  color='r', alpha=0.5)
+        plt.title(f'{all_args.get("name")} {hard_neg_string}\nTest {title_name}: {t_and_p_labels[1]}')
 
     plt.savefig(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
     plt.clf()
