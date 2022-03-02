@@ -519,7 +519,7 @@ def main():
         results += f'{idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
 
     if len(auc_predictions) > 1:
-        fig, axes = plt.subplots(2, 2)
+        fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
         for ax, (key, value) in zip([axes[0][0], axes[0][1], axes[1][0], axes[1][1]], auc_predictions.items()):
             ax.hist(value['pred_labels'][value['true_labels'] == 1], bins=100, color='g', alpha=0.5)
             ax.hist(value['pred_labels'][value['true_labels'] == 0], bins=100, color='r', alpha=0.5)
