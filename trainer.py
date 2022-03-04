@@ -171,7 +171,8 @@ class Trainer:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
 
-                preds, similarities, img_embeddings = net(imgs)
+                img_embeddings = net(imgs)
+                preds, similarities = utils.get_preds(img_embeddings)
                 bce_labels = utils.make_batch_bce_labels(lbls)
 
                 loss = self.get_loss_value(img_embeddings, preds, lbls)
@@ -215,7 +216,8 @@ class Trainer:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
 
-                preds, similarities, img_embeddings = net(imgs)
+                img_embeddings = net(imgs)
+                preds, similarities = utils.get_preds(img_embeddings)
                 bce_labels = utils.make_batch_bce_labels(lbls)
                 loss = self.get_loss_value(img_embeddings, preds, lbls, train=False)
 
@@ -259,7 +261,7 @@ class Trainer:
             if self.cuda:
                 imgs = imgs.cuda()
 
-            preds, similarities, img_embeddings = net(imgs)
+            img_embeddings = net(imgs)
 
             begin_idx = batch_id * self.batch_size
             end_idx = min(val_size, (batch_id + 1) * self.batch_size)

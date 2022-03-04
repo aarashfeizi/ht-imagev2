@@ -9,6 +9,8 @@ import cv2
 import faiss
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from PIL import Image
 from matplotlib import pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
@@ -17,7 +19,8 @@ from torchvision.transforms import transforms
 
 import datasets
 import metrics
-from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseSampler, DrawHeatmapSampler, HardTripletSampler
+from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseSampler, DrawHeatmapSampler, \
+    HardTripletSampler
 
 SHARING_STRATEGY = "file_system"
 torch.multiprocessing.set_sharing_strategy(SHARING_STRATEGY)
@@ -212,7 +215,8 @@ def open_img(path):
     return img
 
 
-def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch', **kwargs):  # 'kbatch', 'balanced_triplet', 'db'
+def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
+             **kwargs):  # 'kbatch', 'balanced_triplet', 'db'
     SAMPLERS = {'kbatch': KBatchSampler,
                 'balanced_triplet': BalancedTripletSampler,
                 'hard_triplet': HardTripletSampler,
@@ -325,7 +329,6 @@ def get_model_name(args):
             f"k{args.get('num_inst_per_class')}_" \
             f"lr{args.get('learning_rate'):.2}_" \
             f"bblr{args.get('bb_learning_rate'):.2}"
-
 
     name += f"_{args.get('loss')}"
     for n in loss_specific_args:
@@ -669,7 +672,6 @@ def get_all_heatmaps(list_of_activationsets, imgs):
 
         heatmaps_to_return = {}
         for layer_i, (label, act) in enumerate(dict_of_activations.items(), 1):
-
             pic = get_heatmaped_img(act, img)
             heatmaps_to_return[label] = pic
 
@@ -712,3 +714,33 @@ def get_a2n(ordered_lbls, ordered_idxs, all_labels):
     a2n = {i: [row] for i, row in enumerate(negative_idxs)}
 
     return a2n
+
+
+def get_preds(embeddings, metric='cosine', model=None, temperature=3):
+    if metric == 'cosine':
+        norm_embeddings = F.normalize(embeddings, p=2)
+        sims = torch.matmul(norm_embeddings, norm_embeddings.T)
+        preds = (sims + 1) / 2  # maps (-1, 1) to (0, 1)
+
+        preds = torch.clamp(preds, min=0.0, max=1.0)
+    elif metric == 'euclidean':
+        euclidean_dist = pairwise_distance(embeddings)
+
+        euclidean_dist = euclidean_dist / temperature
+
+        preds = 2 * nn.functional.sigmoid(-euclidean_dist)  # maps (0, +inf) to (1, 0)
+        sims = -euclidean_dist
+        # preds = torch.clamp(preds, min=0.0, max=1.0)
+    elif metric == 'mlp':
+        if model is None:
+            raise Exception('No model provided for mlp distance')
+        bs = embeddings.shape[0]
+        indices = torch.tensor([[i, j] for i in range(bs) for j in range(bs)]).flatten()
+        logits = model(embeddings[indices].reshape(bs * bs, -1))
+
+        sims = logits / temperature
+        preds = nn.functional.sigmoid(sims)
+    else:
+        raise Exception(f'{metric} not supported in Top Module')
+
+    return preds, sims
