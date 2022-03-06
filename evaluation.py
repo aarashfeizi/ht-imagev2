@@ -332,9 +332,12 @@ def main():
     if all_args.get('name') is None:
         raise Exception('Provide --name')
 
-    utils.make_dirs(os.path.join(all_args.get('eval_log_path'), 'cache/'))
+    eval_log_path = os.path.join(all_args.get('eval_log_path'),
+                                 f'{all_args.get("eval_mode").upper()}_{all_args.get("dataset")}')
 
-    cache_path = os.path.join(all_args.get('eval_log_path'), 'cache', all_args.get('name'))
+    utils.make_dirs(os.path.join(eval_log_path, 'cache/'))
+
+    cache_path = os.path.join(eval_log_path, 'cache', all_args.get('name'))
 
     # provide model and extract embeddings here
     if len(all_args.get('X')) == 0:
@@ -512,8 +515,6 @@ def main():
         results += f'\n\n{idx}: AUC_ROC: {auc}\n\n'
         results += '*' * 20
 
-
-
         print(f'{idx}: Calc Recall at {kset}')
         rec = utils.get_recall_at_k(features, labels,
                                     metric='cosine',
@@ -534,14 +535,16 @@ def main():
     else:
         title_name = list(auc_predictions.keys())[0]
         t_and_p_labels = auc_predictions[title_name]
-        plt.hist(t_and_p_labels[0]['pred_labels'][t_and_p_labels[0]['true_labels'] == 1], bins=100, color='g', alpha=0.5)
-        plt.hist(t_and_p_labels[0]['pred_labels'][t_and_p_labels[0]['true_labels'] == 0], bins=100,  color='r', alpha=0.5)
+        plt.hist(t_and_p_labels[0]['pred_labels'][t_and_p_labels[0]['true_labels'] == 1], bins=100, color='g',
+                 alpha=0.5)
+        plt.hist(t_and_p_labels[0]['pred_labels'][t_and_p_labels[0]['true_labels'] == 0], bins=100, color='r',
+                 alpha=0.5)
         plt.title(f'{all_args.get("name")} {hard_neg_string}\nTest {title_name}: {t_and_p_labels[1]:.3}')
 
-    plt.savefig(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
+    plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
     plt.clf()
 
-    with open(os.path.join(all_args.get('eval_log_path'), all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
+    with open(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
         f.write(results)
 
 
