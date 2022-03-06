@@ -567,8 +567,8 @@ def main():
             u_lbls = np.unique(labels_specific)
 
             for l in u_lbls:
-                ax.scatter(features_2d_specific[labels_specific == l, :][:0],
-                           features_2d_specific[labels_specific == l, :][:1],
+                ax.scatter(features_2d_specific[labels_specific == l][:, 0],
+                           features_2d_specific[labels_specific == l][:, 1],
                            )
             ax.set_title(f'Test {key}: {value[1]:.3}')
     plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter.pdf"))
