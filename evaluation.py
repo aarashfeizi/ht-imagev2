@@ -315,6 +315,8 @@ def main():
 
     parser.add_argument('--hard_neg', default=False, action='store_true')
     parser.add_argument('--project', default=False, action='store_true')
+    parser.add_argument('--project_no_labels', type=int, default=30)
+
 
     parser.add_argument('--metric', default='cosine', choices=['cosine', 'euclidean'])
 
@@ -547,7 +549,7 @@ def main():
     plt.clf()
 
     if all_args.get('project'):
-        NUM_COLORS = 10
+        NUM_COLORS = all_args.get('project_no_labels')  #30
         cm = plt.get_cmap('gist_rainbow')
 
 
@@ -561,8 +563,13 @@ def main():
                     auc_predictions.items()), 1):
             ax.set_prop_cycle(color=[cm(1. * i / NUM_COLORS) for i in range(NUM_COLORS)])
             features_2d = pca(features, emb_size=2)
-            features_2d_specific = features_2d[labels < NUM_COLORS]
-            labels_specific = labels[labels < NUM_COLORS]
+
+            chosen_unique_labels = sorted(np.unique(labels))[:NUM_COLORS]
+            print(f'Test {key} labels:', chosen_unique_labels)
+
+
+            features_2d_specific = features_2d[labels < chosen_unique_labels[-1]]
+            labels_specific = labels[labels < chosen_unique_labels[-1]]
 
             u_lbls = np.unique(labels_specific)
 
