@@ -314,6 +314,7 @@ def main():
     parser.add_argument('-name', '--name', default=None, type=str)
 
     parser.add_argument('--hard_neg', default=False, action='store_true')
+    parser.add_argument('--project', default=False, action='store_true')
 
     parser.add_argument('--metric', default='cosine', choices=['cosine', 'euclidean'])
 
@@ -525,6 +526,7 @@ def main():
         print(rec)
         results += f'{idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
 
+
     if len(auc_predictions) > 1:
         fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
         fig.suptitle(f'{all_args.get("name")} {hard_neg_string}')
@@ -542,6 +544,35 @@ def main():
         plt.title(f'{all_args.get("name")} {hard_neg_string}\nTest {title_name}: {t_and_p_labels[1]:.3}')
 
     plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
+    plt.clf()
+
+    if all_args.get('project'):
+        NUM_COLORS = 10
+        cm = plt.get_cmap('gist_rainbow')
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.set_color_cycle([cm(1. * i / NUM_COLORS) for i in range(NUM_COLORS)])
+
+        fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
+        fig.suptitle(f'{all_args.get("name")} {hard_neg_string}')
+
+        for idx, (ax, (features, labels), (key, value)) in enumerate(
+                zip([axes[0][0], axes[0][1], axes[1][0], axes[1][1]],
+                    all_data,
+                    auc_predictions.items()), 1):
+
+            features_2d = pca(features, emb_size=2)
+            features_2d_specific = features_2d[labels < NUM_COLORS]
+            labels_specific = labels[labels < NUM_COLORS]
+
+            u_lbls = np.unique(labels_specific)
+
+            for l in u_lbls:
+                ax.scatter(features_2d_specific[labels_specific == l][:0],
+                           features_2d_specific[labels_specific == l][:1],
+                           )
+            ax.set_title(f'Test {key}: {value[1]:.3}')
+    plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter.pdf"))
     plt.clf()
 
     with open(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
