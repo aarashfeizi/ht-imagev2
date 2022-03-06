@@ -549,9 +549,8 @@ def main():
     if all_args.get('project'):
         NUM_COLORS = 10
         cm = plt.get_cmap('gist_rainbow')
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.set_color_cycle([cm(1. * i / NUM_COLORS) for i in range(NUM_COLORS)])
+
+
 
         fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
         fig.suptitle(f'{all_args.get("name")} {hard_neg_string}')
@@ -560,7 +559,7 @@ def main():
                 zip([axes[0][0], axes[0][1], axes[1][0], axes[1][1]],
                     all_data,
                     auc_predictions.items()), 1):
-
+            ax.set_prop_cycle(color=[cm(1. * i / NUM_COLORS) for i in range(NUM_COLORS)])
             features_2d = pca(features, emb_size=2)
             features_2d_specific = features_2d[labels < NUM_COLORS]
             labels_specific = labels[labels < NUM_COLORS]
