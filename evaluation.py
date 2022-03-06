@@ -182,18 +182,18 @@ def htv2_load_model_resnet50(save_path, args):
 
     net = htv2.get_top_module(args)
 
-    if args.get('trained_with_mltp_gpu'):
-        net = torch.nn.DataParallel(net)
+    # if args.get('trained_with_mltp_gpu'):
+    #     net = torch.nn.DataParallel(net)
 
     net.load_state_dict(checkpoint['model_state_dict'])
 
     if args.get('cuda'):
         net = net.cuda()
 
-    if args.get('trained_with_mltp_gpu'):
-        net = net.module.encoder
-    else:
-        net = net.encoder
+    # if args.get('trained_with_mltp_gpu'):
+    #     net = net.module.encoder
+    # else:
+    net = net.encoder
 
     return net
 
