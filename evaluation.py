@@ -642,8 +642,11 @@ def main():
             chosen_unique_labels = sorted(np.unique(labels))[idx_start: idx_start + NUM_COLORS]
             print(f'Test {key} labels:', chosen_unique_labels)
 
-            features_2d_specific = features_2d[labels < chosen_unique_labels[-1]]
-            labels_specific = labels[labels < chosen_unique_labels[-1]]
+            features_2d_specific = features_2d[np.logical_and(labels <= chosen_unique_labels[-1],
+                                                              labels >= chosen_unique_labels[0])]
+
+            labels_specific = labels[np.logical_and(labels <= chosen_unique_labels[-1],
+                                                    labels >= chosen_unique_labels[0])]
 
             u_lbls = np.unique(labels_specific)
 
