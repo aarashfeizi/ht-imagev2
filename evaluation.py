@@ -21,6 +21,71 @@ import model as htv2
 # python evaluation.py -chk ../SupContrast/save/SupCon/hotels_models/SupCon_hotels_resnet50_lr_0.01_decay_0.0001_bsz_32_temp_0.1_trial_0_cosine/last.pth -name SupCon_hotels_resnet50_lr_0.01_decay_0.0001_bsz_32_temp_0.1_trial_0_cosine/ --kset 1 2 4 8 10 100 1000 --model_type resnet50 -d hotels -dr ../../datasets/ --baseline supcontrastive --gpu_ids 6
 import utils
 
+COLORS_VALUES = [(0, 0, 0),
+          (1, 0, 103),
+          (213, 255, 0),
+          (255, 0, 86),
+          (158, 0, 142),
+          (14, 76, 161),
+          (255, 229, 2),
+          (0, 95, 57),
+          (0, 255, 0),
+          (149, 0, 58),
+          (255, 147, 126),
+          (164, 36, 0),
+          (0, 21, 68),
+          (145, 208, 203),
+          (98, 14, 0),
+          (107, 104, 130),
+          (0, 0, 255),
+          (0, 125, 181),
+          (106, 130, 108),
+          (0, 174, 126),
+          (194, 140, 159),
+          (190, 153, 112),
+          (0, 143, 156),
+          (95, 173, 78),
+          (255, 0, 0),
+          (255, 0, 246),
+          (255, 2, 157),
+          (104, 61, 59),
+          (255, 116, 163),
+          (150, 138, 232),
+          (152, 255, 82),
+          (167, 87, 64),
+          (1, 255, 254),
+          (255, 238, 232),
+          (254, 137, 0),
+          (189, 198, 255),
+          (1, 208, 255),
+          (187, 136, 0),
+          (117, 68, 177),
+          (165, 255, 210),
+          (255, 166, 254),
+          (119, 77, 0),
+          (122, 71, 130),
+          (38, 52, 0),
+          (0, 71, 84),
+          (67, 0, 44),
+          (181, 0, 255),
+          (255, 177, 103),
+          (255, 219, 102),
+          (144, 251, 146),
+          (126, 45, 210),
+          (189, 211, 147),
+          (229, 111, 254),
+          (222, 255, 116),
+          (0, 255, 120),
+          (0, 155, 255),
+          (0, 100, 1),
+          (0, 118, 255),
+          (133, 169, 0),
+          (0, 185, 23),
+          (120, 130, 49),
+          (0, 255, 198),
+          (255, 110, 65),
+          (232, 94, 190)]
+
 # todo: visualize embeddings after training with each model to see how they look softtriple, proxy, htv2
 
 dataset_choices = ['cars', 'cub', 'hotels', 'hotels_small', 'hotelid-val', 'hotelid-test']
@@ -317,7 +382,6 @@ def main():
     parser.add_argument('--project', default=False, action='store_true')
     parser.add_argument('--project_no_labels', type=int, default=30)
 
-
     parser.add_argument('--metric', default='cosine', choices=['cosine', 'euclidean'])
 
     args = parser.parse_args()
@@ -528,7 +592,6 @@ def main():
         print(rec)
         results += f'{idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
 
-
     if len(auc_predictions) > 1:
         fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
         fig.suptitle(f'{all_args.get("name")} {hard_neg_string}')
@@ -549,10 +612,8 @@ def main():
     plt.clf()
 
     if all_args.get('project'):
-        NUM_COLORS = all_args.get('project_no_labels')  #30
+        NUM_COLORS = all_args.get('project_no_labels')  # 30
         cm = plt.get_cmap('gist_rainbow')
-
-
 
         fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
         fig.suptitle(f'{all_args.get("name")} {hard_neg_string}')
@@ -561,12 +622,12 @@ def main():
                 zip([axes[0][0], axes[0][1], axes[1][0], axes[1][1]],
                     all_data,
                     auc_predictions.items()), 1):
-            ax.set_prop_cycle(color=[cm(1. * i / NUM_COLORS) for i in range(NUM_COLORS)])
+            # ax.set_prop_cycle(color=[cm(1. * i / NUM_COLORS) for i in range(NUM_COLORS)])
+            ax.set_prop_cycle(color=COLORS_VALUES[:NUM_COLORS])
             features_2d = pca(features, emb_size=2)
 
             chosen_unique_labels = sorted(np.unique(labels))[:NUM_COLORS]
             print(f'Test {key} labels:', chosen_unique_labels)
-
 
             features_2d_specific = features_2d[labels < chosen_unique_labels[-1]]
             labels_specific = labels[labels < chosen_unique_labels[-1]]
