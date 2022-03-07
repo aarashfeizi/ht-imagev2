@@ -60,6 +60,9 @@ def get_args():
     parser.add_argument('--num_inst_per_class', type=int, default=2)
     parser.add_argument('--k_inc_freq', type=int, default=0)
     parser.add_argument('--loss', default='pnpp', choices=LOSSES_LIST)
+    parser.add_argument('--with_bce', default=False, action='store_true')
+    parser.add_argument('--bce_weight', type=float, default=1.0)
+
     parser.add_argument('--temperature', type=float, default=1.0)
     parser.add_argument('--scale', type=float, default=3.0)
     parser.add_argument('--metric', default='cosine', choices=METRIC_LIST)

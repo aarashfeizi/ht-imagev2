@@ -36,6 +36,9 @@ def get_loss(args):
     input_kwargs = None
     if loss_name in IMPLEMENTED_LOSSES:
         input_kwargs = get_inputs(args=args)
+    elif loss_name == 'bce-trpl':
+        input_kwargs = get_inputs(args=args,
+                                  margin=args.get('LOSS_margin'))
     elif loss_name == 'supcon':
         input_kwargs = get_inputs(temperature=args.get('LOSS_temp'))
     elif loss_name == 'trpl':
@@ -80,5 +83,11 @@ def get_loss(args):
         raise Exception('Loss no supported on losses/__init__.py')
 
     to_ret = LOSSES[loss_name](**input_kwargs)
+
+    # if args.get('with_bce'):
+    #     assert loss_name != 'bce'
+    #     assert loss_name != 'hardbce'
+    #
+    #     to_ret = linkprediction.BceAndOtherLoss(args=args, other_loss=to_ret)
 
     return to_ret

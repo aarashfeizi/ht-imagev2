@@ -85,14 +85,16 @@ def main():
             trainer.draw_heatmaps(net)
 
         with torch.no_grad():
-            val_loss, val_acc, val_auroc_score = trainer.validate(net)
+            val_losses, val_acc, val_auroc_score = trainer.validate(net)
             embeddings, classes = trainer.get_embeddings(net)
 
             r_at_k_score = utils.get_recall_at_k(embeddings, classes,
                                                  metric='cosine',
                                                  sim_matrix=None)
 
-            print(f'VALIDATION from saved in epoch {epoch}-> val_loss: ', val_loss / len(trainer.val_loader),
+            all_val_losses = {lss_name: (lss / len(trainer.val_loader)) for lss_name, lss in val_losses.items()}
+
+            print(f'VALIDATION from saved in epoch {epoch}-> val_loss: ', all_val_losses,
                   f', val_acc: ', val_acc,
                   f', val_auroc: ', val_auroc_score,
                   f', val_R@K: ', r_at_k_score)

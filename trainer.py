@@ -5,6 +5,7 @@ import torch
 from sklearn.metrics import roc_auc_score
 from tqdm import tqdm
 
+import losses
 import utils
 from SummaryWriter import SummaryWriter
 from metrics import Metric_Accuracy
@@ -28,6 +29,14 @@ class Trainer:
         self.current_epoch = current_epoch
         self.loss_name = args.get('loss')
         self.loss_function = loss
+
+        if args.get('with_bce'):
+            self.bce_loss = losses.linkprediction.NormalBCELoss(args=args)
+            self.bce_weight = args.get('bce_weight')
+        else:
+            self.bce_loss = None
+            self.bce_weight = 0
+
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.val_db_loader = val_db_loader
@@ -161,6 +170,8 @@ class Trainer:
     def __train_one_epoch(self, net):
         net.train()
 
+        epoch_losses = None
+
         epoch_loss = 0
 
         acc = Metric_Accuracy()
@@ -175,7 +186,7 @@ class Trainer:
                 preds, similarities = utils.get_preds(img_embeddings)
                 bce_labels = utils.make_batch_bce_labels(lbls)
 
-                loss = self.get_loss_value(img_embeddings, preds, lbls)
+                loss, loss_items = self.get_loss_value(img_embeddings, preds, lbls)
 
                 if torch.isnan(loss):
                     raise Exception(f'Loss became NaN on iteration {batch_id} of epoch {self.current_epoch}! :(')
@@ -183,6 +194,12 @@ class Trainer:
                 acc.update_acc(preds.flatten(), bce_labels.flatten(), sigmoid=False)
 
                 epoch_loss += loss.item()
+
+                if epoch_losses is None:
+                    epoch_losses = loss_items
+                else:
+                    for k, v in loss_items.items():
+                        epoch_losses[k] += v
 
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -196,19 +213,21 @@ class Trainer:
 
                 t.update()
 
-        return epoch_loss, acc.get_acc()
+        return epoch_losses, acc.get_acc()
 
     def validate(self, net):
         if self.val_loader is None:
             raise Exception('val_loader is not set in trainer!')
         net.eval()
 
+        val_losses = None
         val_loss = 0
 
         acc = Metric_Accuracy()
 
         predicted_links = []
         true_links = []
+
 
         with tqdm(total=len(self.val_loader), desc=f'{self.current_epoch} validating...') as t:
             for batch_id, (imgs, lbls) in enumerate(self.val_loader, 1):
@@ -219,7 +238,13 @@ class Trainer:
                 img_embeddings = net(imgs)
                 preds, similarities = utils.get_preds(img_embeddings)
                 bce_labels = utils.make_batch_bce_labels(lbls)
-                loss = self.get_loss_value(img_embeddings, preds, lbls, train=False)
+                loss, loss_items = self.get_loss_value(img_embeddings, preds, lbls, train=False)
+
+                if val_losses is None:
+                    val_losses = loss_items
+                else:
+                    for k, v in loss_items.items():
+                        val_losses[k] += v
 
                 # equal numbers of positives and negatives
                 balanced_preds = utils.balance_labels(preds.cpu().detach().numpy(), k=3)
@@ -241,16 +266,29 @@ class Trainer:
         assert len(true_links) == len(predicted_links)
         auroc_score = roc_auc_score(true_links, predicted_links)
 
-        return val_loss, acc.get_acc(), auroc_score
+        return val_losses, acc.get_acc(), auroc_score
 
     def get_loss_value(self, embeddings, binary_predictions, lbls, train=True):
+        each_loss_item = {}
         if self.loss_name == 'bce' or self.loss_name == 'hardbce':
             loss = self.loss_function(embeddings, lbls, output_pred=binary_predictions, train=train)
         else:
             loss = self.loss_function(embeddings, lbls.type(torch.int64))
+
+        each_loss_item[self.loss_name] = loss.item()
+
+        if self.bce_loss:
+            bce_loss_value = self.bce_loss(embeddings, lbls, output_pred=binary_predictions, train=train)
+
+            loss = (self.bce_weight / self.bce_weight + 1) * bce_loss_value + \
+                    (1 / self.bce_weight + 1) * loss
+
+            each_loss_item['bce'] = bce_loss_value.item()
+            each_loss_item[f'bce_{self.loss_name}'] = loss.item()
+
         # elif self.loss_name == 'trpl':
         #     loss = self.loss_function(embeddings, lbls)
-        return loss
+        return loss, each_loss_item
 
     def get_embeddings(self, net):
         net.eval()
@@ -291,7 +329,7 @@ class Trainer:
         # validate before training
         if val:
             with torch.no_grad():
-                val_loss, val_acc, val_auroc_score = self.validate(net)
+                val_losses, val_acc, val_auroc_score = self.validate(net)
 
                 embeddings, classes = self.get_embeddings(net)
 
@@ -299,14 +337,17 @@ class Trainer:
                                                      metric='cosine',
                                                      sim_matrix=None)
 
-                print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss / len(self.val_loader),
+                all_val_losses = {lss_name: (lss / len(self.val_loader)) for lss_name, lss in val_losses.items()}
+
+                print(f'VALIDATION {self.current_epoch}-> val_loss: ', all_val_losses,
                       f', val_acc: ', val_acc,
                       f', val_auroc: ', val_auroc_score,
                       f', val_R@K: ', r_at_k_score)
 
-                list_for_tb = [('Val/Loss', val_loss / len(self.val_loader)),
-                               ('Val/AUROC', val_auroc_score),
-                               ('Val/Accuracy', val_acc)]
+                list_for_tb = [(f'Val/{lss_name}_Loss', lss / len(self.val_loader)) for lss_name, lss in
+                                    val_losses.items()]
+                list_for_tb.append(('Val/AUROC', val_auroc_score))
+                list_for_tb.append(('Val/Accuracy', val_acc))
 
                 for k, v in r_at_k_score.items():
                     list_for_tb.append((f'Val/{k}', v))
@@ -332,17 +373,21 @@ class Trainer:
 
             self.current_epoch = epoch
 
-            epoch_loss, epoch_acc = self.__train_one_epoch(net)
+            epoch_losses, epoch_acc = self.__train_one_epoch(net)
 
-            print(f'Epoch {self.current_epoch}-> loss: ', epoch_loss / len(self.train_loader),
+            all_losses = {lss_name: (lss / len(self.train_loader)) for lss_name, lss in epoch_losses.items()}
+
+            print(f'Epoch {self.current_epoch}-> loss: ', all_losses,
                   f', acc: ', epoch_acc)
 
-            self.__tb_update_value([(f'Train/{self.loss_name}_Loss', epoch_loss / len(self.train_loader)),
-                                    ('Train/Accuracy', epoch_acc)])
+            update_tb_losses = [(f'Train/{lss_name}_Loss', lss / len(self.train_loader)) for lss_name, lss in epoch_losses.items()]
+            update_tb_losses.append(('Train/Accuracy', epoch_acc))
+
+            self.__tb_update_value(update_tb_losses)
 
             if val:
                 with torch.no_grad():
-                    val_loss, val_acc, val_auroc_score = self.validate(net)
+                    val_losses, val_acc, val_auroc_score = self.validate(net)
 
                     embeddings, classes = self.get_embeddings(net)
 
@@ -355,14 +400,17 @@ class Trainer:
                     #     header=True,
                     #     index=False)
 
-                    print(f'VALIDATION {self.current_epoch}-> val_loss: ', val_loss / len(self.val_loader),
+                    all_val_losses = {lss_name: (lss / len(self.val_loader)) for lss_name, lss in val_losses.items()}
+
+                    print(f'VALIDATION {self.current_epoch}-> val_loss: ', all_val_losses,
                           f', val_acc: ', val_acc,
                           f', val_auroc: ', val_auroc_score,
                           f', val_R@K: ', r_at_k_score)
 
-                    list_for_tb = [(f'Val/{self.loss_name}_Loss', val_loss / len(self.val_loader)),
-                                   ('Val/AUROC', val_auroc_score),
-                                   ('Val/Accuracy', val_acc)]
+                    list_for_tb = [(f'Val/{lss_name}_Loss', lss / len(self.val_loader)) for lss_name, lss in
+                                   val_losses.items()]
+                    list_for_tb.append(('Val/AUROC', val_auroc_score))
+                    list_for_tb.append(('Val/Accuracy', val_acc))
 
                     for k, v in r_at_k_score.items():
                         list_for_tb.append((f'Val/{k}', v))

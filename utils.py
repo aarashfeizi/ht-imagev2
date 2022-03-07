@@ -331,6 +331,10 @@ def get_model_name(args):
             f"bblr{args.get('bb_learning_rate'):.2}"
 
     name += f"_{args.get('loss')}"
+
+    if args.get('with_bce'):
+        name += f'-bce_bw{args.get("bce_weight")}'
+
     for n in loss_specific_args:
         if args.get(n) is not None:
             name += f'-{n}{args.get(n)}'
