@@ -632,6 +632,11 @@ def main():
         fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
         fig.suptitle(f'{all_args.get("name")} {hard_neg_string}')
 
+        if len(all_data) > 2:
+            sorted_shared_labels = sorted(list(set(all_data[0][1]).intersection(set(all_data[1][1]))))
+        else:
+            sorted_shared_labels = []
+
         for idx, (ax, (features, labels), (key, value)) in enumerate(
                 zip([axes[0][0], axes[0][1], axes[1][0], axes[1][1]],
                     all_data,
@@ -640,7 +645,10 @@ def main():
             ax.set_prop_cycle(color=COLORS_VALUES_01[:NUM_COLORS])
             features_2d = pca(features, emb_size=2)
 
-            chosen_unique_labels = sorted(np.unique(labels))[idx_start: idx_start + NUM_COLORS]
+            if sorted_shared_labels[0] in labels:
+                chosen_unique_labels = sorted_shared_labels[idx_start: idx_start + NUM_COLORS]
+            else:
+                chosen_unique_labels = sorted(np.unique(labels))[idx_start: idx_start + NUM_COLORS]
             print(f'Test {key} labels:', chosen_unique_labels)
 
             features_2d_specific = features_2d[np.logical_and(labels <= chosen_unique_labels[-1],
