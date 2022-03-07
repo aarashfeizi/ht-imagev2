@@ -21,9 +21,9 @@ import model as htv2
 # python evaluation.py -chk ../SupContrast/save/SupCon/hotels_models/SupCon_hotels_resnet50_lr_0.01_decay_0.0001_bsz_32_temp_0.1_trial_0_cosine/last.pth -name SupCon_hotels_resnet50_lr_0.01_decay_0.0001_bsz_32_temp_0.1_trial_0_cosine/ --kset 1 2 4 8 10 100 1000 --model_type resnet50 -d hotels -dr ../../datasets/ --baseline supcontrastive --gpu_ids 6
 import utils
 
-ALPHA = 0.5
+ALPHA = 128.0
 
-COLORS_VALUES = [
+COLORS_VALUES_0255 = [
           (0.0, 0.0, 0.0, ALPHA),
           (1.0, 0.0, 103.0, ALPHA),
           (213.0, 255.0, 0.0, ALPHA),
@@ -615,6 +615,13 @@ def main():
     plt.clf()
 
     if all_args.get('project'):
+        COLORS_VALUES_01 = []
+        for c in COLORS_VALUES_0255:
+            COLORS_VALUES_01.append((c[0] / 255,
+                                     c[1] / 255,
+                                     c[2] / 255,
+                                     c[3] / 255))
+
         NUM_COLORS = all_args.get('project_no_labels')  # 30
         cm = plt.get_cmap('gist_rainbow')
 
@@ -626,7 +633,7 @@ def main():
                     all_data,
                     auc_predictions.items()), 1):
             # ax.set_prop_cycle(color=[cm(1. * i / NUM_COLORS) for i in range(NUM_COLORS)])
-            ax.set_prop_cycle(color=COLORS_VALUES[:NUM_COLORS])
+            ax.set_prop_cycle(color=COLORS_VALUES_01[:NUM_COLORS])
             features_2d = pca(features, emb_size=2)
 
             chosen_unique_labels = sorted(np.unique(labels))[:NUM_COLORS]
