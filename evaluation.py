@@ -384,6 +384,8 @@ def main():
     parser.add_argument('--hard_neg', default=False, action='store_true')
     parser.add_argument('--project', default=False, action='store_true')
     parser.add_argument('--project_no_labels', type=int, default=30)
+    parser.add_argument('--project_labels_start', type=int, default=0)
+
 
     parser.add_argument('--metric', default='cosine', choices=['cosine', 'euclidean'])
 
@@ -623,6 +625,7 @@ def main():
                                      c[3] / 255))
 
         NUM_COLORS = all_args.get('project_no_labels')  # 30
+        idx_start = all_args.get('project_labels_start')
         cm = plt.get_cmap('gist_rainbow')
 
         fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
@@ -636,7 +639,7 @@ def main():
             ax.set_prop_cycle(color=COLORS_VALUES_01[:NUM_COLORS])
             features_2d = pca(features, emb_size=2)
 
-            chosen_unique_labels = sorted(np.unique(labels))[:NUM_COLORS]
+            chosen_unique_labels = sorted(np.unique(labels))[idx_start: idx_start + NUM_COLORS]
             print(f'Test {key} labels:', chosen_unique_labels)
 
             features_2d_specific = features_2d[labels < chosen_unique_labels[-1]]
@@ -649,7 +652,7 @@ def main():
                            features_2d_specific[labels_specific == l][:, 1],
                            )
             ax.set_title(f'Test {key}: {value[1]:.3}')
-    plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{all_args.get('project_no_labels')}.pdf"))
+    plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.pdf"))
     plt.clf()
 
     with open(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
