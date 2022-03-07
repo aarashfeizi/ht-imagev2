@@ -384,6 +384,7 @@ def main():
 
     parser.add_argument('--hard_neg', default=False, action='store_true')
     parser.add_argument('--project', default=False, action='store_true')
+    parser.add_argument('--normalize_project', default=False, action='store_true')
     parser.add_argument('--project_no_labels', type=int, default=30)
     parser.add_argument('--project_labels_start', type=int, default=0)
 
@@ -637,6 +638,10 @@ def main():
                     all_data,
                     auc_predictions.items()), 1):
             # ax.set_prop_cycle(color=[cm(1. * i / NUM_COLORS) for i in range(NUM_COLORS)])
+
+            if all_args.get('normalize_project'):
+                features = F.normalize(torch.tensor(features), p=2, dim=1).numpy()
+
             ax.set_prop_cycle(color=COLORS_VALUES_01[:NUM_COLORS])
             features_2d = pca(features, emb_size=2)
 
@@ -657,14 +662,19 @@ def main():
                            features_2d_specific[labels_specific == l][:, 1],
                            )
             ax.set_title(f'Test {key}: {value[1]:.3}')
-        plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.pdf"))
+
+        if all_args.get('normalize_project'):
+            norm_string = 'norm_'
+        else:
+            norm_string = ''
+        plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{norm_string}{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.pdf"))
         plt.clf()
 
         scatter_text_to_write = ''
         for k, v in drawn_labels.items():
             scatter_text_to_write += f'Test {k}: {v}' + '\n'
 
-        with open(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.txt"), 'w') as f:
+        with open(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{norm_string}{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.txt"), 'w') as f:
             f.write(scatter_text_to_write)
 
     with open(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
