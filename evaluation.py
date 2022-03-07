@@ -631,7 +631,7 @@ def main():
 
         fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
         fig.suptitle(f'{all_args.get("name")} {hard_neg_string}')
-
+        drawn_labels = {}
         for idx, (ax, (features, labels), (key, value)) in enumerate(
                 zip([axes[0][0], axes[0][1], axes[1][0], axes[1][1]],
                     all_data,
@@ -642,6 +642,7 @@ def main():
 
             chosen_unique_labels = sorted(np.unique(labels))[idx_start: idx_start + NUM_COLORS]
             print(f'Test {key} labels:', chosen_unique_labels)
+            drawn_labels[key] = chosen_unique_labels
 
             features_2d_specific = features_2d[np.logical_and(labels <= chosen_unique_labels[-1],
                                                               labels >= chosen_unique_labels[0])]
@@ -656,8 +657,15 @@ def main():
                            features_2d_specific[labels_specific == l][:, 1],
                            )
             ax.set_title(f'Test {key}: {value[1]:.3}')
-    plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.pdf"))
-    plt.clf()
+        plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.pdf"))
+        plt.clf()
+
+        scatter_text_to_write = ''
+        for k, v in drawn_labels:
+            scatter_text_to_write += f'Test {k}: {v}' + '\n'
+
+        with open(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.txt"), 'w') as f:
+            f.write(scatter_text_to_write)
 
     with open(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
         f.write(results)
