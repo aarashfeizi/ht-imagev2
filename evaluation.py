@@ -649,7 +649,7 @@ def main():
                            features_2d_specific[labels_specific == l][:, 1],
                            )
             ax.set_title(f'Test {key}: {value[1]:.3}')
-    plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter.pdf"))
+    plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{all_args.get('project_no_labels')}.pdf"))
     plt.clf()
 
     with open(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
