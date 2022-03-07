@@ -21,7 +21,7 @@ import model as htv2
 # python evaluation.py -chk ../SupContrast/save/SupCon/hotels_models/SupCon_hotels_resnet50_lr_0.01_decay_0.0001_bsz_32_temp_0.1_trial_0_cosine/last.pth -name SupCon_hotels_resnet50_lr_0.01_decay_0.0001_bsz_32_temp_0.1_trial_0_cosine/ --kset 1 2 4 8 10 100 1000 --model_type resnet50 -d hotels -dr ../../datasets/ --baseline supcontrastive --gpu_ids 6
 import utils
 
-ALPHA = 128.0
+ALPHA = 200.0
 
 COLORS_VALUES_0255 = [
           (0.0, 0.0, 0.0, ALPHA),
