@@ -145,7 +145,8 @@ DATASET_STDS = {'hotels': [0.2508, 0.2580, 0.2701],
 def get_features_and_labels(args, model, loader):
     features = []
     labels = []
-
+    lbl2idx = loader.dataset.lbl2idx
+    idx2lbl = {v: k for k, v in lbl2idx.items()}
     with tqdm(total=len(loader), desc='Getting features...') as t:
         for idx, batch in enumerate(loader):
             img, lbl = batch
@@ -158,7 +159,7 @@ def get_features_and_labels(args, model, loader):
                 f = F.normalize(f, p=2, dim=1)
 
             features.append(f.cpu().detach().numpy())
-            labels.append(lbl)
+            labels.append(lbl.apply_(idx2lbl.get))
 
             t.update()
 
