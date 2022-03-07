@@ -661,7 +661,7 @@ def main():
         plt.clf()
 
         scatter_text_to_write = ''
-        for k, v in drawn_labels:
+        for k, v in drawn_labels.items():
             scatter_text_to_write += f'Test {k}: {v}' + '\n'
 
         with open(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.txt"), 'w') as f:
