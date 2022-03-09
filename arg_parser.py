@@ -16,9 +16,7 @@ LOSSES_LIST = ['pnpp',
                'lifted',
                'softtriple']
 
-BACKBONE_LIST = ['resnet50',
-                 'deit',
-                 'bninception']  # only implementing resnet50 :))
+BACKBONE_LIST = ['resnet50', 'resnet18', 'deit_small']
 
 METRIC_LIST = ['cosine',
                'euclidean',
@@ -113,7 +111,7 @@ def get_args_for_ordered_distance():
 
 
 
-    parser.add_argument('--backbone', choices=['resnet50', 'resnet18'])
+    parser.add_argument('--backbone', choices=BACKBONE_LIST)
 
     parser.add_argument('--dataset', choices=DATASET_LIST)
     parser.add_argument('--workers', type=int, default=10, help="number of workers for data loading")

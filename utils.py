@@ -324,6 +324,7 @@ def get_model_name(args):
 
     name += f"wbn_{args.get('epochs')}ep_" \
             f"{args.get('dataset')}_" \
+            f"{args.get('backbone')}_" \
             f"{args.get('metric')}_" \
             f"bs{args.get('batch_size')}_" \
             f"k{args.get('num_inst_per_class')}_" \
