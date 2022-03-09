@@ -91,16 +91,22 @@ class Trainer:
         else:
             netmod = net
 
-        learnable_params = [{'params': netmod.encoder.rest.parameters(),
-                             'lr': self.args.get('bb_learning_rate'),
-                             'weight_decay': self.args.get('weight_decay'),
-                             'new': False}]
+        if self.args.get('backbone') == 'resnet50':
+            learnable_params = [{'params': netmod.encoder.rest.parameters(),
+                                 'lr': self.args.get('bb_learning_rate'),
+                                 'weight_decay': self.args.get('weight_decay'),
+                                 'new': False}]
 
-        if netmod.encoder.last_conv is not None:
-            learnable_params += [{'params': netmod.encoder.last_conv.parameters(),
-                                  'lr': self.args.get('learning_rate'),
-                                  'weight_decay': self.args.get('weight_decay'),
-                                  'new': True}]
+            if netmod.encoder.last_conv is not None:
+                learnable_params += [{'params': netmod.encoder.last_conv.parameters(),
+                                      'lr': self.args.get('learning_rate'),
+                                      'weight_decay': self.args.get('weight_decay'),
+                                      'new': True}]
+        else:
+            learnable_params = [{'params': netmod.parameters(),
+                                 'lr': self.args.get('learning_rate'),
+                                 'weight_decay': self.args.get('weight_decay'),
+                                 'new': False}]
 
         learnable_params += [{'params': self.loss_function.parameters(),
                               'lr': self.args.get('LOSS_lr'),
