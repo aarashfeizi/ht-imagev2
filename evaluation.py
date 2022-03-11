@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import pickle
 
@@ -341,6 +342,8 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-cuda', '--cuda', default=False, action='store_true')
+    parser.add_argument('-seed', '--seed', default=402, type=int)
+    parser.add_argument('--run_times', default=1, type=int)
     parser.add_argument('-trained_with_mltp_gpu', '--trained_with_mltp_gpu', default=False, action='store_true')
     parser.add_argument('--eval_mode', default='val', help="val or test", choices=['val', 'test'])
 
@@ -388,6 +391,8 @@ def main():
     parser.add_argument('--project_no_labels', type=int, default=30)
     parser.add_argument('--project_labels_start', type=int, default=0)
 
+    parser.add_argument('--eval_mode', default='auc', choices=['auc', 'ret'])
+
 
     parser.add_argument('--metric', default='cosine', choices=['cosine', 'euclidean'])
 
@@ -401,7 +406,9 @@ def main():
 
     all_args = utils.Global_Config_File(args=args, config_file=dataset_config)
 
+
     print(str(all_args))
+    utils.seed_all(all_args.get('seed'))
 
     if all_args.get('name') is None:
         raise Exception('Provide --name')
@@ -568,55 +575,87 @@ def main():
     else:
         hard_neg_string = ''
 
-    for idx, (features, labels) in enumerate(all_data, 1):
-
-        if features.shape[1] != all_args.get('emb_size'):
-            if all_args.get('pca_to_dim'):
-                features = pca(features, all_args.get('emb_size'))
-            else:
-                raise Exception(
-                    f'--pca_to_dim is set to False and feature dim {features.shape[1]} not equal to expected dim {all_args.get("emb_size")}')
-
-        print('*' * 10)
-        print(f'{idx}: Calc AUC_ROC')
-        if all_args.get('hard_neg'):
-            a2n = utils.get_a2n(ordered_lbls_idxs[idx - 1][0], ordered_lbls_idxs[idx - 1][1], labels)
-        else:
-            a2n = None
-        auc, t_and_p_labels = utils.calc_auroc(features, torch.tensor(labels), anch_2_hardneg_idx=a2n)
-        auc_predictions[idx] = (t_and_p_labels, auc)
-        print(f'{idx}: AUC_ROC:', auc)
-        results += f'\n\n{idx}: AUC_ROC: {auc}\n\n'
-        results += '*' * 20
-
-        print(f'{idx}: Calc Recall at {kset}')
-        rec = utils.get_recall_at_k(features, labels,
-                                    metric='cosine',
-                                    sim_matrix=None,
-                                    Kset=kset)
-        # = evaluate_recall_at_k(features, labels, Kset=kset, metric=all_args.get('metric'))
-        print(kset)
-        print(rec)
-        results += f'{idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
-
-    if len(auc_predictions) > 1:
-        fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
-        fig.suptitle(f'{all_args.get("name")} {hard_neg_string}')
-        for ax, (key, value) in zip([axes[0][0], axes[0][1], axes[1][0], axes[1][1]], auc_predictions.items()):
-            ax.hist(value[0]['pred_labels'][value[0]['true_labels'] == 1], bins=100, color='g', alpha=0.5)
-            ax.hist(value[0]['pred_labels'][value[0]['true_labels'] == 0], bins=100, color='r', alpha=0.5)
-            ax.set_title(f'Test {key}: {value[1]:.3}')
+    different_seeds_auc = {}
+    # if all_args.get('eval_mode').upper() == 'AUC':
+    #     different_seeds_results = {}
+    if all_args.get('eval_mode').upper() == 'AUC':
+        seeds = [all_args.get('seed') * (i + 1) for i in range(all_args.get('run_times'))]
     else:
-        title_name = list(auc_predictions.keys())[0]
-        t_and_p_labels = auc_predictions[title_name]
-        plt.hist(t_and_p_labels[0]['pred_labels'][t_and_p_labels[0]['true_labels'] == 1], bins=100, color='g',
-                 alpha=0.5)
-        plt.hist(t_and_p_labels[0]['pred_labels'][t_and_p_labels[0]['true_labels'] == 0], bins=100, color='r',
-                 alpha=0.5)
-        plt.title(f'{all_args.get("name")} {hard_neg_string}\nTest {title_name}: {t_and_p_labels[1]:.3}')
+        seeds = [all_args.get('seed')]
 
-    plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
-    plt.clf()
+    for seed in seeds:
+        print(f'SEED = {seed}')
+        for idx, (features, labels) in enumerate(all_data, 1):
+
+            if features.shape[1] != all_args.get('emb_size'):
+                if all_args.get('pca_to_dim'):
+                    features = pca(features, all_args.get('emb_size'))
+                else:
+                    raise Exception(
+                        f'--pca_to_dim is set to False and feature dim {features.shape[1]} not equal to expected dim {all_args.get("emb_size")}')
+
+            if all_args.get('eval_mode').upper() == 'AUC':
+                print('*' * 10)
+                print(f'{idx}: Calc AUC_ROC')
+                if all_args.get('hard_neg'):
+                    a2n = utils.get_a2n(ordered_lbls_idxs[idx - 1][0], ordered_lbls_idxs[idx - 1][1], labels)
+                else:
+                    a2n = None
+                auc, t_and_p_labels = utils.calc_auroc(features, torch.tensor(labels), anch_2_hardneg_idx=a2n)
+                if idx not in auc_predictions.keys():
+                    auc_predictions[idx] = []
+
+                auc_predictions[idx].extend(t_and_p_labels)
+
+                print(f'{idx}: AUC_ROC:', auc)
+                results += f'\n\n{idx}: AUC_ROC: {auc}\n\n'
+                if idx not in different_seeds_auc.keys():
+                    different_seeds_auc[idx] = []
+
+                different_seeds_auc[idx].extend([auc])
+                results += '*' * 20 + '\n'
+
+            elif all_args.get('eval_mode').upper() == 'RET':
+                print(f'{idx}: Calc Recall at {kset}')
+                rec = utils.get_recall_at_k(features, labels,
+                                            metric='cosine',
+                                            sim_matrix=None,
+                                            Kset=kset)
+                # = evaluate_recall_at_k(features, labels, Kset=kset, metric=all_args.get('metric'))
+                print(kset)
+                print(rec)
+                results += f'seed: {seed} - {idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
+                results += '*' * 20 + '\n\n'
+
+    mean_stdvs = {}
+
+    if all_args.get('eval_mode').upper() == 'AUC':
+
+        for k, v in different_seeds_auc.items():
+            mean_stdvs[k] = (np.mean(v), np.std(v))
+            auc_predictions[k] = (auc_predictions[k], np.mean(v), np.std(v))
+            results += f"AUCs for Eval {k}: {v}\n\n"
+
+        results += f"\n***\nMean AUC and Std Dev over {len(seeds)} seeds: ({seeds}) \n{str(json.dumps(mean_stdvs))}\n\n"
+
+        if len(auc_predictions) > 1:
+            fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
+            fig.suptitle(f'{all_args.get("name")} {hard_neg_string}')
+            for ax, (key, value) in zip([axes[0][0], axes[0][1], axes[1][0], axes[1][1]], auc_predictions.items()):
+                ax.hist(value[0]['pred_labels'][value[0]['true_labels'] == 1], bins=100, color='g', alpha=0.5)
+                ax.hist(value[0]['pred_labels'][value[0]['true_labels'] == 0], bins=100, color='r', alpha=0.5)
+                ax.set_title(f'Test {key}: {value[1]:.3} +- {value[2]:.3}')
+        else:
+            title_name = list(auc_predictions.keys())[0]
+            t_and_p_labels = auc_predictions[title_name]
+            plt.hist(t_and_p_labels[0]['pred_labels'][t_and_p_labels[0]['true_labels'] == 1], bins=100, color='g',
+                     alpha=0.5)
+            plt.hist(t_and_p_labels[0]['pred_labels'][t_and_p_labels[0]['true_labels'] == 0], bins=100, color='r',
+                     alpha=0.5)
+            plt.title(f'{all_args.get("name")} {hard_neg_string}\nTest {title_name}: {t_and_p_labels[1]:.3} +- {t_and_p_labels[2]:.3}')
+
+        plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
+        plt.clf()
 
     if all_args.get('project'):
         COLORS_VALUES_01 = []
