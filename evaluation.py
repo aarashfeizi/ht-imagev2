@@ -340,6 +340,9 @@ def fix_name(path: str):
 
 def add_dicts(dict1, dict2):
     if dict1 is None or len(dict1.keys()) == 0:
+        for k in dict2.keys():
+            dict2[k] = list(dict2[k])
+
         return dict2
 
     assert len(dict1) == len(dict2)
