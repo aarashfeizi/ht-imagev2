@@ -327,7 +327,7 @@ class Trainer:
 
         starting_epoch = max(1, self.current_epoch + 1)
 
-        best_val_acc = -1
+        best_val_Rat1 = -1
         best_val_auroc_score = -1
         val_auroc_score = 0
         val_acc = 0
@@ -354,8 +354,9 @@ class Trainer:
                                     val_losses.items()]
                 list_for_tb.append(('Val/AUROC', val_auroc_score))
                 list_for_tb.append(('Val/Accuracy', val_acc))
-
+                r_at_k_values = []
                 for k, v in r_at_k_score.items():
+                    r_at_k_values.append(v)
                     list_for_tb.append((f'Val/{k}', v))
 
                 self.__tb_update_value(list_for_tb)
@@ -367,9 +368,9 @@ class Trainer:
                     utils.save_model(net, self.current_epoch, 'auc', self.save_path)
                 else:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            if val_acc > best_val_acc:
+            if r_at_k_values[0] > best_val_Rat1:
                 # best_val_acc = val_acc
-                best_val_acc = val_acc
+                best_val_Rat1 = r_at_k_values[0]
                 if self.args.get('save_model'):
                     utils.save_model(net, self.current_epoch, 'recall', self.save_path)
                 else:
@@ -417,8 +418,9 @@ class Trainer:
                                    val_losses.items()]
                     list_for_tb.append(('Val/AUROC', val_auroc_score))
                     list_for_tb.append(('Val/Accuracy', val_acc))
-
+                    r_at_k_values = []
                     for k, v in r_at_k_score.items():
+                        r_at_k_values.append(v)
                         list_for_tb.append((f'Val/{k}', v))
 
                     self.__tb_update_value(list_for_tb)
@@ -432,10 +434,10 @@ class Trainer:
                 else:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
-            if (val and val_acc > best_val_acc) or \
+            if (val and r_at_k_values[0] > best_val_Rat1) or \
                     (not val and epoch == self.epochs):
                 # best_val_acc = val_acc
-                best_val_acc = val_acc
+                best_val_Rat1 = r_at_k_values[0]
                 if self.args.get('save_model'):
                     utils.save_model(net, self.current_epoch, 'recall', self.save_path)
                 else:
