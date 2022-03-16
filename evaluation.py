@@ -432,7 +432,7 @@ def main():
                                  f'{all_args.get("eval_mode").upper()}_{all_args.get("dataset")}')
 
     utils.make_dirs(os.path.join(eval_log_path, 'cache/'))
-    checkpoint_name = all_args.get('checkpoint').split('.')[0]
+    checkpoint_name = os.path.split(all_args.get('checkpoint'))[1].split('.')[0]
     cache_path = os.path.join(eval_log_path, 'cache', f'{checkpoint_name}_' + all_args.get('name'))
 
     # provide model and extract embeddings here
