@@ -731,7 +731,7 @@ def main():
         with open(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}_scatter_{norm_string}{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.txt"), 'w') as f:
             f.write(scatter_text_to_write)
 
-    with open(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
+    with open(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + '_m' + all_args.get('eval_metric').upper() + f"{hard_neg_string}.txt"), 'w') as f:
         f.write(results)
 
 
