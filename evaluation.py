@@ -391,7 +391,7 @@ def main():
     parser.add_argument('--project_no_labels', type=int, default=30)
     parser.add_argument('--project_labels_start', type=int, default=0)
 
-    parser.add_argument('--eval_mode', default='auc', choices=['auc', 'ret'])
+    parser.add_argument('--eval_metric', default='auc', choices=['auc', 'ret'])
 
 
     parser.add_argument('--metric', default='cosine', choices=['cosine', 'euclidean'])
@@ -576,9 +576,9 @@ def main():
         hard_neg_string = ''
 
     different_seeds_auc = {}
-    # if all_args.get('eval_mode').upper() == 'AUC':
+    # if all_args.get('eval_metric').upper() == 'AUC':
     #     different_seeds_results = {}
-    if all_args.get('eval_mode').upper() == 'AUC':
+    if all_args.get('eval_metric').upper() == 'AUC':
         seeds = [all_args.get('seed') * (i + 1) for i in range(all_args.get('run_times'))]
     else:
         seeds = [all_args.get('seed')]
@@ -594,7 +594,7 @@ def main():
                     raise Exception(
                         f'--pca_to_dim is set to False and feature dim {features.shape[1]} not equal to expected dim {all_args.get("emb_size")}')
 
-            if all_args.get('eval_mode').upper() == 'AUC':
+            if all_args.get('eval_metric').upper() == 'AUC':
                 print('*' * 10)
                 print(f'{idx}: Calc AUC_ROC')
                 if all_args.get('hard_neg'):
@@ -615,7 +615,7 @@ def main():
                 different_seeds_auc[idx].extend([auc])
                 results += '*' * 20 + '\n'
 
-            elif all_args.get('eval_mode').upper() == 'RET':
+            elif all_args.get('eval_metric').upper() == 'RET':
                 print(f'{idx}: Calc Recall at {kset}')
                 rec = utils.get_recall_at_k(features, labels,
                                             metric='cosine',
@@ -629,7 +629,7 @@ def main():
 
     mean_stdvs = {}
 
-    if all_args.get('eval_mode').upper() == 'AUC':
+    if all_args.get('eval_metric').upper() == 'AUC':
 
         for k, v in different_seeds_auc.items():
             mean_stdvs[k] = (np.mean(v), np.std(v))
