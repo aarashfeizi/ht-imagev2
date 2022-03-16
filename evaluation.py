@@ -345,7 +345,7 @@ def add_dicts(dict1, dict2):
     assert len(dict1) == len(dict2)
 
     for k, v in dict2.items():
-        dict1[k].extend(v)
+        dict1[k].extend(list(v))
 
     return dict1
 
