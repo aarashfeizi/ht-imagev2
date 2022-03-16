@@ -338,6 +338,18 @@ def fix_name(path: str):
     return path.replace('/', '_').split('.')[0]
 
 
+def add_dicts(dict1, dict2):
+    if dict1 is None or len(dict1.keys()) == 0:
+        return dict2
+
+    assert len(dict1) == len(dict2)
+
+    for k, v in dict2.items():
+        dict1[k].extend(v)
+
+    return dict1
+
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -603,9 +615,9 @@ def main():
                     a2n = None
                 auc, t_and_p_labels = utils.calc_auroc(features, torch.tensor(labels), anch_2_hardneg_idx=a2n)
                 if idx not in auc_predictions.keys():
-                    auc_predictions[idx] = []
+                    auc_predictions[idx] = {}
 
-                auc_predictions[idx].extend(t_and_p_labels)
+                auc_predictions[idx] = add_dicts(auc_predictions[idx], t_and_p_labels)
 
                 print(f'{idx}: AUC_ROC:', auc)
                 results += f'\n\n{idx}: AUC_ROC: {auc}\n\n'
