@@ -432,8 +432,8 @@ def main():
                                  f'{all_args.get("eval_mode").upper()}_{all_args.get("dataset")}')
 
     utils.make_dirs(os.path.join(eval_log_path, 'cache/'))
-
-    cache_path = os.path.join(eval_log_path, 'cache', all_args.get('name'))
+    checkpoint_name = all_args.get('checkpoint').split('.')[0]
+    cache_path = os.path.join(eval_log_path, 'cache', f'{checkpoint_name}_' + all_args.get('name'))
 
     # provide model and extract embeddings here
     if len(all_args.get('X')) == 0:
@@ -669,7 +669,7 @@ def main():
                      alpha=0.5)
             plt.title(f'{all_args.get("name")} {hard_neg_string}\nTest {title_name}: {t_and_p_labels[1]:.3} +- {t_and_p_labels[2]:.3}')
 
-        plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
+        plt.savefig(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
         plt.clf()
 
     if all_args.get('project'):
@@ -721,17 +721,17 @@ def main():
             norm_string = 'norm_'
         else:
             norm_string = ''
-        plt.savefig(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{norm_string}{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.pdf"))
+        plt.savefig(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}_scatter_{norm_string}{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.pdf"))
         plt.clf()
 
         scatter_text_to_write = ''
         for k, v in drawn_labels.items():
             scatter_text_to_write += f'Test {k}: {v}' + '\n'
 
-        with open(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}_scatter_{norm_string}{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.txt"), 'w') as f:
+        with open(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}_scatter_{norm_string}{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.txt"), 'w') as f:
             f.write(scatter_text_to_write)
 
-    with open(os.path.join(eval_log_path, all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
+    with open(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}.txt"), 'w') as f:
         f.write(results)
 
 
