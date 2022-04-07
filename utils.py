@@ -8,6 +8,7 @@ import sys
 import cv2
 import faiss
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -749,3 +750,30 @@ def get_preds(embeddings, metric='cosine', model=None, temperature=3):
         raise Exception(f'{metric} not supported in Top Module')
 
     return preds, sims
+
+
+def seperate_k_per_class(data, number_of_instances=3, number_of_classes=500, number_of_runs=1, img_label='image',
+                         class_label='hotel_id'):
+    to_return = []
+    img_ids = np.array([i for i in range(len(data))])
+    classes, class_sizes = np.unique(data[class_label], return_counts=True)
+    classes = classes[class_sizes >= number_of_instances]
+    # class_sizes = class_sizes[class_sizes >= number_of_instances]
+    assert number_of_classes <= len(classes)
+    for _ in range(number_of_runs):
+        sampled_df = {img_label: [], class_label: []}
+        if number_of_classes != 0:
+            sampled_classes = np.random.choice(classes, number_of_classes, replace=False)
+        else:
+            sampled_classes = classes
+
+        sampled_classes = sorted(sampled_classes)
+        for c in sampled_classes:
+            data_c = img_ids[data[class_label] == c]
+            sampled_images = np.random.choice(data_c, number_of_instances, replace=False)
+            sampled_df[img_label].extend(sorted(sampled_images))
+            sampled_df[class_label].extend([c for _ in range(number_of_instances)])
+
+        to_return.append(pd.DataFrame(data=sampled_df))
+
+    return to_return

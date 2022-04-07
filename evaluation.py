@@ -6,6 +6,7 @@ import pickle
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import timm
 import torch
 import torch.nn.functional as F
@@ -406,7 +407,7 @@ def main():
     parser.add_argument('--project_no_labels', type=int, default=30)
     parser.add_argument('--project_labels_start', type=int, default=0)
 
-    parser.add_argument('--eval_metric', default='auc', choices=['auc', 'ret'])
+    parser.add_argument('--eval_metric', default='auc', choices=['auc', 'ret', 'conret'])
 
 
     parser.add_argument('--metric', default='cosine', choices=['cosine', 'euclidean'])
@@ -591,14 +592,18 @@ def main():
         hard_neg_string = ''
 
     different_seeds_auc = {}
+    different_recs = {}
     # if all_args.get('eval_metric').upper() == 'AUC':
     #     different_seeds_results = {}
-    if all_args.get('eval_metric').upper() == 'AUC':
+    if all_args.get('eval_metric').upper() == 'AUC' or all_args.get('eval_metric').upper() == 'CONRET':
         seeds = [all_args.get('seed') * (i + 1) for i in range(all_args.get('run_times'))]
     else:
         seeds = [all_args.get('seed')]
 
-    for seed in seeds:
+
+    controlled_recall_files = all_args.get('controlled_recall_files')
+
+    for j, seed in enumerate(seeds):
         print(f'SEED = {seed}')
         for idx, (features, labels) in enumerate(all_data, 1):
 
@@ -629,6 +634,32 @@ def main():
 
                 different_seeds_auc[idx].extend([auc])
                 results += '*' * 20 + '\n'
+
+            elif all_args.get('eval_metric').upper() == 'CONRET':
+                mask_path = controlled_recall_files[idx - 1] + f'{j}.csv'
+                idx_mask = np.array(pd.read_csv(mask_path).image)
+
+                mask_name = fix_name(mask_path)
+
+                features = features[idx_mask, :]
+                labels = labels[idx_mask]
+
+                print(f'{idx}: Calc Recall at {kset}')
+                rec = utils.get_recall_at_k(features, labels,
+                                            metric='cosine',
+                                            sim_matrix=None,
+                                            Kset=kset)
+                # = evaluate_recall_at_k(features, labels, Kset=kset, metric=all_args.get('metric'))
+                print(kset)
+                print(rec)
+
+                if idx not in different_recs:
+                    different_recs[idx] = []
+
+                results += f'{mask_name} - {idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
+                results += '*' * 20 + '\n\n'
+
+                different_recs[idx].append(rec)
 
             elif all_args.get('eval_metric').upper() == 'RET':
                 print(f'{idx}: Calc Recall at {kset}')
@@ -671,6 +702,16 @@ def main():
 
         plt.savefig(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
         plt.clf()
+
+    if all_args.get('eval_metric').upper() == 'CONRET':
+
+        for k, v in different_recs.items():
+            mean_stdvs[k] = (np.mean(v), np.std(v))
+            auc_predictions[k] = (auc_predictions[k], np.mean(v), np.std(v))
+            results += f"RECs for Eval {k}: {v}\n\n"
+
+        results += f"\n***\nMean REC and Std Dev over {len(seeds)} files: \n{str(json.dumps(mean_stdvs))}\n\n"
+
 
     if all_args.get('project'):
         COLORS_VALUES_01 = []
