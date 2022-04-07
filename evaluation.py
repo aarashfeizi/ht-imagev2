@@ -637,7 +637,7 @@ def main():
 
             elif all_args.get('eval_metric').upper() == 'CONRET':
                 mask_path = controlled_recall_files[idx - 1] + f'{j}.csv'
-                idx_mask = np.array(pd.read_csv(mask_path).image)
+                idx_mask = np.array(pd.read_csv(os.path.join(all_args.get('dataset_path') + mask_path)).image)
 
                 mask_name = fix_name(mask_path)
 
