@@ -653,7 +653,7 @@ def main():
                 print(rec)
 
                 if idx not in different_recs:
-                    different_recs[idx] = []
+                    different_recs[idx] = {}
 
                 results += f'{mask_name} - {idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
                 results += '*' * 20 + '\n\n'
