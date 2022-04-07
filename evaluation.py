@@ -284,7 +284,6 @@ def softtriple_load_model_inception(save_path, args):
 
     return net
 
-
 def ms_load_model_resnet50(save_path, args):
     if args.get('cuda'):
         checkpoint = torch.load(save_path, map_location=torch.device(0))
@@ -659,7 +658,13 @@ def main():
                 results += f'{mask_name} - {idx}: Calc Recall at {kset}' + '\n' + str(kset) + '\n' + str(rec) + '\n'
                 results += '*' * 20 + '\n\n'
 
-                different_recs[idx].append(rec)
+                different_recs[idx] = add_dicts(different_recs[idx], rec)
+                #
+                # if len(different_recs[idx]) > 0:
+                #     for k, v in rec.items():
+                #         different_recs[idx][k].append(v)
+                # else:
+                #     different_recs[idx].append(rec)
 
             elif all_args.get('eval_metric').upper() == 'RET':
                 print(f'{idx}: Calc Recall at {kset}')
@@ -704,11 +709,13 @@ def main():
         plt.clf()
 
     if all_args.get('eval_metric').upper() == 'CONRET':
-
-        for k, v in different_recs.items():
-            mean_stdvs[k] = (np.mean(v), np.std(v))
-            auc_predictions[k] = (auc_predictions[k], np.mean(v), np.std(v))
-            results += f"RECs for Eval {k}: {v}\n\n"
+        print(different_recs)
+        for k1, v1 in different_recs.items():
+            mean_stdvs[k1] = {}
+            for k, v in v1.items():
+                mean_stdvs[k1][k] = (np.mean(v), np.std(v))
+                v1[k] = (v1[k], np.mean(v), np.std(v))
+                results += f"RECs for Eval split {k1}-{k}: {v}\n\n"
 
         results += f"\n***\nMean REC and Std Dev over {len(seeds)} files: \n{str(json.dumps(mean_stdvs))}\n\n"
 
