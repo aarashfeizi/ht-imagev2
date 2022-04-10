@@ -51,7 +51,7 @@ class TopModule(nn.Module):
         self.projs = []
         if args.get('ml_emb'):
             assert args.get('emb_size') % 4 == 0
-            partial_emb_size = args.get('emb_size') / 4
+            partial_emb_size = args.get('emb_size') // 4
             for i in range(1, 5):
                 self.projs.append(Projector(input_channels=FEATURE_MAP_SIZES[i][0],
                                             output_channels=partial_emb_size,
