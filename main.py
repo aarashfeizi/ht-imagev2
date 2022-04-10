@@ -66,6 +66,9 @@ def main():
             net = nn.DataParallel(net)
         logger.info(f'Let\'s use {torch.cuda.device_count()} GPUs!')
         net.cuda()
+        if len(net.projs) != 0:
+            for p in net.projs:
+                p.cuda()
         loss.cuda()
 
     if not all_args.get('test'):  # training
