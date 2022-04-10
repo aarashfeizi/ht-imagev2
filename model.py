@@ -67,14 +67,26 @@ class TopModule(nn.Module):
                                                       out_features=1))
 
     def get_normal_embeddings(self, imgs):
+        """
+
+        :param imgs:
+        :return: return a (B, dim) tensor, where dim is the emb_dim
+        """
         return self.encoder(imgs)
 
     def get_multilayer_embeddings(self, imgs):
+        """
+
+        :param imgs:
+        :return: return a (B, dim) tensor, where dim is the emb_dim
+        """
         embeddings, activations = self.encoder(imgs, is_feat=True)
         smaller_embs = []
         for a, p in zip(activations, self.projs):
             smaller_embs.append(p(a))
 
+        embeddings = torch.cat(smaller_embs, dim=1).squeeze(dim=-1).squeeze(dim=-1)
+        return embeddings
 
 
     def forward(self, imgs):
@@ -84,8 +96,6 @@ class TopModule(nn.Module):
         else: #partial embeddings
             embeddings = self.get_multilayer_embeddings(imgs)
         # preds, sims = self.get_preds(embeddings)
-
-
 
         return embeddings
 
