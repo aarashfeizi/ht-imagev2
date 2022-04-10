@@ -48,15 +48,40 @@ class TopModule(nn.Module):
         self.encoder = encoder
         self.logits_net = None
         self.temeperature = args.get('temperature')
+        self.multi_layer_emb = args.get('ml_emb')
+        self.proj_layer1 = None
+        self.proj_layer2 = None
+        self.proj_layer3 = None
+        self.proj_layer4 = None
         self.projs = []
-        if args.get('ml_emb'):
+        if self.multi_layer_emb:
             assert args.get('emb_size') % 4 == 0
             partial_emb_size = args.get('emb_size') // 4
-            for i in range(1, 5):
-                self.projs.append(Projector(input_channels=FEATURE_MAP_SIZES[i][0],
+
+            self.proj_layer1 = Projector(input_channels=FEATURE_MAP_SIZES[1][0],
                                             output_channels=partial_emb_size,
                                             pool='avg',
-                                            kernel_size=FEATURE_MAP_SIZES[i][1]))
+                                            kernel_size=FEATURE_MAP_SIZES[1][1])
+
+            self.proj_layer2 = Projector(input_channels=FEATURE_MAP_SIZES[2][0],
+                                         output_channels=partial_emb_size,
+                                         pool='avg',
+                                         kernel_size=FEATURE_MAP_SIZES[2][1])
+
+            self.proj_layer3 = Projector(input_channels=FEATURE_MAP_SIZES[3][0],
+                                         output_channels=partial_emb_size,
+                                         pool='avg',
+                                         kernel_size=FEATURE_MAP_SIZES[3][1])
+
+            self.proj_layer4 = Projector(input_channels=FEATURE_MAP_SIZES[4][0],
+                                         output_channels=partial_emb_size,
+                                         pool='avg',
+                                         kernel_size=FEATURE_MAP_SIZES[4][1])
+
+            self.projs = [self.proj_layer1,
+                          self.proj_layer2,
+                          self.proj_layer3,
+                          self.proj_layer4]
 
 
         if args.get('metric') == 'mlp':
@@ -91,10 +116,10 @@ class TopModule(nn.Module):
 
     def forward(self, imgs):
         embeddings = None
-        if len(self.projs) == 0:
-            embeddings = self.get_normal_embeddings(imgs)
-        else: #partial embeddings
+        if self.multi_layer_emb: #partial embeddings
             embeddings = self.get_multilayer_embeddings(imgs)
+        else:
+            embeddings = self.get_normal_embeddings(imgs)
         # preds, sims = self.get_preds(embeddings)
 
         return embeddings
