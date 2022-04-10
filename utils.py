@@ -337,6 +337,9 @@ def get_model_name(args):
     if args.get('with_bce'):
         name += f'-bce_bw{args.get("bce_weight")}'
 
+    if args.get('ml_emb'):
+        name += f'-MLTEMB'
+
     for n in loss_specific_args:
         if args.get(n) is not None:
             name += f'-{n}{args.get(n)}'

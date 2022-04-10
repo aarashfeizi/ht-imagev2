@@ -49,7 +49,7 @@ class TopModule(nn.Module):
         self.logits_net = None
         self.temeperature = args.get('temperature')
         self.projs = []
-        if args.get('all_model_emb'):
+        if args.get('ml_emb'):
             assert args.get('emb_size') % 4 == 0
             partial_emb_size = args.get('emb_size') / 4
             for i in range(1, 5):
