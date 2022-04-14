@@ -180,7 +180,7 @@ class MultiEmbTopModule(nn.Module):
         embeddings, activations = self.encoder(imgs, is_feat=True)
 
         heatmaps = []
-        for act in activations:
+        for idx, act in enumerate(activations):
             B, C, H0, W0 = act.shape
             act = self.maxpool_layers[H0](act)
             _, _, H, W = act.shape
@@ -189,10 +189,16 @@ class MultiEmbTopModule(nn.Module):
 
             act2 = act.reshape(1, B, C, H * W)
             heatmap = act1 @ act2
+            heatmap = heatmap.softmax(dim=3)
+
+            activations[idx] = heatmap @ act
+
             heatmaps.append(heatmap)
 
-        import pdb
-        pdb.set_trace()
+
+
+            import pdb
+            pdb.set_trace()
 
         return embeddings, activations, heatmaps
 
