@@ -780,3 +780,44 @@ def seperate_k_per_class(data, number_of_instances=3, number_of_classes=500, num
         to_return.append(pd.DataFrame(data=sampled_df))
 
     return to_return
+
+def get_class_plots(embeddings, labels, num_classes_2_draw=16, specific_labels=None, name='classembeddings'):
+    """
+    plots graphs with -> x axis: channels, y axis: avg channel value with a std of each value
+    :param embeddings:
+    :param labels:
+    :param num_classes_2_draw:
+    :param specific_labels:
+    :param name:
+    :return:
+    """
+    N, C = embeddings.shape
+    X_axis = [i for i in range(C)]
+
+    unique_classes = np.unique(labels)
+
+
+    unique_classes = sorted(unique_classes)
+    fig, axes = plt.subplots(4, 4, figsize=(128, 96), sharex=True, sharey=True)
+    if specific_labels is not None:
+        classes_to_iterate = specific_labels
+        classes_to_iterate = sorted(classes_to_iterate)
+    else:
+        classes_to_iterate = unique_classes[:num_classes_2_draw]
+
+    for idx, c in enumerate(classes_to_iterate):
+        c_embs = embeddings[labels == c]
+        c_embs_avg = c_embs.mean(axis=0)
+        c_embs_std = c_embs.std(axis=0)
+
+        axes[idx // 4][idx % 4].plot(X_axis, c_embs_avg)
+        axes[idx // 4][idx % 4].fill_between(X_axis,
+                                             c_embs_avg - c_embs_std,
+                                             c_embs_avg + c_embs_std,
+                                             alpha=.1)
+        axes[idx // 4][idx % 4].set_title(f'Label {c}')
+
+    if specific_labels is not None:
+        num_classes_2_draw = len(specific_labels)
+    plt.savefig(f'{num_classes_2_draw}_{name}.pdf')
+    # plt.show()

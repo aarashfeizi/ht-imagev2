@@ -41,9 +41,9 @@ class Projector(nn.Module):
         return x
 
 
-class TopModule(nn.Module):
+class SingleEmbTopModule(nn.Module):
     def __init__(self, args, encoder):
-        super(TopModule, self).__init__()
+        super(SingleEmbTopModule, self).__init__()
         self.metric = args.get('metric')
         self.encoder = encoder
         self.logits_net = None
@@ -124,8 +124,71 @@ class TopModule(nn.Module):
 
         return embeddings
 
+class MultiEmbTopModule(nn.Module):
+    def __init__(self, args, encoder):
+        super(MultiEmbTopModule, self).__init__()
+        self.metric = args.get('metric')
+        self.encoder = encoder
+        self.logits_net = None
+        self.temeperature = args.get('temperature')
+        self.multi_layer_emb = args.get('ml_emb')
+        # self.proj_layer1 = None
+        # self.proj_layer2 = None
+        # self.proj_layer3 = None
+        # self.proj_layer4 = None
+        # self.projs = []
+        # if self.multi_layer_emb:
+        #     assert args.get('emb_size') % 4 == 0
+        #     partial_emb_size = args.get('emb_size') // 4
+        #
+        #     self.proj_layer1 = Projector(input_channels=FEATURE_MAP_SIZES[1][0],
+        #                                     output_channels=partial_emb_size,
+        #                                     pool='avg',
+        #                                     kernel_size=FEATURE_MAP_SIZES[1][1])
+        #
+        #     self.proj_layer2 = Projector(input_channels=FEATURE_MAP_SIZES[2][0],
+        #                                  output_channels=partial_emb_size,
+        #                                  pool='avg',
+        #                                  kernel_size=FEATURE_MAP_SIZES[2][1])
+        #
+        #     self.proj_layer3 = Projector(input_channels=FEATURE_MAP_SIZES[3][0],
+        #                                  output_channels=partial_emb_size,
+        #                                  pool='avg',
+        #                                  kernel_size=FEATURE_MAP_SIZES[3][1])
+        #
+        #     self.proj_layer4 = Projector(input_channels=FEATURE_MAP_SIZES[4][0],
+        #                                  output_channels=partial_emb_size,
+        #                                  pool='avg',
+        #                                  kernel_size=FEATURE_MAP_SIZES[4][1])
+        #
+        #     self.projs = [self.proj_layer1,
+        #                   self.proj_layer2,
+        #                   self.proj_layer3,
+        #                   self.proj_layer4]
+
+
+    def forward(self, imgs):
+        embeddings, activations = self.encoder(imgs, is_feat=True)
+
+        heatmaps = []
+        for act in activations:
+            B, C, H, W = act.shape
+            act1 = act.reshape(B, 1, C, H*W)
+            act1 = act1.transpose(3, 2)
+
+            act2 = act.reshape(1, B, C, H * W)
+            heatmap = act1 @ act2
+            heatmaps.append(heatmap)
+
+        import pdb
+        pdb.set_trace()
+
+        return embeddings, activations, heatmaps
 
 
 def get_top_module(args):
     encoder = backbones.get_bb_network(args)
-    return TopModule(args, encoder)
+    if args.get('multi_emb'):
+        return MultiEmbTopModule(args, encoder)
+    else:
+        return SingleEmbTopModule(args, encoder)
