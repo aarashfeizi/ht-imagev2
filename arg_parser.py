@@ -56,7 +56,7 @@ def get_args():
     parser.add_argument('--batch_size', type=int, default=20)
     parser.add_argument('--emb_size', type=int, default=512)
     parser.add_argument('--ml_emb', default=False, action='store_true')
-    parser.add_argument('--multi_emb', default=False, action='store_true')
+    parser.add_argument('--ml_self_att', default=False, action='store_true')
     parser.add_argument('--num_inst_per_class', type=int, default=2)
     parser.add_argument('--k_inc_freq', type=int, default=0)
     parser.add_argument('--loss', default='pnpp', choices=LOSSES_LIST)

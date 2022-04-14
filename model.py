@@ -147,39 +147,42 @@ class MultiEmbTopModule(nn.Module):
                                14: self.maxpool_2,
                                7: self.maxpool_1}
         self.projs = []
-        # if self.multi_layer_emb:
-        #     assert args.get('emb_size') % 4 == 0
-        #     partial_emb_size = args.get('emb_size') // 4
-        #
-        #     self.proj_layer1 = Projector(input_channels=FEATURE_MAP_SIZES[1][0],
-        #                                     output_channels=partial_emb_size,
-        #                                     pool='avg',
-        #                                     kernel_size=FEATURE_MAP_SIZES[1][1])
-        #
-        #     self.proj_layer2 = Projector(input_channels=FEATURE_MAP_SIZES[2][0],
-        #                                  output_channels=partial_emb_size,
-        #                                  pool='avg',
-        #                                  kernel_size=FEATURE_MAP_SIZES[2][1])
-        #
-        #     self.proj_layer3 = Projector(input_channels=FEATURE_MAP_SIZES[3][0],
-        #                                  output_channels=partial_emb_size,
-        #                                  pool='avg',
-        #                                  kernel_size=FEATURE_MAP_SIZES[3][1])
-        #
-        #     self.proj_layer4 = Projector(input_channels=FEATURE_MAP_SIZES[4][0],
-        #                                  output_channels=partial_emb_size,
-        #                                  pool='avg',
-        #                                  kernel_size=FEATURE_MAP_SIZES[4][1])
-        #
-        #     self.projs = [self.proj_layer1,
-        #                   self.proj_layer2,
-        #                   self.proj_layer3,
-        #                   self.proj_layer4]
+        if self.multi_layer_emb:
+            assert args.get('emb_size') % 4 == 0
+            partial_emb_size = args.get('emb_size') // 4
+
+            self.proj_layer1 = Projector(input_channels=FEATURE_MAP_SIZES[1][0],
+                                            output_channels=partial_emb_size,
+                                            pool='avg',
+                                            kernel_size=FEATURE_MAP_SIZES[1][1])
+
+            self.proj_layer2 = Projector(input_channels=FEATURE_MAP_SIZES[2][0],
+                                         output_channels=partial_emb_size,
+                                         pool='avg',
+                                         kernel_size=FEATURE_MAP_SIZES[2][1])
+
+            self.proj_layer3 = Projector(input_channels=FEATURE_MAP_SIZES[3][0],
+                                         output_channels=partial_emb_size,
+                                         pool='avg',
+                                         kernel_size=FEATURE_MAP_SIZES[3][1])
+
+            self.proj_layer4 = Projector(input_channels=FEATURE_MAP_SIZES[4][0],
+                                         output_channels=partial_emb_size,
+                                         pool='avg',
+                                         kernel_size=FEATURE_MAP_SIZES[4][1])
+
+            self.projs = [self.proj_layer1,
+                          self.proj_layer2,
+                          self.proj_layer3,
+                          self.proj_layer4]
 
     def forward(self, imgs):
         embeddings, activations = self.encoder(imgs, is_feat=True)
 
         heatmaps = []
+
+        layer_embeddings = []
+
         for idx, act in enumerate(activations):
             B, C, H0, W0 = act.shape
             act = self.maxpool_layers[H0](act)
@@ -189,26 +192,31 @@ class MultiEmbTopModule(nn.Module):
 
             act2 = act.reshape(1, B, C, H * W)
             heatmap = act1 @ act2
-            heatmap = heatmap.softmax(dim=3)
+            # heatmap is (B, B, H*W, H*W) the attention coefficients of every image according to another image
 
+            heatmap = heatmap.softmax(dim=3)
 
             act = act.reshape(1, B, C, H * W)
             act = act.transpose(3, 2)
+
             activations[idx] = heatmap @ act
+
+            layer_embeddings.append(activations[idx].transpose(-1, -2).mean(dim=-1))
 
             heatmaps.append(heatmap)
 
+        all_embeddings = torch.cat(layer_embeddings, dim=2)
+        import pdb
+        pdb.set_trace()
 
-
-            import pdb
-            pdb.set_trace()
+        # activations is a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
 
         return embeddings, activations, heatmaps
 
 
 def get_top_module(args):
     encoder = backbones.get_bb_network(args)
-    if args.get('multi_emb'):
+    if args.get('ml_self_att'):
         return MultiEmbTopModule(args, encoder)
     else:
         return SingleEmbTopModule(args, encoder)
