@@ -1,23 +1,24 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import backbones
-import utils
-
 from functools import partial
 
+import torch
+import torch.nn as nn
 from timm.models.vision_transformer import VisionTransformer
+
+import backbones
 
 FEATURE_MAP_SIZES = {1: (256, 56, 56),
                      2: (512, 28, 28),
                      3: (1024, 14, 14),
                      4: (2048, 7, 7)}
 
+
 class SimTrans(nn.Module):
-    def __init__(self, in_size=7, in_channels=2048, emb_dim=768, depth=12, num_heads=6): # depth 3?
+    def __init__(self, in_size=7, in_channels=2048, emb_dim=768, depth=12, num_heads=6):  # depth 3?
         super(SimTrans, self).__init__()
-        self.transformer = VisionTransformer(img_size=in_size, patch_size=1, in_chans=in_channels, num_classes=1000, embed_dim=emb_dim, depth=depth,
-                 num_heads=num_heads, mlp_ratio=4., norm_layer=partial(nn.LayerNorm, eps=1e-6))
+        self.transformer = VisionTransformer(img_size=in_size, patch_size=1, in_chans=in_channels, num_classes=1000,
+                                             embed_dim=emb_dim, depth=depth,
+                                             num_heads=num_heads, mlp_ratio=4.,
+                                             norm_layer=partial(nn.LayerNorm, eps=1e-6))
 
 
 class Projector(nn.Module):
@@ -59,9 +60,9 @@ class SingleEmbTopModule(nn.Module):
             partial_emb_size = args.get('emb_size') // 4
 
             self.proj_layer1 = Projector(input_channels=FEATURE_MAP_SIZES[1][0],
-                                            output_channels=partial_emb_size,
-                                            pool='avg',
-                                            kernel_size=FEATURE_MAP_SIZES[1][1])
+                                         output_channels=partial_emb_size,
+                                         pool='avg',
+                                         kernel_size=FEATURE_MAP_SIZES[1][1])
 
             self.proj_layer2 = Projector(input_channels=FEATURE_MAP_SIZES[2][0],
                                          output_channels=partial_emb_size,
@@ -82,7 +83,6 @@ class SingleEmbTopModule(nn.Module):
                           self.proj_layer2,
                           self.proj_layer3,
                           self.proj_layer4]
-
 
         if args.get('metric') == 'mlp':
             self.logits_net = nn.Sequential(nn.Linear(in_features=2 * args.get('emb_size'),
@@ -113,16 +113,16 @@ class SingleEmbTopModule(nn.Module):
         embeddings = torch.cat(smaller_embs, dim=1).squeeze(dim=-1).squeeze(dim=-1)
         return embeddings
 
-
     def forward(self, imgs):
         embeddings = None
-        if self.multi_layer_emb: #partial embeddings
+        if self.multi_layer_emb:  # partial embeddings
             embeddings = self.get_multilayer_embeddings(imgs)
         else:
             embeddings = self.get_normal_embeddings(imgs)
         # preds, sims = self.get_preds(embeddings)
 
         return embeddings
+
 
 class MultiEmbTopModule(nn.Module):
     def __init__(self, args, encoder):
@@ -136,6 +136,16 @@ class MultiEmbTopModule(nn.Module):
         self.proj_layer2 = None
         self.proj_layer3 = None
         self.proj_layer4 = None
+
+
+        self.maxpool_8 = nn.MaxPool2d((8, 8))
+        self.maxpool_4 = nn.MaxPool2d((4, 4))
+        self.maxpool_2 = nn.MaxPool2d((2, 2))
+        self.maxpool_1 = nn.MaxPool2d((1, 1))
+        self.maxpool_layers = {56: self.maxpool_8,
+                               28: self.maxpool_4,
+                               14: self.maxpool_2,
+                               7: self.maxpool_1}
         self.projs = []
         # if self.multi_layer_emb:
         #     assert args.get('emb_size') % 4 == 0
@@ -166,14 +176,15 @@ class MultiEmbTopModule(nn.Module):
         #                   self.proj_layer3,
         #                   self.proj_layer4]
 
-
     def forward(self, imgs):
         embeddings, activations = self.encoder(imgs, is_feat=True)
 
         heatmaps = []
         for act in activations:
-            B, C, H, W = act.shape
-            act1 = act.reshape(B, 1, C, H*W)
+            B, C, H0, W0 = act.shape
+            act = self.maxpool_layers[H0](act)
+            _, _, H, W = act.shape
+            act1 = act.reshape(B, 1, C, H * W)
             act1 = act1.transpose(3, 2)
 
             act2 = act.reshape(1, B, C, H * W)
