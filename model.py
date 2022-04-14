@@ -191,6 +191,9 @@ class MultiEmbTopModule(nn.Module):
             heatmap = act1 @ act2
             heatmap = heatmap.softmax(dim=3)
 
+
+            act = act.reshape(1, B, C, H * W)
+            act = act.transpose(3, 2)
             activations[idx] = heatmap @ act
 
             heatmaps.append(heatmap)
