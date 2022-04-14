@@ -132,11 +132,11 @@ class MultiEmbTopModule(nn.Module):
         self.logits_net = None
         self.temeperature = args.get('temperature')
         self.multi_layer_emb = args.get('ml_emb')
-        # self.proj_layer1 = None
-        # self.proj_layer2 = None
-        # self.proj_layer3 = None
-        # self.proj_layer4 = None
-        # self.projs = []
+        self.proj_layer1 = None
+        self.proj_layer2 = None
+        self.proj_layer3 = None
+        self.proj_layer4 = None
+        self.projs = []
         # if self.multi_layer_emb:
         #     assert args.get('emb_size') % 4 == 0
         #     partial_emb_size = args.get('emb_size') // 4
