@@ -59,7 +59,7 @@ class HardBCELoss(NormalBCELoss):
 
         if train:
             batch_bce_labels = utils.make_batch_bce_labels(labels, diagonal_fill=-1)
-            sims = self.__get_sims(batch)
+            sims = (output_pred * 2) - 1
             col_index = self.__get_mask(sims, batch_bce_labels)
             row_index = torch.tensor([[i for _ in range(col_index.shape[1])] for i in range(len(labels))])
 
