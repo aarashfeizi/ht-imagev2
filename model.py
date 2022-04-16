@@ -153,7 +153,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
         for k, v in FEATURE_MAP_SIZES.items():
             big_emb_size += v[0]
 
-        self.final_projector = nn.Linear(big_emb_size, self.args.get('emb_size'))
+        self.final_projector = nn.Linear(big_emb_size, args.get('emb_size'))
 
         if self.multi_layer_emb:
             assert args.get('emb_size') % 4 == 0
