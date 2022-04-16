@@ -347,6 +347,10 @@ def get_model_name(args):
     if args.get('lnorm'):
         name += f"_n"
 
+    if args.get('ml_self_att'):
+        name += f"_selfatt"
+
+
     if args.get('metric') != 'cosine':
         name += f"_temp{args.get('temperature')}"
 
