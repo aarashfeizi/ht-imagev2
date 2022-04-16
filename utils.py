@@ -348,7 +348,7 @@ def get_model_name(args):
         name += f"_n"
 
     if args.get('ml_self_att'):
-        name += f"_selfatt"
+        name += f"_localselfatt"
 
 
     if args.get('metric') != 'cosine':
