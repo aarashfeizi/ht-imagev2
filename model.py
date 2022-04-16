@@ -150,7 +150,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
                                7: self.maxpool_1}
 
         big_emb_size = 0
-        for k, v in FEATURE_MAP_SIZES:
+        for k, v in FEATURE_MAP_SIZES.items():
             big_emb_size += v[0]
 
         self.final_projector = nn.Linear(big_emb_size, self.args.get('emb_size'))
