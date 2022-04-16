@@ -103,6 +103,14 @@ class Trainer:
                                       'weight_decay': self.args.get('weight_decay'),
                                       'new': True}]
 
+            if netmod.final_projector is not None:
+                learnable_params += [{'params': netmod.final_projector.parameters(),
+                                      'lr': self.args.get('learning_rate'),
+                                      'weight_decay': self.args.get('weight_decay'),
+                                      'new': True}]
+
+
+
             if len(netmod.projs) != 0:
                 for p in netmod.projs:
                     learnable_params += [{'params': p.parameters(),
@@ -248,6 +256,7 @@ class Trainer:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
 
+
                 img_embeddings = net(imgs)
                 preds, similarities = utils.get_preds(img_embeddings)
                 bce_labels = utils.make_batch_bce_labels(lbls)
@@ -313,6 +322,9 @@ class Trainer:
                 imgs = imgs.cuda()
 
             img_embeddings = net(imgs)
+
+            if len(img_embeddings.shape) == 3:
+                img_embeddings = utils.get_diag_3d_tensor(img_embeddings)
 
             begin_idx = batch_id * self.batch_size
             end_idx = min(val_size, (batch_id + 1) * self.batch_size)

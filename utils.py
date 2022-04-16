@@ -727,8 +727,11 @@ def get_a2n(ordered_lbls, ordered_idxs, all_labels):
 
 def get_preds(embeddings, metric='cosine', model=None, temperature=3):
     if metric == 'cosine':
-        norm_embeddings = F.normalize(embeddings, p=2)
-        sims = torch.matmul(norm_embeddings, norm_embeddings.T)
+        norm_embeddings = F.normalize(embeddings, p=2, dim=-1)
+        if len(norm_embeddings.shape) == 2:
+            sims = torch.matmul(norm_embeddings, norm_embeddings.T)
+        else: # todo make sure it works!!!!
+            sims = norm_embeddings * norm_embeddings.transpose(0, 1).sum(dim=-1)
         preds = (sims + 1) / 2  # maps (-1, 1) to (0, 1)
 
         preds = torch.clamp(preds, min=0.0, max=1.0)
@@ -821,3 +824,7 @@ def get_class_plots(embeddings, labels, num_classes_2_draw=16, specific_labels=N
         num_classes_2_draw = len(specific_labels)
     plt.savefig(f'{num_classes_2_draw}_{name}.pdf')
     # plt.show()
+
+def get_diag_3d_tensor(t):
+    t_2d = torch.diagonal(t).T
+    return t_2d

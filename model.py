@@ -42,9 +42,9 @@ class Projector(nn.Module):
         return x
 
 
-class SingleEmbTopModule(nn.Module):
+class GeneralTopLevelModule(nn.Module):
     def __init__(self, args, encoder):
-        super(SingleEmbTopModule, self).__init__()
+        super(GeneralTopLevelModule, self).__init__()
         self.metric = args.get('metric')
         self.encoder = encoder
         self.logits_net = None
@@ -54,7 +54,19 @@ class SingleEmbTopModule(nn.Module):
         self.proj_layer2 = None
         self.proj_layer3 = None
         self.proj_layer4 = None
+
         self.projs = []
+
+        self.final_projector = None
+
+    def forward(self, imgs):
+        pass
+
+
+class SingleEmbTopModule(GeneralTopLevelModule):
+    def __init__(self, args, encoder):
+        super(SingleEmbTopModule, self).__init__(args, encoder)
+
         if self.multi_layer_emb:
             assert args.get('emb_size') % 4 == 0
             partial_emb_size = args.get('emb_size') // 4
@@ -124,19 +136,9 @@ class SingleEmbTopModule(nn.Module):
         return embeddings
 
 
-class MultiEmbTopModule(nn.Module):
+class MultiEmbTopModule(GeneralTopLevelModule):
     def __init__(self, args, encoder):
-        super(MultiEmbTopModule, self).__init__()
-        self.metric = args.get('metric')
-        self.encoder = encoder
-        self.logits_net = None
-        self.temeperature = args.get('temperature')
-        self.multi_layer_emb = args.get('ml_emb')
-        self.proj_layer1 = None
-        self.proj_layer2 = None
-        self.proj_layer3 = None
-        self.proj_layer4 = None
-
+        super(MultiEmbTopModule, self).__init__(args, encoder)
 
         self.maxpool_8 = nn.MaxPool2d((8, 8))
         self.maxpool_4 = nn.MaxPool2d((4, 4))
@@ -146,15 +148,21 @@ class MultiEmbTopModule(nn.Module):
                                28: self.maxpool_4,
                                14: self.maxpool_2,
                                7: self.maxpool_1}
-        self.projs = []
+
+        big_emb_size = 0
+        for k, v in FEATURE_MAP_SIZES:
+            big_emb_size += v[0]
+
+        self.final_projector = nn.Linear(big_emb_size, self.args.get('emb_size'))
+
         if self.multi_layer_emb:
             assert args.get('emb_size') % 4 == 0
             partial_emb_size = args.get('emb_size') // 4
 
             self.proj_layer1 = Projector(input_channels=FEATURE_MAP_SIZES[1][0],
-                                            output_channels=partial_emb_size,
-                                            pool='avg',
-                                            kernel_size=FEATURE_MAP_SIZES[1][1])
+                                         output_channels=partial_emb_size,
+                                         pool='avg',
+                                         kernel_size=FEATURE_MAP_SIZES[1][1])
 
             self.proj_layer2 = Projector(input_channels=FEATURE_MAP_SIZES[2][0],
                                          output_channels=partial_emb_size,
@@ -179,12 +187,14 @@ class MultiEmbTopModule(nn.Module):
     def forward(self, imgs):
         embeddings, activations = self.encoder(imgs, is_feat=True)
 
-        heatmaps = []
+        # heatmaps = []
 
         layer_embeddings = []
-
+        batch_size = 0
         for idx, act in enumerate(activations):
             B, C, H0, W0 = act.shape
+            if batch_size == 0:
+                batch_size = B
             act = self.maxpool_layers[H0](act)
             _, _, H, W = act.shape
             act1 = act.reshape(B, 1, C, H * W)
@@ -199,19 +209,32 @@ class MultiEmbTopModule(nn.Module):
             act = act.reshape(1, B, C, H * W)
             act = act.transpose(3, 2)
 
-            activations[idx] = heatmap @ act
+            # activations is being updated to a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
+            activations[idx] = (heatmap @ act) + act  # add original with attention activation
 
             layer_embeddings.append(activations[idx].transpose(-1, -2).mean(dim=-1))
 
-            heatmaps.append(heatmap)
+            # heatmaps.append(heatmap)
 
+        # create all_layer embeddings
         all_embeddings = torch.cat(layer_embeddings, dim=2)
-        import pdb
-        pdb.set_trace()
 
-        # activations is a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
+        all_embeddings = self.final_projector(all_embeddings.reshape(batch_size * batch_size, -1)).reshape(batch_size,
+                                                                                                           batch_size,
+                                                                                                           -1)
 
-        return embeddings, activations, heatmaps
+        # normalize embeddings
+        all_embeddings = all_embeddings / all_embeddings.norm(dim=-1, keepdim=True).reshape(batch_size, batch_size, 1)
+
+        # Find cosine similarities between embeddings as predictions
+        # cosine_similarities is a (B, B) matrix, ranging from -1 to 1
+        # cosine_similarities = (all_embeddings * all_embeddings.transpose(0, 1)).sum(dim=-1)
+        #
+        # predictions = (cosine_similarities + 1) / 2
+
+        # todo currently, outputed final embeddings from the model are NOT being used. Maybe use concatenating embeddings and passing it to an mlp for difference?
+
+        return all_embeddings
 
 
 def get_top_module(args):
