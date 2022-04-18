@@ -141,7 +141,7 @@ class SingleEmbTopModule(GeneralTopLevelModule):
         """
         embeddings, activations = self.encoder(imgs, is_feat=True)
         smaller_embs = []
-        for a in zip(activations):
+        for a in activations:
             B, C, H, W = a.shape
             smaller_embs.append(a.reshape(B, C, -1).mean(dim=-1))
 
