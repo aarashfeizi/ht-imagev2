@@ -69,7 +69,7 @@ class SingleEmbTopModule(GeneralTopLevelModule):
         super(SingleEmbTopModule, self).__init__(args, encoder)
 
         if self.multi_layer_emb:
-            if self.eq_layer_contrib:
+            if self.equal_layer_contrib:
                 assert args.get('emb_size') % 4 == 0
                 partial_emb_size = args.get('emb_size') // 4
 
