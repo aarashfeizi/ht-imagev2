@@ -337,8 +337,14 @@ def get_model_name(args):
     if args.get('with_bce'):
         name += f'-bce_bw{args.get("bce_weight")}'
 
-    if args.get('ml_emb'):
+    if args.get('ml_self_att'):
+        name += f"_localselfatt"
+
+    if args.get('multlayer_emb'):
         name += f'-MLTEMB'
+
+        if args.get('eq_layer_contrib'):
+            name += f'-EQ'
 
     for n in loss_specific_args:
         if args.get(n) is not None:
@@ -346,10 +352,6 @@ def get_model_name(args):
 
     if args.get('lnorm'):
         name += f"_n"
-
-    if args.get('ml_self_att'):
-        name += f"_localselfatt"
-
 
     if args.get('metric') != 'cosine':
         name += f"_temp{args.get('temperature')}"

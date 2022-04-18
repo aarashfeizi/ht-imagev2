@@ -49,7 +49,8 @@ class GeneralTopLevelModule(nn.Module):
         self.encoder = encoder
         self.logits_net = None
         self.temeperature = args.get('temperature')
-        self.multi_layer_emb = args.get('ml_emb')
+        self.multi_layer_emb = args.get('multlayer_emb')
+        self.equal_layer_contrib = args.get('eq_layer_contrib')
         self.proj_layer1 = None
         self.proj_layer2 = None
         self.proj_layer3 = None
@@ -68,33 +69,40 @@ class SingleEmbTopModule(GeneralTopLevelModule):
         super(SingleEmbTopModule, self).__init__(args, encoder)
 
         if self.multi_layer_emb:
-            assert args.get('emb_size') % 4 == 0
-            partial_emb_size = args.get('emb_size') // 4
+            if self.eq_layer_contrib:
+                assert args.get('emb_size') % 4 == 0
+                partial_emb_size = args.get('emb_size') // 4
 
-            self.proj_layer1 = Projector(input_channels=FEATURE_MAP_SIZES[1][0],
-                                         output_channels=partial_emb_size,
-                                         pool='avg',
-                                         kernel_size=FEATURE_MAP_SIZES[1][1])
+                self.proj_layer1 = Projector(input_channels=FEATURE_MAP_SIZES[1][0],
+                                             output_channels=partial_emb_size,
+                                             pool='avg',
+                                             kernel_size=FEATURE_MAP_SIZES[1][1])
 
-            self.proj_layer2 = Projector(input_channels=FEATURE_MAP_SIZES[2][0],
-                                         output_channels=partial_emb_size,
-                                         pool='avg',
-                                         kernel_size=FEATURE_MAP_SIZES[2][1])
+                self.proj_layer2 = Projector(input_channels=FEATURE_MAP_SIZES[2][0],
+                                             output_channels=partial_emb_size,
+                                             pool='avg',
+                                             kernel_size=FEATURE_MAP_SIZES[2][1])
 
-            self.proj_layer3 = Projector(input_channels=FEATURE_MAP_SIZES[3][0],
-                                         output_channels=partial_emb_size,
-                                         pool='avg',
-                                         kernel_size=FEATURE_MAP_SIZES[3][1])
+                self.proj_layer3 = Projector(input_channels=FEATURE_MAP_SIZES[3][0],
+                                             output_channels=partial_emb_size,
+                                             pool='avg',
+                                             kernel_size=FEATURE_MAP_SIZES[3][1])
 
-            self.proj_layer4 = Projector(input_channels=FEATURE_MAP_SIZES[4][0],
-                                         output_channels=partial_emb_size,
-                                         pool='avg',
-                                         kernel_size=FEATURE_MAP_SIZES[4][1])
+                self.proj_layer4 = Projector(input_channels=FEATURE_MAP_SIZES[4][0],
+                                             output_channels=partial_emb_size,
+                                             pool='avg',
+                                             kernel_size=FEATURE_MAP_SIZES[4][1])
 
-            self.projs = [self.proj_layer1,
-                          self.proj_layer2,
-                          self.proj_layer3,
-                          self.proj_layer4]
+                self.projs = [self.proj_layer1,
+                              self.proj_layer2,
+                              self.proj_layer3,
+                              self.proj_layer4]
+            else:
+                big_emb_size = 0
+                for k, v in FEATURE_MAP_SIZES.items():
+                    big_emb_size += v[0]
+
+                self.final_projector = nn.Linear(big_emb_size, args.get('emb_size'))
 
         if args.get('metric') == 'mlp':
             self.logits_net = nn.Sequential(nn.Linear(in_features=2 * args.get('emb_size'),
@@ -111,7 +119,7 @@ class SingleEmbTopModule(GeneralTopLevelModule):
         """
         return self.encoder(imgs)
 
-    def get_multilayer_embeddings(self, imgs):
+    def get_multilayer_embeddings_equal(self, imgs):
         """
 
         :param imgs:
@@ -125,10 +133,30 @@ class SingleEmbTopModule(GeneralTopLevelModule):
         embeddings = torch.cat(smaller_embs, dim=1).squeeze(dim=-1).squeeze(dim=-1)
         return embeddings
 
+    def get_multilayer_embeddings_unequal(self, imgs):
+        """
+
+        :param imgs:
+        :return: return a (B, dim) tensor, where dim is the emb_dim
+        """
+        embeddings, activations = self.encoder(imgs, is_feat=True)
+        smaller_embs = []
+        for a in zip(activations):
+            B, C, H, W = a.shape
+            smaller_embs.append(a.reshape(B, C, -1).mean(dim=-1))
+
+        embeddings = torch.cat(smaller_embs, dim=-1)
+
+        return embeddings
+
     def forward(self, imgs):
         embeddings = None
         if self.multi_layer_emb:  # partial embeddings
-            embeddings = self.get_multilayer_embeddings(imgs)
+            if self.equal_layer_contrib:
+                embeddings = self.get_multilayer_embeddings_equal(imgs)
+            else:
+                embeddings = self.get_multilayer_embeddings_unequal(imgs)
+                embeddings = self.final_projector(embeddings)
         else:
             embeddings = self.get_normal_embeddings(imgs)
         # preds, sims = self.get_preds(embeddings)
