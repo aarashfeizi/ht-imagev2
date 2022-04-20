@@ -338,7 +338,7 @@ def get_model_name(args):
         name += f'-bce_bw{args.get("bce_weight")}'
 
     if args.get('ml_self_att'):
-        name += f"_localselfatt"
+        name += f"_trueQLocSelfAtt"
 
     if args.get('multlayer_emb'):
         name += f'-MLTEMB'

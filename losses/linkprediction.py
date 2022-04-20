@@ -29,8 +29,15 @@ class HardBCELoss(NormalBCELoss):
     """
 
     def __get_sims(self, batch):
-        norm_embeddings = F.normalize(batch, p=2)
-        sims = torch.matmul(norm_embeddings, norm_embeddings.T)
+
+        norm_embeddings = F.normalize(batch, p=2, dim=-1)
+        if len(norm_embeddings.shape) == 2:
+            sims = torch.matmul(norm_embeddings, norm_embeddings.T)
+        else:  # todo make sure it works!!!!
+            sims = (norm_embeddings * norm_embeddings.transpose(0, 1)).sum(dim=-1)
+        # preds = (sims + 1) / 2  # maps (-1, 1) to (0, 1)
+        #
+        # preds = torch.clamp(preds, min=0.0, max=1.0)
         return sims
 
     def __get_mask(self, sims, batch_bce_labels):
@@ -59,6 +66,7 @@ class HardBCELoss(NormalBCELoss):
 
         if train:
             batch_bce_labels = utils.make_batch_bce_labels(labels, diagonal_fill=-1)
+            # sims = self.__get_sims(batch)
             sims = (output_pred * 2) - 1
             col_index = self.__get_mask(sims, batch_bce_labels)
             row_index = torch.tensor([[i for _ in range(col_index.shape[1])] for i in range(len(labels))])

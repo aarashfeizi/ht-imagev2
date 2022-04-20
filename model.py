@@ -60,6 +60,13 @@ class GeneralTopLevelModule(nn.Module):
 
         self.final_projector = None
 
+        self.attQ_layer1 = None
+        self.attQ_layer2 = None
+        self.attQ_layer3 = None
+        self.attQ_layer4 = None
+
+        self.attQs = []
+
     def forward(self, imgs):
         pass
 
@@ -164,6 +171,27 @@ class SingleEmbTopModule(GeneralTopLevelModule):
         return embeddings
 
 
+class FanInOutAtt(nn.Module):
+    def __init__(self, in_channels, out_channels=0):
+        super(FanInOutAtt, self).__init__()
+        if out_channels == 0:
+            out_channels = in_channels // 2
+        self.conv1 = nn.Conv2d(in_channels=in_channels,
+                               out_channels=out_channels,
+                               kernel_size=1)
+        self.relu = nn.ReLU()
+        self.conv2 = nn.Conv2d(in_channels=out_channels,
+                               out_channels=in_channels,
+                               kernel_size=1)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+
+        return x
+
+
 class MultiEmbTopModule(GeneralTopLevelModule):
     def __init__(self, args, encoder):
         super(MultiEmbTopModule, self).__init__(args, encoder)
@@ -178,6 +206,17 @@ class MultiEmbTopModule(GeneralTopLevelModule):
                                7: self.maxpool_1}
 
         big_emb_size = 0
+
+        self.attQ_layer1 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[1][0])
+        self.attQ_layer2 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[2][0])
+        self.attQ_layer3 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[3][0])
+        self.attQ_layer4 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[4][0])
+
+        self.attQs = [self.attQ_layer1,
+                      self.attQ_layer2,
+                      self.attQ_layer3,
+                      self.attQ_layer4]
+
         for k, v in FEATURE_MAP_SIZES.items():
             big_emb_size += v[0]
 
@@ -225,11 +264,12 @@ class MultiEmbTopModule(GeneralTopLevelModule):
                 batch_size = B
             act = self.maxpool_layers[H0](act)
             _, _, H, W = act.shape
-            act1 = act.reshape(B, 1, C, H * W)
-            act1 = act1.transpose(3, 2)
+            act1Q = self.attQs[idx](act)
+            act1Q = act1Q.reshape(B, 1, C, H * W)
+            act1Q = act1Q.transpose(3, 2)
 
-            act2 = act.reshape(1, B, C, H * W)
-            heatmap = act1 @ act2
+            act2K = act.reshape(1, B, C, H * W)
+            heatmap = act1Q @ act2K
             # heatmap is (B, B, H*W, H*W) the attention coefficients of every image according to another image
 
             heatmap = heatmap.softmax(dim=3)

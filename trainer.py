@@ -117,6 +117,12 @@ class Trainer:
                                           'lr': self.args.get('learning_rate'),
                                           'weight_decay': self.args.get('weight_decay'),
                                           'new': True}]
+            if len(netmod.attQs) != 0:
+                for p in netmod.attQs:
+                    learnable_params += [{'params': p.parameters(),
+                                          'lr': self.args.get('learning_rate'),
+                                          'weight_decay': self.args.get('weight_decay'),
+                                          'new': True}]
         else:
             learnable_params = [{'params': netmod.parameters(),
                                  'lr': self.args.get('learning_rate'),
