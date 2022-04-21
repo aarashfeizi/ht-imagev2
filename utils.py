@@ -332,6 +332,9 @@ def get_model_name(args):
             f"lr{args.get('learning_rate'):.2}_" \
             f"bblr{args.get('bb_learning_rate'):.2}"
 
+    if args.get('cov'):
+        name += f'-cov'
+
     name += f"_{args.get('loss')}"
 
     if args.get('with_bce'):
@@ -834,3 +837,19 @@ def get_class_plots(embeddings, labels, num_classes_2_draw=16, specific_labels=N
 def get_diag_3d_tensor(t):
     t_2d = torch.diagonal(t).T
     return t_2d
+
+def torch_get_cov(t):
+    """
+    get cov matrix
+    :param t: a (N, D) tensor, with N samples and D feature types
+    :return: cov tensor with size (D, D)
+    """
+
+    N, D = t.shape
+    t_mean = t.mean(dim=0, keepdim=True)
+    t_prime = t - t_mean
+
+    t_cov = (t_prime.T @ t_prime) / (N - 1)
+
+    return t_cov
+

@@ -1,6 +1,7 @@
 import pytorch_metric_learning.losses as pml_losses
 
 from losses import linkprediction, proxynca, triplet
+from . import covariance
 
 LOSSES = {
     'pnpp': proxynca.ProxyNCA_prob,

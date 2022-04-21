@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import losses.covariance as cov
 import utils
 
 
@@ -14,11 +15,15 @@ class NormalBCELoss(nn.Module):
         super(NormalBCELoss, self).__init__()
         self.bce_loss = nn.BCELoss()
 
-    def forward(self, batch, labels, output_pred=None, train=True):
+    def calculate_loss(self, batch, labels, output_pred, train):
         assert output_pred is not None
         batch_bce_labels = utils.make_batch_bce_labels(labels)
         assert len(output_pred.flatten()) == len(batch_bce_labels.flatten())
         loss = self.bce_loss(output_pred.flatten(), batch_bce_labels.flatten())
+        return loss
+
+    def forward(self, batch, labels, output_pred=None, train=True):
+        loss = self.calculate_loss(batch, labels, output_pred, train)
         return loss
 
 
@@ -61,7 +66,7 @@ class HardBCELoss(NormalBCELoss):
 
         return mask_index
 
-    def forward(self, batch, labels, output_pred=None, train=True):
+    def calculate_loss(self, batch, labels, output_pred=None, train=True):
         assert output_pred is not None
 
         if train:

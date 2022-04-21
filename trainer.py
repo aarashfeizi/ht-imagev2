@@ -27,6 +27,12 @@ class Trainer:
         self.cuda = args.get('cuda')
         self.epochs = args.get('epochs')
         self.current_epoch = current_epoch
+        self.cov_loss = None
+        self.cov_loss_coefficient = 1
+
+        if args.get('cov'):
+            self.cov_loss = losses.covariance.COV_Loss()
+
         self.loss_name = args.get('loss')
         self.loss_function = loss
 
@@ -313,6 +319,11 @@ class Trainer:
 
             each_loss_item['bce'] = bce_loss_value.item()
             each_loss_item[f'bce_{self.loss_name}'] = loss.item()
+
+        if self.cov_loss:
+            cov_loss_value = self.cov_loss(embeddings)
+            loss += self.cov_loss_coefficient * cov_loss_value
+            each_loss_item['cov'] = cov_loss_value.item()
 
         # elif self.loss_name == 'trpl':
         #     loss = self.loss_function(embeddings, lbls)
