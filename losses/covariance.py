@@ -11,11 +11,11 @@ class COV_Loss(nn.Module):
         self.margin = margin
 
     def forward(self, batch):
-        # n, d = batch.shape
+        n, d = batch.shape
         batch_cov = utils.torch_get_cov(batch)
-        not_same_feat_loss = batch_cov.sum() - batch_cov.diag().sum()
+        not_same_feat_loss = (batch_cov.sum() - batch_cov.diag().sum()) / (d * (d - 1))
         stds = torch.sqrt(batch_cov.diag() + EPS)
-        same_feat_loss = F.relu(-stds + self.margin).sum()
+        same_feat_loss = (F.relu(-stds + self.margin).sum() / d)
 
         return not_same_feat_loss + same_feat_loss
         # todo add eps to main diagonal and subtract margin
