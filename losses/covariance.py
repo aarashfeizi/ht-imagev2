@@ -13,7 +13,7 @@ class COV_Loss(nn.Module):
     def forward(self, batch):
         # n, d = batch.shape
         batch_cov = utils.torch_get_cov(batch)
-        not_same_feat_loss = batch_cov.sum() - batch_cov.diag.sum()
+        not_same_feat_loss = batch_cov.sum() - batch_cov.diag().sum()
         stds = torch.sqrt(batch_cov.diag() + EPS)
         same_feat_loss = F.relu(-stds + self.margin).sum()
 
