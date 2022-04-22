@@ -28,7 +28,7 @@ class Trainer:
         self.epochs = args.get('epochs')
         self.current_epoch = current_epoch
         self.cov_loss = None
-        self.cov_loss_coefficient = 1
+        self.cov_loss_coefficient = args.get('cov_coef')
 
         if args.get('cov'):
             self.cov_loss = losses.covariance.COV_Loss(self.emb_size)
