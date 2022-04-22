@@ -6,11 +6,15 @@ import utils
 EPS = 1e-7
 
 class COV_Loss(nn.Module):
-    def __init__(self, margin=1.0):
+    def __init__(self, dim, margin=1.0):
         super().__init__()
+        self.dim = dim
         self.margin = margin
 
     def forward(self, batch):
+        if len(batch.shape) != 2:
+            batch = batch.reshape(-1, self.dim)
+
         n, d = batch.shape
         batch_cov = utils.torch_get_cov(batch)
         not_same_feat_loss = (batch_cov.sum() - batch_cov.diag().sum()) / (d * (d - 1))

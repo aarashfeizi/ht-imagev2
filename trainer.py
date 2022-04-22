@@ -31,7 +31,7 @@ class Trainer:
         self.cov_loss_coefficient = 1
 
         if args.get('cov'):
-            self.cov_loss = losses.covariance.COV_Loss()
+            self.cov_loss = losses.covariance.COV_Loss(self.emb_size)
 
         self.loss_name = args.get('loss')
         self.loss_function = loss
