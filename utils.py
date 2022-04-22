@@ -333,7 +333,7 @@ def get_model_name(args):
             f"bblr{args.get('bb_learning_rate'):.2}"
 
     if args.get('cov'):
-        name += f'-cov'
+        name += f'-cov2'
 
     name += f"_{args.get('loss')}"
 
