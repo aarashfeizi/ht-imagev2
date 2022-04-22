@@ -17,7 +17,8 @@ class COV_Loss(nn.Module):
 
         n, d = batch.shape
         batch_cov = utils.torch_get_cov(batch)
-        not_same_feat_loss = (batch_cov.sum() - batch_cov.diag().sum()) / (d * (d - 1))
+        batch_cov_2 = (batch_cov * batch_cov)
+        not_same_feat_loss = (batch_cov_2.sum() - batch_cov_2.diag().sum()) / (d * (d - 1))
         stds = torch.sqrt(batch_cov.diag() + EPS)
         same_feat_loss = (F.relu(-stds + self.margin).sum() / d)
 
