@@ -176,9 +176,6 @@ class Trainer:
 
             embeddings, activations = net.forward_with_activations(imgs) # returns embeddings, [f1, f2, f3, f4]
 
-            import pdb
-            pdb.set_trace()
-
             img_names = []
 
             for path in paths:
@@ -192,17 +189,21 @@ class Trainer:
             for path in paths:
                 org_imgs.append(utils.transform_only_img(path))
 
-            heatmaps = utils.get_all_heatmaps([activations], org_imgs)
-
             name_imgs = []
-            for name, heatmap in zip(img_names, heatmaps):
-                name_imgs.extend([(f'img_{name}/{n}', i) for n, i in heatmap.items()])
+            if type(activations) is dict:
+                for k, v in activations.items():
+                    heatmaps = utils.get_all_heatmaps([v], org_imgs)
+
+                    for name, heatmap in zip(img_names, heatmaps):
+                        name_imgs.extend([(f'img_{name}_{k}/{n}', i) for n, i in heatmap.items()])
+
+            else:
+                heatmaps = utils.get_all_heatmaps([activations], org_imgs)
+
+                for name, heatmap in zip(img_names, heatmaps):
+                    name_imgs.extend([(f'img_{name}/{n}', i) for n, i in heatmap.items()])
 
             self.__tb_draw_img(name_imgs)
-            
-
-
-
 
     def __train_one_epoch(self, net):
         net.train()

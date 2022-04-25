@@ -309,7 +309,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
 
         # todo currently, outputed final embeddings from the model are NOT being used. Maybe use concatenating embeddings and passing it to an mlp for difference?
         if is_feat:
-            all_activations = list(zip(activations, new_activations))
+            all_activations = {'org': activations, 'att': new_activations}
             return all_embeddings, all_activations
         else:
             return all_embeddings
