@@ -285,7 +285,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
 
             # activations is being updated to a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
             new_act = (heatmap @ act) + act  # add original with attention activation
-            new_activations.append(new_act.transpose(-1, -2).reshape(B, C, H, W))
+            new_activations.append(torch.diagonal(new_act.transpose(-1, -2).reshape(B, B, C * H * W)).transpose(0, 1).reshape(B, C, H, W))
 
             layer_embeddings.append(new_act.transpose(-1, -2).mean(dim=-1))
 
