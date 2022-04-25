@@ -285,7 +285,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
 
             # activations is being updated to a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
             new_act = (heatmap @ act) + act  # add original with attention activation
-            new_activations.append(new_act)
+            new_activations.append(new_act.transpose(-1, -2).reshape(B, C, H, W))
 
             layer_embeddings.append(new_act.transpose(-1, -2).mean(dim=-1))
 
@@ -309,7 +309,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
 
         # todo currently, outputed final embeddings from the model are NOT being used. Maybe use concatenating embeddings and passing it to an mlp for difference?
         if is_feat:
-            all_activations = zip(activations, new_activations)
+            all_activations = list(zip(activations, new_activations))
             return all_embeddings, all_activations
         else:
             return all_embeddings
