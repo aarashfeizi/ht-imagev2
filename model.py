@@ -68,7 +68,12 @@ class GeneralTopLevelModule(nn.Module):
         self.attQs = []
 
     def forward(self, imgs):
-        pass
+        embeddings = self.encoder(imgs)
+        return embeddings
+
+    def forward_with_activations(self, imgs):
+        embeddings, activations = self.encoder(imgs, is_feat=True)  # returns embeddings, [f1, f2, f3, f4]
+        return embeddings, activations
 
 
 class SingleEmbTopModule(GeneralTopLevelModule):
@@ -251,13 +256,14 @@ class MultiEmbTopModule(GeneralTopLevelModule):
                           self.proj_layer3,
                           self.proj_layer4]
 
-    def forward(self, imgs):
+    def forward(self, imgs, is_feat=False):
         embeddings, activations = self.encoder(imgs, is_feat=True)
 
         # heatmaps = []
 
         layer_embeddings = []
         batch_size = 0
+        new_activations = []
         for idx, act in enumerate(activations):
             B, C, H0, W0 = act.shape
             if batch_size == 0:
@@ -278,9 +284,10 @@ class MultiEmbTopModule(GeneralTopLevelModule):
             act = act.transpose(3, 2)
 
             # activations is being updated to a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
-            activations[idx] = (heatmap @ act) + act  # add original with attention activation
+            new_act = (heatmap @ act) + act  # add original with attention activation
+            new_activations.append(new_act)
 
-            layer_embeddings.append(activations[idx].transpose(-1, -2).mean(dim=-1))
+            layer_embeddings.append(new_act.transpose(-1, -2).mean(dim=-1))
 
             # heatmaps.append(heatmap)
 
@@ -301,9 +308,15 @@ class MultiEmbTopModule(GeneralTopLevelModule):
         # predictions = (cosine_similarities + 1) / 2
 
         # todo currently, outputed final embeddings from the model are NOT being used. Maybe use concatenating embeddings and passing it to an mlp for difference?
+        if is_feat:
+            all_activations = zip(activations, new_activations)
+            return all_embeddings, all_activations
+        else:
+            return all_embeddings
 
-        return all_embeddings
-
+    def forward_with_activations(self, imgs):
+        embeddings, activations = self.forward(imgs, is_feat=True)
+        return embeddings, activations
 
 def get_top_module(args):
     encoder = backbones.get_bb_network(args)

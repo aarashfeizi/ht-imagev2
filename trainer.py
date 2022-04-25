@@ -26,6 +26,7 @@ class Trainer:
         self.k_inc_freq = args.get('k_inc_freq')
         self.cuda = args.get('cuda')
         self.epochs = args.get('epochs')
+        self.heatmap = args.get('draw_heatmaps')
         self.current_epoch = current_epoch
         self.cov_loss = None
         self.cov_loss_coefficient = args.get('cov_coef')
@@ -173,7 +174,10 @@ class Trainer:
             if self.cuda:
                 imgs = imgs.cuda()
 
-            embeddings, activations = net.encoder(imgs, is_feat=True) # returns embeddings, [f1, f2, f3, f4]
+            embeddings, activations = net.forward_with_activations(imgs) # returns embeddings, [f1, f2, f3, f4]
+
+            import pdb
+            pdb.set_trace()
 
             img_names = []
 
@@ -397,6 +401,9 @@ class Trainer:
 
                 self.__tb_update_value(list_for_tb)
 
+                if self.heatmap:
+                    self.draw_heatmaps(net)
+
             if val_auroc_score > best_val_auroc_score:
                 # best_val_acc = val_acc
                 best_val_auroc_score = val_auroc_score
@@ -460,6 +467,10 @@ class Trainer:
                         list_for_tb.append((f'Val/{k}', v))
 
                     self.__tb_update_value(list_for_tb)
+
+                    if self.heatmap:
+                        self.draw_heatmaps(net)
+
 
             if (val and val_auroc_score > best_val_auroc_score) or \
                     (not val and epoch == self.epochs):
