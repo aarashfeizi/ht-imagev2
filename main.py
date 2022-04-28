@@ -23,14 +23,27 @@ def main():
     logger.info(args)
 
     train_transforms, train_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='train')
+    # train_transforms_swap = None
+    # if type(train_transforms) is list:
+    #     train_transforms_swap = train_transforms[1]
+    #     train_transforms = train_transforms[0]
+
     val_transforms, val_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='val')
 
     print('Train transforms: ', train_transforms_names)
     print('Val transforms: ', val_transforms_names)
 
     train_loader = utils.get_data(all_args, mode='train', transform=train_transforms, sampler_mode='kbatch')
+
+    # if train_transforms_swap is not None:
+    #     train_loader = utils.get_data(all_args, mode='train', transform=train_transforms, sampler_mode='kbatch')
+
+    val2_loader = None
+    val2_db_loader = None
+
     if not all_args.get('hard_triplet'):
         val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet')
+        val2_loader = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='balanced_triplet')
 
     else:
         if all_args.get('ordered_idxs') is not None:
@@ -47,7 +60,10 @@ def main():
                                     ordered_lbls=ordered_lbls)
 
     val_loader_4heatmap = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='heatmap')
+
     val_db_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='db')
+    val2_db_loader = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='db')
+
     test_loader = None
     if args.test:
         test_loader = utils.get_data(all_args, mode='test', transform=val_transforms, sampler_mode='balanced_triplet')
@@ -72,8 +88,11 @@ def main():
         loss.cuda()
 
     if not all_args.get('test'):  # training
-        trainer = Trainer(all_args, loss=loss, train_loader=train_loader, val_loader=val_loader,
-                          val_db_loader=val_db_loader, force_new_dir=True)
+        trainer = Trainer(all_args, loss=loss, train_loader=train_loader,
+                          val_loaders={'val': val_loader,
+                                      'val2': val2_loader},
+                          val_db_loaders={'val': val_db_loader,
+                                         'val2': val2_db_loader}, force_new_dir=True)
 
         if all_args.get('draw_heatmaps'):
             trainer.set_heatmap_loader(val_loader_4heatmap)
@@ -82,8 +101,8 @@ def main():
 
     else:  # testing
         assert os.path.exists(all_args.get('ckpt_path'))
-        trainer = Trainer(all_args, loss=loss, train_loader=None, val_loader=val_loader,
-                          val_db_loader=val_db_loader, force_new_dir=False)
+        trainer = Trainer(all_args, loss=loss, train_loader=None, val_loaders={'val': val_loader},
+                          val_db_loaders={'val': val_db_loader}, force_new_dir=False)
         net, epoch = utils.load_model(net, os.path.join(all_args.get('ckpt_path')))
         net.encoder.set_to_eval()
 
@@ -91,20 +110,23 @@ def main():
             trainer.set_heatmap_loader(val_loader_4heatmap)
             trainer.draw_heatmaps(net)
 
-        with torch.no_grad():
-            val_losses, val_acc, val_auroc_score = trainer.validate(net)
-            embeddings, classes = trainer.get_embeddings(net)
+        for val_name, val_loader in {'val': val_loader, 'val2': val2_loader}.items():
+            if val_loader is None:
+                continue
+            with torch.no_grad():
+                val_losses, val_acc, val_auroc_score = trainer.validate(net, val_name, val_loader)
+                embeddings, classes = trainer.get_embeddings(net)
 
-            r_at_k_score = utils.get_recall_at_k(embeddings, classes,
-                                                 metric='cosine',
-                                                 sim_matrix=None)
+                r_at_k_score = utils.get_recall_at_k(embeddings, classes,
+                                                     metric='cosine',
+                                                     sim_matrix=None)
 
-            all_val_losses = {lss_name: (lss / len(trainer.val_loader)) for lss_name, lss in val_losses.items()}
+                all_val_losses = {lss_name: (lss / len(val_loader)) for lss_name, lss in val_losses.items()}
 
-            print(f'VALIDATION from saved in epoch {epoch}-> val_loss: ', all_val_losses,
-                  f', val_acc: ', val_acc,
-                  f', val_auroc: ', val_auroc_score,
-                  f', val_R@K: ', r_at_k_score)
+                print(f'VALIDATION from saved in epoch {epoch}-> {val_name}_loss: ', all_val_losses,
+                      f', {val_name}_acc: ', val_acc,
+                      f', {val_name}_auroc: ', val_auroc_score,
+                      f', {val_name}_R@K: ', r_at_k_score)
 
 
 if __name__ == '__main__':

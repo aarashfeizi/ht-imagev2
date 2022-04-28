@@ -18,8 +18,8 @@ class Trainer:
     Class for training and validating model
     """
 
-    def __init__(self, args, loss, train_loader, val_loader,
-                 val_db_loader, optimizer='adam', current_epoch=0, force_new_dir=True):
+    def __init__(self, args, loss, train_loader, val_loaders,
+                 val_db_loaders, optimizer='adam', current_epoch=0, force_new_dir=True):
         self.batch_size = args.get('batch_size')
         self.emb_size = args.get('emb_size')
         self.args = args
@@ -45,8 +45,8 @@ class Trainer:
             self.bce_weight = 0
 
         self.train_loader = train_loader
-        self.val_loader = val_loader
-        self.val_db_loader = val_db_loader
+        self.val_loaders = val_loaders
+        self.val_db_loader = val_db_loaders['val'] # todo only using first one
         self.optimizer_name = optimizer
         self.model_name = utils.get_model_name(self.args)
         self.optimizer = None
@@ -85,8 +85,8 @@ class Trainer:
     def set_train_loader(self, train_loader):
         self.train_loader = train_loader
 
-    def set_val_loader(self, val_loader):
-        self.val_loader = val_loader
+    def set_val_loader(self, val_loaders):
+        self.val_loaders = val_loaders
 
     def set_val_db_loader(self, val_db_loader):
         self.val_db_loader = val_db_loader
@@ -253,8 +253,8 @@ class Trainer:
 
         return epoch_losses, acc.get_acc()
 
-    def validate(self, net):
-        if self.val_loader is None:
+    def validate(self, net, val_name, val_loader):
+        if self.val_loaders is None:
             raise Exception('val_loader is not set in trainer!')
         net.eval()
 
@@ -266,9 +266,8 @@ class Trainer:
         predicted_links = []
         true_links = []
 
-
-        with tqdm(total=len(self.val_loader), desc=f'{self.current_epoch} validating...') as t:
-            for batch_id, (imgs, lbls) in enumerate(self.val_loader, 1):
+        with tqdm(total=len(val_loader), desc=f'{self.current_epoch} validating {val_name}...') as t:
+            for batch_id, (imgs, lbls) in enumerate(val_loader, 1):
                 if self.cuda:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
@@ -296,8 +295,8 @@ class Trainer:
 
                 val_loss += loss.item()
 
-                postfixes = {f'val_{self.loss_name}': f'{val_loss / (batch_id) :.4f}',
-                             'val_acc': f'{acc.get_acc():.4f}'}
+                postfixes = {f'{val_name}_{self.loss_name}': f'{val_loss / (batch_id) :.4f}',
+                             f'{val_name}_acc': f'{acc.get_acc():.4f}'}
                 t.set_postfix(**postfixes)
 
                 t.update()
@@ -375,46 +374,60 @@ class Trainer:
 
         # validate before training
         if val:
+            total_vals_Rat1 = 0.0
+            total_vals_auroc = 0.0
             with torch.no_grad():
-                val_losses, val_acc, val_auroc_score = self.validate(net)
 
-                embeddings, classes = self.get_embeddings(net)
+                for val_name, val_loader in self.val_loaders.items():
+                    if val_loader is None:
+                        continue
+                    val_name = val_name[0].upper() + val_name[1:]
 
-                r_at_k_score = utils.get_recall_at_k(embeddings, classes,
-                                                     metric='cosine',
-                                                     sim_matrix=None)
+                    val_losses, val_acc, val_auroc_score = self.validate(net, val_name, val_loader)
 
-                all_val_losses = {lss_name: (lss / len(self.val_loader)) for lss_name, lss in val_losses.items()}
+                    embeddings, classes = self.get_embeddings(net)
 
-                print(f'VALIDATION {self.current_epoch}-> val_loss: ', all_val_losses,
-                      f', val_acc: ', val_acc,
-                      f', val_auroc: ', val_auroc_score,
-                      f', val_R@K: ', r_at_k_score)
+                    r_at_k_score = utils.get_recall_at_k(embeddings, classes,
+                                                         metric='cosine',
+                                                         sim_matrix=None)
 
-                list_for_tb = [(f'Val/{lss_name}_Loss', lss / len(self.val_loader)) for lss_name, lss in
-                                    val_losses.items()]
-                list_for_tb.append(('Val/AUROC', val_auroc_score))
-                list_for_tb.append(('Val/Accuracy', val_acc))
-                r_at_k_values = []
-                for k, v in r_at_k_score.items():
-                    r_at_k_values.append(v)
-                    list_for_tb.append((f'Val/{k}', v))
+                    all_val_losses = {lss_name: (lss / len(val_loader)) for lss_name, lss in val_losses.items()}
 
-                self.__tb_update_value(list_for_tb)
+                    print(f'VALIDATION on {val_name} {self.current_epoch}-> val_loss: ', all_val_losses,
+                          f', val_acc: ', val_acc,
+                          f', val_auroc: ', val_auroc_score,
+                          f', val_R@K: ', r_at_k_score)
+
+                    list_for_tb = [(f'{val_name}/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss in
+                                        val_losses.items()]
+                    list_for_tb.append((f'{val_name}/AUROC', val_auroc_score))
+                    list_for_tb.append((f'{val_name}/Accuracy', val_acc))
+                    r_at_k_values = []
+                    for k, v in r_at_k_score.items():
+                        r_at_k_values.append(v)
+                        list_for_tb.append((f'{val_name}/{k}', v))
+
+                    total_vals_Rat1 += r_at_k_values[0]
+                    total_vals_auroc += val_auroc_score
+
+                    self.__tb_update_value(list_for_tb)
 
                 if self.heatmap:
                     self.draw_heatmaps(net)
 
-            if val_auroc_score > best_val_auroc_score:
+            total_vals_Rat1 /= len(self.val_loaders)
+            total_vals_auroc /= len(self.val_loaders)
+
+            if total_vals_auroc > best_val_auroc_score:
                 # best_val_acc = val_acc
-                best_val_auroc_score = val_auroc_score
+                best_val_auroc_score = total_vals_auroc
                 if self.args.get('save_model'):
                     utils.save_model(net, self.current_epoch, 'auc', self.save_path)
                 else:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            if r_at_k_values[0] > best_val_Rat1:
+            if total_vals_Rat1 > best_val_Rat1:
                 # best_val_acc = val_acc
-                best_val_Rat1 = r_at_k_values[0]
+                best_val_Rat1 = total_vals_Rat1
                 if self.args.get('save_model'):
                     utils.save_model(net, self.current_epoch, 'recall', self.save_path)
                 else:
@@ -436,56 +449,68 @@ class Trainer:
 
             self.__tb_update_value(update_tb_losses)
 
+            total_vals_Rat1 = 0.0
+            total_vals_auroc = 0.0
             if val:
                 with torch.no_grad():
-                    val_losses, val_acc, val_auroc_score = self.validate(net)
 
-                    embeddings, classes = self.get_embeddings(net)
+                    for val_name, val_loader in self.val_loaders.items():
+                        if val_loader is None:
+                            continue
+                        val_name = val_name[0].upper() + val_name[1:]
+                        val_losses, val_acc, val_auroc_score = self.validate(net, val_name, val_loader)
 
-                    r_at_k_score = utils.get_recall_at_k(embeddings, classes,
-                                                         metric='cosine',
-                                                         sim_matrix=None)
+                        embeddings, classes = self.get_embeddings(net)
 
-                    # r_at_k_score.to_csv(
-                    #     os.path.join(self.save_path, f'{self.args.get("dataset")}_{mode}_per_class_total_avg_k@n.csv'),
-                    #     header=True,
-                    #     index=False)
+                        r_at_k_score = utils.get_recall_at_k(embeddings, classes,
+                                                             metric='cosine',
+                                                             sim_matrix=None)
 
-                    all_val_losses = {lss_name: (lss / len(self.val_loader)) for lss_name, lss in val_losses.items()}
+                        # r_at_k_score.to_csv(
+                        #     os.path.join(self.save_path, f'{self.args.get("dataset")}_{mode}_per_class_total_avg_k@n.csv'),
+                        #     header=True,
+                        #     index=False)
 
-                    print(f'VALIDATION {self.current_epoch}-> val_loss: ', all_val_losses,
-                          f', val_acc: ', val_acc,
-                          f', val_auroc: ', val_auroc_score,
-                          f', val_R@K: ', r_at_k_score)
+                        all_val_losses = {lss_name: (lss / len(val_loader)) for lss_name, lss in val_losses.items()}
 
-                    list_for_tb = [(f'Val/{lss_name}_Loss', lss / len(self.val_loader)) for lss_name, lss in
-                                   val_losses.items()]
-                    list_for_tb.append(('Val/AUROC', val_auroc_score))
-                    list_for_tb.append(('Val/Accuracy', val_acc))
-                    r_at_k_values = []
-                    for k, v in r_at_k_score.items():
-                        r_at_k_values.append(v)
-                        list_for_tb.append((f'Val/{k}', v))
+                        print(f'VALIDATION {self.current_epoch}-> val_loss: ', all_val_losses,
+                              f', val_acc: ', val_acc,
+                              f', val_auroc: ', val_auroc_score,
+                              f', val_R@K: ', r_at_k_score)
 
-                    self.__tb_update_value(list_for_tb)
+                        list_for_tb = [(f'Val/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss in
+                                       val_losses.items()]
+                        list_for_tb.append(('Val/AUROC', val_auroc_score))
+                        list_for_tb.append(('Val/Accuracy', val_acc))
+                        r_at_k_values = []
+                        for k, v in r_at_k_score.items():
+                            r_at_k_values.append(v)
+                            list_for_tb.append((f'Val/{k}', v))
+
+                        total_vals_Rat1 += r_at_k_values[0]
+                        total_vals_auroc += val_auroc_score
+
+                        self.__tb_update_value(list_for_tb)
 
                     if self.heatmap:
                         self.draw_heatmaps(net)
 
+            total_vals_Rat1 /= len(self.val_loaders)
+            total_vals_auroc /= len(self.val_loaders)
 
-            if (val and val_auroc_score > best_val_auroc_score) or \
+            if (val and total_vals_auroc > best_val_auroc_score) or \
                     (not val and epoch == self.epochs):
                 # best_val_acc = val_acc
-                best_val_auroc_score = val_auroc_score
+                best_val_auroc_score = total_vals_auroc
                 if self.args.get('save_model'):
                     utils.save_model(net, self.current_epoch, 'auc', self.save_path)
                 else:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
-            if (val and r_at_k_values[0] > best_val_Rat1) or \
+            if (val and total_vals_Rat1 > best_val_Rat1) or \
                     (not val and epoch == self.epochs):
                 # best_val_acc = val_acc
-                best_val_Rat1 = r_at_k_values[0]
+                best_val_Rat1 = total_vals_Rat1
                 if self.args.get('save_model'):
                     utils.save_model(net, self.current_epoch, 'recall', self.save_path)
                 else:

@@ -125,7 +125,7 @@ class TransformLoader:
         elif transform_type == 'RandomErasing':
             return method(p=self.random_erase_prob, scale=(0.1, 0.75), ratio=(0.3, 3.3))  # TODO RANDOM ERASE!!!
         elif transform_type == 'RandomSwap':
-            return method(p=self.random_swap_prob, size=self.random_swap)
+            return method(size=self.random_swap)
         elif transform_type == 'RandomHorizontalFlip':
             return method(p=0.5)
         else:
@@ -157,6 +157,13 @@ class TransformLoader:
 
         transform_funcs = [self.parse_transform(x) for x in transform_list]
         transform = transforms.Compose(transform_funcs)
+
+        # if 'RandomSwap' in transform_list:
+        #     transform_list_wo_swap = transform_list.remove('RandomSwap')
+        #     transform_funcs_wo_swap = [self.parse_transform(x) for x in transform_list_wo_swap]
+        #     transform_wo_swap = transforms.Compose(transform_funcs_wo_swap)
+        #     return [transform, transform_wo_swap], \
+        #            [transform_list, transform_list_wo_swap]
 
         return transform, transform_list
 

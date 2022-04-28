@@ -3,6 +3,7 @@
   "nb_classes": 17281,
   "train_file": "v5_splits/train.csv",
   "val_file": "v5_splits/val1.csv",
+  "val2_file": "v5_splits/val3.csv",
   "test_file": "v5_splits/test1.csv",
   "all_val_files": [
     "v5_splits/val1.csv",
