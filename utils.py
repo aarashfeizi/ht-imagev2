@@ -16,7 +16,7 @@ from PIL import Image
 from matplotlib import pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 from torch.utils.data import DataLoader
-from torchvision.transforms import transforms
+import transforms
 
 import datasets
 import metrics
@@ -103,6 +103,8 @@ class TransformLoader:
         self.rotate = rotate
         self.scale = scale
         self.random_erase_prob = 0.0
+        self.random_swap = args.get('aug_swap')
+        self.random_swap_prob = args.get('aug_swap_prob')
 
     def parse_transform(self, transform_type):
 
@@ -121,6 +123,8 @@ class TransformLoader:
             return method(**self.color_jitter_param)
         elif transform_type == 'RandomErasing':
             return method(p=self.random_erase_prob, scale=(0.1, 0.75), ratio=(0.3, 3.3))  # TODO RANDOM ERASE!!!
+        elif transform_type == 'RandomSwap':
+            return method(p=self.random_swap_prob, size=self.random_swap)
         elif transform_type == 'RandomHorizontalFlip':
             return method(p=0.5)
         else:
@@ -138,6 +142,9 @@ class TransformLoader:
 
         if color_jitter and mode == 'train':
             transform_list.extend(['ColorJitter'])
+
+        if self.random_swap != 1 and mode == 'train':
+            transform_list.extend(['RandomSwap'])
 
         transform_list.extend(['ToTensor'])
 
@@ -331,6 +338,11 @@ def get_model_name(args):
             f"k{args.get('num_inst_per_class')}_" \
             f"lr{args.get('learning_rate'):.2}_" \
             f"bblr{args.get('bb_learning_rate'):.2}"
+
+    if args.get('aug_swap') != 0:
+        swap_size = args.get('aug_swap')
+        swap_prob = args.get('aug_swap_prob')
+        name += f'-{swap_prob}swap{swap_size}'
 
     if args.get('cov'):
         coef = ''
