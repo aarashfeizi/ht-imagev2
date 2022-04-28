@@ -16,6 +16,7 @@ from PIL import Image
 from matplotlib import pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 from torch.utils.data import DataLoader
+# from torchvision import transforms
 import transforms
 
 import datasets
