@@ -473,19 +473,19 @@ class Trainer:
 
                         all_val_losses = {lss_name: (lss / len(val_loader)) for lss_name, lss in val_losses.items()}
 
-                        print(f'VALIDATION {self.current_epoch}-> val_loss: ', all_val_losses,
-                              f', val_acc: ', val_acc,
-                              f', val_auroc: ', val_auroc_score,
-                              f', val_R@K: ', r_at_k_score)
+                        print(f'VALIDATION on {val_name} {self.current_epoch}-> {val_name}_loss: ', all_val_losses,
+                              f', {val_name}_acc: ', val_acc,
+                              f', {val_name}_auroc: ', val_auroc_score,
+                              f', {val_name}_R@K: ', r_at_k_score)
 
-                        list_for_tb = [(f'Val/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss in
+                        list_for_tb = [(f'{val_name}/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss in
                                        val_losses.items()]
-                        list_for_tb.append(('Val/AUROC', val_auroc_score))
-                        list_for_tb.append(('Val/Accuracy', val_acc))
+                        list_for_tb.append((f'{val_name}/AUROC', val_auroc_score))
+                        list_for_tb.append((f'{val_name}/Accuracy', val_acc))
                         r_at_k_values = []
                         for k, v in r_at_k_score.items():
                             r_at_k_values.append(v)
-                            list_for_tb.append((f'Val/{k}', v))
+                            list_for_tb.append((f'{val_name}/{k}', v))
 
                         total_vals_Rat1 += r_at_k_values[0]
                         total_vals_auroc += val_auroc_score
