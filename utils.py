@@ -347,7 +347,7 @@ def get_model_name(args):
             f"lr{args.get('learning_rate'):.2}_" \
             f"bblr{args.get('bb_learning_rate'):.2}"
 
-    if args.get('aug_swap') != 0:
+    if args.get('aug_swap') != 1:
         swap_size = args.get('aug_swap')
         swap_prob = args.get('aug_swap_prob')
         name += f'-{swap_prob}swap{swap_size}'
