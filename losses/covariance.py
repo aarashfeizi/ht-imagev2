@@ -11,7 +11,7 @@ class COV_Loss(nn.Module):
     def __init__(self, dim, margin=1.0, static_mean=False):
         super().__init__()
         self.dim = dim
-        self.means = torch.zeros(size=self.dim)
+        self.means = torch.zeros(size=(self.dim,))
         self.datapoint_num = 0
         self.margin = margin
         self.static_mean = static_mean
@@ -36,7 +36,7 @@ class COV_Loss(nn.Module):
         # todo add eps to main diagonal and subtract margin
 
     def reset_means(self):
-        self.means = torch.zeros(size=self.dim)
+        self.means = torch.zeros(size=(self.dim,))
         self.datapoint_num = 0
 
     def update_means(self, new_means, new_size):
