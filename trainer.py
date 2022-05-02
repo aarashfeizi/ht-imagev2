@@ -32,7 +32,7 @@ class Trainer:
         self.cov_loss_coefficient = args.get('cov_coef')
 
         if args.get('cov'):
-            self.cov_loss = losses.covariance.COV_Loss(self.emb_size)
+            self.cov_loss = losses.covariance.COV_Loss(self.emb_size, static_mean=args.get('cov_static_mean'))
 
         self.loss_name = args.get('loss')
         self.loss_function = loss
@@ -251,6 +251,9 @@ class Trainer:
 
                 t.update()
 
+        if self.cov_loss:
+            self.cov_loss.reset_means()
+
         return epoch_losses, acc.get_acc()
 
     def validate(self, net, val_name, val_loader):
@@ -300,6 +303,9 @@ class Trainer:
                 t.set_postfix(**postfixes)
 
                 t.update()
+
+        if self.cov_loss:
+            self.cov_loss.reset_means()
 
         assert len(true_links) == len(predicted_links)
         auroc_score = roc_auc_score(true_links, predicted_links)

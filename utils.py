@@ -356,7 +356,11 @@ def get_model_name(args):
         coef = ''
         if args.get("cov_coef") != 1.0:
             coef = args.get("cov_coef")
-        name += f'-{coef}cov2'
+
+        if args.get('cov_static_mean'):
+            name += f'-{coef}cov3'
+        else:
+            name += f'-{coef}cov2'
 
     name += f"_{args.get('loss')}"
 
@@ -861,18 +865,21 @@ def get_diag_3d_tensor(t):
     t_2d = torch.diagonal(t).T
     return t_2d
 
-def torch_get_cov(t):
+def torch_get_cov(t, previous_mean, size):
     """
     get cov matrix
     :param t: a (N, D) tensor, with N samples and D feature types
+    :param previous_mean: a (1, D) tensor with mean of all previous embeddings
+    :param size: number of all embeddings up until now
     :return: cov tensor with size (D, D)
     """
 
     N, D = t.shape
-    t_mean = t.mean(dim=0, keepdim=True)
+    # t_mean = t.mean(dim=0, keepdim=True)
+    t_mean = (previous_mean * size + t.sum(dim=0, keepdim=True)) / (size + t.shape[0])
     t_prime = t - t_mean
 
     t_cov = (t_prime.T @ t_prime) / (N - 1)
 
-    return t_cov
+    return t_cov, t_mean
 
