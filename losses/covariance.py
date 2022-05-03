@@ -21,6 +21,9 @@ class COV_Loss(nn.Module):
             batch = batch.reshape(-1, self.dim)
 
         n, d = batch.shape
+        if batch.device.type == 'cuda':
+            self.means = self.means.cuda()
+
         batch_cov, new_means = utils.torch_get_cov(batch, self.means, self.datapoint_num)
         if self.static_mean:
             self.update_means(new_means=new_means, new_size=(self.datapoint_num + n))
