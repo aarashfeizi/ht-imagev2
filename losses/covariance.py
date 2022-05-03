@@ -45,5 +45,5 @@ class COV_Loss(nn.Module):
         self.datapoint_num = 0
 
     def update_means(self, new_means, new_size):
-        self.means = new_means.cpu()
+        self.means = new_means.detach().cpu()
         self.new_size = new_size

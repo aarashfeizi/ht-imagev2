@@ -876,7 +876,7 @@ def torch_get_cov_with_previous(t, previous_mean, size):
 
     N, D = t.shape
     # t_mean = t.mean(dim=0, keepdim=True)
-    t_mean = (previous_mean * size + t.sum(dim=0, keepdim=True).cpu()) / (size + t.shape[0])
+    t_mean = (previous_mean * size + t.sum(dim=0, keepdim=True).detach()) / (size + t.shape[0])
     t_prime = t - t_mean
 
     t_cov = (t_prime.T @ t_prime) / (N - 1)
