@@ -865,7 +865,7 @@ def get_diag_3d_tensor(t):
     t_2d = torch.diagonal(t).T
     return t_2d
 
-def torch_get_cov(t, previous_mean, size):
+def torch_get_cov_with_previous(t, previous_mean, size):
     """
     get cov matrix
     :param t: a (N, D) tensor, with N samples and D feature types
@@ -876,10 +876,24 @@ def torch_get_cov(t, previous_mean, size):
 
     N, D = t.shape
     # t_mean = t.mean(dim=0, keepdim=True)
-    t_mean = (previous_mean * size + t.sum(dim=0, keepdim=True)) / (size + t.shape[0])
+    t_mean = (previous_mean * size + t.sum(dim=0, keepdim=True).cpu()) / (size + t.shape[0])
     t_prime = t - t_mean
 
     t_cov = (t_prime.T @ t_prime) / (N - 1)
 
     return t_cov, t_mean
 
+def torch_get_cov(t):
+    """
+        get cov matrix
+        :param t: a (N, D) tensor, with N samples and D feature types
+        :return: cov tensor with size (D, D)
+        """
+
+    N, D = t.shape
+    t_mean = t.mean(dim=0, keepdim=True)
+    t_prime = t - t_mean
+
+    t_cov = (t_prime.T @ t_prime) / (N - 1)
+
+    return t_cov

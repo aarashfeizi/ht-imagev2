@@ -251,7 +251,7 @@ class Trainer:
 
                 t.update()
 
-        if self.cov_loss:
+        if self.cov_loss and self.cov_loss.static_mean:
             self.cov_loss.reset_means()
 
         return epoch_losses, acc.get_acc()
@@ -304,7 +304,7 @@ class Trainer:
 
                 t.update()
 
-        if self.cov_loss:
+        if self.cov_loss and self.cov_loss.static_mean:
             self.cov_loss.reset_means()
 
         assert len(true_links) == len(predicted_links)
