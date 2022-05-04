@@ -353,14 +353,19 @@ def get_model_name(args):
         name += f'-{swap_prob}swap{swap_size}'
 
     if args.get('cov'):
-        coef = ''
+        cov_coef = ''
+        var_coef = ''
+
         if args.get("cov_coef") != 1.0:
-            coef = args.get("cov_coef")
+            cov_coef = args.get("cov_coef")
+
+        if args.get("var_coef") != 1.0:
+            var_coef = args.get("var_coef")
 
         if args.get('cov_static_mean'):
-            name += f'-{coef}cov3'
+            name += f'-{cov_coef}cov3-{var_coef}var'
         else:
-            name += f'-{coef}cov2'
+            name += f'-{cov_coef}cov2-{var_coef}var'
 
     name += f"_{args.get('loss')}"
 

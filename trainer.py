@@ -30,6 +30,7 @@ class Trainer:
         self.current_epoch = current_epoch
         self.cov_loss = None
         self.cov_loss_coefficient = args.get('cov_coef')
+        self.var_loss_coefficient = args.get('var_coef')
 
         if args.get('cov'):
             self.cov_loss = losses.covariance.COV_Loss(self.emb_size, static_mean=args.get('cov_static_mean'))
@@ -331,9 +332,11 @@ class Trainer:
             each_loss_item[f'bce_{self.loss_name}'] = loss.item()
 
         if self.cov_loss:
-            cov_loss_value = self.cov_loss(embeddings)
+            cov_loss_value, var_loss_value = self.cov_loss(embeddings)
             loss += self.cov_loss_coefficient * cov_loss_value
+            loss += self.var_loss_coefficient * var_loss_value
             each_loss_item['cov'] = cov_loss_value.item()
+            each_loss_item['var'] = var_loss_value.item()
 
         # elif self.loss_name == 'trpl':
         #     loss = self.loss_function(embeddings, lbls)

@@ -33,11 +33,11 @@ class COV_Loss(nn.Module):
 
 
         batch_cov_2 = (batch_cov * batch_cov)
-        not_same_feat_loss = (batch_cov_2.sum() - batch_cov_2.diag().sum()) / (d * (d - 1))
+        cov_loss = (batch_cov_2.sum() - batch_cov_2.diag().sum()) / (d * (d - 1))
         stds = torch.sqrt(batch_cov.diag() + EPS)
-        same_feat_loss = (F.relu(-stds + self.margin).sum() / d)
+        var_loss = (F.relu(-stds + self.margin).sum() / d)
 
-        return not_same_feat_loss + same_feat_loss
+        return cov_loss, var_loss
         # todo add eps to main diagonal and subtract margin
 
     def reset_means(self):
