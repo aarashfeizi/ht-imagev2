@@ -363,9 +363,9 @@ def get_model_name(args):
             var_coef = args.get("var_coef")
 
         if args.get('cov_static_mean'):
-            name += f'-{cov_coef}cov3-{var_coef}var'
+            name += f'-{cov_coef}cov6-{var_coef}var'
         else:
-            name += f'-{cov_coef}cov2-{var_coef}var'
+            name += f'-{cov_coef}cov4-{var_coef}var'
 
     name += f"_{args.get('loss')}"
 

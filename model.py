@@ -227,6 +227,8 @@ class MultiEmbTopModule(GeneralTopLevelModule):
 
         self.final_projector = nn.Linear(big_emb_size, args.get('emb_size'))
 
+        self.l2normalize = not args.get('cov')
+
         if self.multi_layer_emb:
             assert args.get('emb_size') % 4 == 0
             partial_emb_size = args.get('emb_size') // 4
@@ -299,7 +301,8 @@ class MultiEmbTopModule(GeneralTopLevelModule):
                                                                                                            -1)
 
         # normalize embeddings
-        all_embeddings = all_embeddings / all_embeddings.norm(dim=-1, keepdim=True).reshape(batch_size, batch_size, 1)
+        if self.l2normalize:
+            all_embeddings = all_embeddings / all_embeddings.norm(dim=-1, keepdim=True).reshape(batch_size, batch_size, 1)
 
         # Find cosine similarities between embeddings as predictions
         # cosine_similarities is a (B, B) matrix, ranging from -1 to 1
