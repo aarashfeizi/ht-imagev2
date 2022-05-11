@@ -46,8 +46,8 @@ class Trainer:
             self.bce_weight = 0
 
         self.train_loader = train_loader
-        self.val_loaders = val_loaders
-        self.val_db_loader = val_db_loaders['val'] # todo only using first one
+        self.val_loaders_dict = val_loaders
+        self.val_db_loaders_dict = val_db_loaders
         self.optimizer_name = optimizer
         self.model_name = utils.get_model_name(self.args)
         self.optimizer = None
@@ -87,10 +87,10 @@ class Trainer:
         self.train_loader = train_loader
 
     def set_val_loader(self, val_loaders):
-        self.val_loaders = val_loaders
+        self.val_loaders_dict = val_loaders
 
     def set_val_db_loader(self, val_db_loader):
-        self.val_db_loader = val_db_loader
+        self.val_db_loaders_dict = val_db_loader
 
     def __set_optimizer(self, net):
 
@@ -258,7 +258,7 @@ class Trainer:
         return epoch_losses, acc.get_acc()
 
     def validate(self, net, val_name, val_loader):
-        if self.val_loaders is None:
+        if self.val_loaders_dict is None:
             raise Exception('val_loader is not set in trainer!')
         net.eval()
 
@@ -342,12 +342,16 @@ class Trainer:
         #     loss = self.loss_function(embeddings, lbls)
         return loss, each_loss_item
 
-    def get_embeddings(self, net):
+    def get_embeddings(self, net, data_loader=None):
         net.eval()
-        val_size = self.val_db_loader.dataset.__len__()
+        if data_loader is None:
+            data_loader = self.val_db_loaders_dict['val']
+
+        val_size = data_loader.dataset.__len__()
+
         embeddings = np.zeros((val_size, self.emb_size), dtype=np.float32)
         classes = np.zeros((val_size,), dtype=np.float32)
-        for batch_id, (imgs, lbls) in enumerate(self.val_db_loader):
+        for batch_id, (imgs, lbls) in enumerate(data_loader):
             if self.cuda:
                 imgs = imgs.cuda()
 
@@ -387,14 +391,14 @@ class Trainer:
             total_vals_auroc = 0.0
             with torch.no_grad():
 
-                for val_name, val_loader in self.val_loaders.items():
+                for val_name, val_loader in self.val_loaders_dict.items():
                     if val_loader is None:
                         continue
                     val_name = val_name[0].upper() + val_name[1:]
 
                     val_losses, val_acc, val_auroc_score = self.validate(net, val_name, val_loader)
 
-                    embeddings, classes = self.get_embeddings(net)
+                    embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
 
                     r_at_k_score = utils.get_recall_at_k(embeddings, classes,
                                                          metric='cosine',
@@ -424,8 +428,8 @@ class Trainer:
                 if self.heatmap:
                     self.draw_heatmaps(net)
 
-            total_vals_Rat1 /= len(self.val_loaders)
-            total_vals_auroc /= len(self.val_loaders)
+            total_vals_Rat1 /= len(self.val_loaders_dict)
+            total_vals_auroc /= len(self.val_loaders_dict)
 
             if total_vals_auroc > best_val_auroc_score:
                 # best_val_acc = val_acc
@@ -463,13 +467,13 @@ class Trainer:
             if val:
                 with torch.no_grad():
 
-                    for val_name, val_loader in self.val_loaders.items():
+                    for val_name, val_loader in self.val_loaders_dict.items():
                         if val_loader is None:
                             continue
                         val_name = val_name[0].upper() + val_name[1:]
                         val_losses, val_acc, val_auroc_score = self.validate(net, val_name, val_loader)
 
-                        embeddings, classes = self.get_embeddings(net)
+                        embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
 
                         r_at_k_score = utils.get_recall_at_k(embeddings, classes,
                                                              metric='cosine',
@@ -504,8 +508,8 @@ class Trainer:
                     if self.heatmap:
                         self.draw_heatmaps(net)
 
-            total_vals_Rat1 /= len(self.val_loaders)
-            total_vals_auroc /= len(self.val_loaders)
+            total_vals_Rat1 /= len(self.val_loaders_dict)
+            total_vals_auroc /= len(self.val_loaders_dict)
 
             if (val and total_vals_auroc > best_val_auroc_score) or \
                     (not val and epoch == self.epochs):

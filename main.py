@@ -90,9 +90,9 @@ def main():
     if not all_args.get('test'):  # training
         trainer = Trainer(all_args, loss=loss, train_loader=train_loader,
                           val_loaders={'val': val_loader,
-                                      'val2': val2_loader},
+                                       'val2': val2_loader},
                           val_db_loaders={'val': val_db_loader,
-                                         'val2': val2_db_loader}, force_new_dir=True)
+                                          'val2': val2_db_loader}, force_new_dir=True)
 
         if all_args.get('draw_heatmaps'):
             trainer.set_heatmap_loader(val_loader_4heatmap)
@@ -100,6 +100,10 @@ def main():
         trainer.train(net, val=(not all_args.get('no_validation')))
 
     else:  # testing
+        val_db_loaders_dict = {'val': val_db_loader,
+                               'val2': val2_db_loader}
+        val_loaders_dict = {'val': val_loader,
+                       'val2': val2_loader}
         assert os.path.exists(all_args.get('ckpt_path'))
         trainer = Trainer(all_args, loss=loss, train_loader=None, val_loaders={'val': val_loader},
                           val_db_loaders={'val': val_db_loader}, force_new_dir=False)
@@ -110,12 +114,12 @@ def main():
             trainer.set_heatmap_loader(val_loader_4heatmap)
             trainer.draw_heatmaps(net)
 
-        for val_name, val_loader in {'val': val_loader, 'val2': val2_loader}.items():
+        for val_name, val_loader in val_loaders_dict.items():
             if val_loader is None:
                 continue
             with torch.no_grad():
                 val_losses, val_acc, val_auroc_score = trainer.validate(net, val_name, val_loader)
-                embeddings, classes = trainer.get_embeddings(net)
+                embeddings, classes = trainer.get_embeddings(net, data_loader=val_db_loaders_dict[val_name])
 
                 r_at_k_score = utils.get_recall_at_k(embeddings, classes,
                                                      metric='cosine',
