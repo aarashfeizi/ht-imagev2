@@ -394,9 +394,9 @@ class Trainer:
                 for val_name, val_loader in self.val_loaders_dict.items():
                     if val_loader is None:
                         continue
-                    val_name = val_name[0].upper() + val_name[1:]
+                    capitalized_val_name = val_name[0].upper() + val_name[1:]
 
-                    val_losses, val_acc, val_auroc_score = self.validate(net, val_name, val_loader)
+                    val_losses, val_acc, val_auroc_score = self.validate(net, capitalized_val_name, val_loader)
 
                     embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
 
@@ -406,19 +406,19 @@ class Trainer:
 
                     all_val_losses = {lss_name: (lss / len(val_loader)) for lss_name, lss in val_losses.items()}
 
-                    print(f'VALIDATION on {val_name} {self.current_epoch}-> val_loss: ', all_val_losses,
+                    print(f'VALIDATION on {capitalized_val_name} {self.current_epoch}-> val_loss: ', all_val_losses,
                           f', val_acc: ', val_acc,
                           f', val_auroc: ', val_auroc_score,
                           f', val_R@K: ', r_at_k_score)
 
-                    list_for_tb = [(f'{val_name}/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss in
+                    list_for_tb = [(f'{capitalized_val_name}/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss in
                                         val_losses.items()]
-                    list_for_tb.append((f'{val_name}/AUROC', val_auroc_score))
-                    list_for_tb.append((f'{val_name}/Accuracy', val_acc))
+                    list_for_tb.append((f'{capitalized_val_name}/AUROC', val_auroc_score))
+                    list_for_tb.append((f'{capitalized_val_name}/Accuracy', val_acc))
                     r_at_k_values = []
                     for k, v in r_at_k_score.items():
                         r_at_k_values.append(v)
-                        list_for_tb.append((f'{val_name}/{k}', v))
+                        list_for_tb.append((f'{capitalized_val_name}/{k}', v))
 
                     total_vals_Rat1 += r_at_k_values[0]
                     total_vals_auroc += val_auroc_score
@@ -470,8 +470,8 @@ class Trainer:
                     for val_name, val_loader in self.val_loaders_dict.items():
                         if val_loader is None:
                             continue
-                        val_name = val_name[0].upper() + val_name[1:]
-                        val_losses, val_acc, val_auroc_score = self.validate(net, val_name, val_loader)
+                        capitalized_val_name = val_name[0].upper() + val_name[1:]
+                        val_losses, val_acc, val_auroc_score = self.validate(net, capitalized_val_name, val_loader)
 
                         embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
 
@@ -486,19 +486,19 @@ class Trainer:
 
                         all_val_losses = {lss_name: (lss / len(val_loader)) for lss_name, lss in val_losses.items()}
 
-                        print(f'VALIDATION on {val_name} {self.current_epoch}-> {val_name}_loss: ', all_val_losses,
-                              f', {val_name}_acc: ', val_acc,
-                              f', {val_name}_auroc: ', val_auroc_score,
-                              f', {val_name}_R@K: ', r_at_k_score)
+                        print(f'VALIDATION on {capitalized_val_name} {self.current_epoch}-> {capitalized_val_name}_loss: ', all_val_losses,
+                              f', {capitalized_val_name}_acc: ', val_acc,
+                              f', {capitalized_val_name}_auroc: ', val_auroc_score,
+                              f', {capitalized_val_name}_R@K: ', r_at_k_score)
 
-                        list_for_tb = [(f'{val_name}/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss in
+                        list_for_tb = [(f'{capitalized_val_name}/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss in
                                        val_losses.items()]
-                        list_for_tb.append((f'{val_name}/AUROC', val_auroc_score))
-                        list_for_tb.append((f'{val_name}/Accuracy', val_acc))
+                        list_for_tb.append((f'{capitalized_val_name}/AUROC', val_auroc_score))
+                        list_for_tb.append((f'{capitalized_val_name}/Accuracy', val_acc))
                         r_at_k_values = []
                         for k, v in r_at_k_score.items():
                             r_at_k_values.append(v)
-                            list_for_tb.append((f'{val_name}/{k}', v))
+                            list_for_tb.append((f'{capitalized_val_name}/{k}', v))
 
                         total_vals_Rat1 += r_at_k_values[0]
                         total_vals_auroc += val_auroc_score
