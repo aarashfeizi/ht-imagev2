@@ -22,6 +22,8 @@ METRIC_LIST = ['cosine',
                'euclidean',
                'mlp']
 
+OPTIMIZER_LIST = ['adam', 'sam', 'sgd']
+
 def get_args():
     parser = argparse.ArgumentParser()
 
@@ -45,10 +47,11 @@ def get_args():
 
     # data
     parser.add_argument('--dataset', default='hotels_small', choices=DATASET_LIST)
+    parser.add_argument('--number_of_val', default=1, type=int)
     parser.add_argument('--hard_triplet', default=False, action='store_true')
 
     # learning
-    parser.add_argument('--optimizer', default='adam', choices=['adam', 'sam', 'sgd'], help='optimizer to use')
+    parser.add_argument('--optimizer', default='adam', choices=OPTIMIZER_LIST, help='optimizer to use')
     parser.add_argument('--ckpt_path', default=None, help="path to the checkpoint file")
     parser.add_argument('--learning_rate', type=float, default=0.001)
     parser.add_argument('--bb_learning_rate', type=float, default=0.00001)

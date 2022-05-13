@@ -87,12 +87,21 @@ def main():
         #         p.cuda()
         loss.cuda()
 
+    all_val_loader_names = ['val', 'val2']
+    all_val_loaders = [val_loader, val2_loader]
+    all_val_db_loaders = [val_db_loader, val2_db_loader]
+
+    val_loaders_dict = {}
+    val_db_loaders_dict = {}
+
+    for i in range(all_args.get('number_of_val')):
+        val_loaders_dict[all_val_loader_names[i]] = all_val_loaders[i]
+        val_db_loaders_dict[all_val_loader_names[i]] = all_val_db_loaders[i]
+
     if not all_args.get('test'):  # training
         trainer = Trainer(all_args, loss=loss, train_loader=train_loader,
-                          val_loaders={'val': val_loader,
-                                       'val2': val2_loader},
-                          val_db_loaders={'val': val_db_loader,
-                                          'val2': val2_db_loader},
+                          val_loaders=val_loaders_dict,
+                          val_db_loaders=val_db_loaders_dict,
                           force_new_dir=True,
                           optimizer=all_args.get('optimizer'))
 
@@ -102,10 +111,6 @@ def main():
         trainer.train(net, val=(not all_args.get('no_validation')))
 
     else:  # testing
-        val_db_loaders_dict = {'val': val_db_loader,
-                               'val2': val2_db_loader}
-        val_loaders_dict = {'val': val_loader,
-                       'val2': val2_loader}
         assert os.path.exists(all_args.get('ckpt_path'))
         trainer = Trainer(all_args, loss=loss, train_loader=None, val_loaders={'val': val_loader},
                           val_db_loaders={'val': val_db_loader}, force_new_dir=False)
