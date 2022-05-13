@@ -352,6 +352,10 @@ def get_model_name(args):
         swap_prob = args.get('aug_swap_prob')
         name += f'-{swap_prob}swap{swap_size}'
 
+    if args.get('optimizer') != 'adam':
+        opt = args.get('optimizer').upper()
+        name += f'-opt{opt}'
+
     if args.get('cov'):
         cov_coef = ''
         var_coef = ''

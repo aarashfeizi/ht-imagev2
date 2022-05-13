@@ -9,8 +9,7 @@ import losses
 import utils
 from SummaryWriter import SummaryWriter
 from metrics import Metric_Accuracy
-
-OPTIMIZERS = {'adam': torch.optim.Adam}
+import optimizers
 
 
 class Trainer:
@@ -141,9 +140,9 @@ class Trainer:
                               'lr': self.args.get('LOSS_lr'),
                               'new': True}]
 
-        self.optimizer = OPTIMIZERS[self.optimizer_name](params=learnable_params,
-                                                         lr=self.args.get('learning_rate'),
-                                                         weight_decay=self.args.get('weight_decay'))
+        self.optimizer = optimizers.get_optimizer(args=self.args,
+                                                  optimizer_name=self.optimizer_name,
+                                                  learnable_params=learnable_params)
 
     def __tb_draw_histograms(self, net):
 
