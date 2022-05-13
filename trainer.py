@@ -220,6 +220,9 @@ class Trainer:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
 
+                if self.optimizer_name == 'adam':
+                    utils.enable_running_stats(net)
+
                 img_embeddings = net(imgs)
                 preds, similarities = utils.get_preds(img_embeddings)
                 bce_labels = utils.make_batch_bce_labels(lbls)
@@ -239,10 +242,24 @@ class Trainer:
                     for k, v in loss_items.items():
                         epoch_losses[k] += v
 
-                self.optimizer.zero_grad()
-                loss.backward()
+                if self.optimizer_name != 'sam':
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
+                else:
+                    loss.backward()
+                    self.optimizer.first_step(zero_grad=True)
 
-                self.optimizer.step()
+                    # second forward-backward step
+                    utils.disable_running_stats(net)
+
+                    img_embeddings_sam = net(imgs)
+                    preds_sam, _ = utils.get_preds(img_embeddings_sam)
+
+                    loss_sam, _ = self.get_loss_value(img_embeddings_sam, preds_sam, lbls)
+
+                    loss_sam.backward()
+                    self.optimizer.second_step(zero_grad=True)
 
 
                 postfixes = {f'train_{self.loss_name}': f'{epoch_loss / (batch_id) :.4f}',
