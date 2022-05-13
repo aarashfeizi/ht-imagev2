@@ -94,7 +94,7 @@ def main():
                           val_db_loaders={'val': val_db_loader,
                                           'val2': val2_db_loader},
                           force_new_dir=True,
-                          optimizer=args.get('optimizer'))
+                          optimizer=all_args.get('optimizer'))
 
         if all_args.get('draw_heatmaps'):
             trainer.set_heatmap_loader(val_loader_4heatmap)
