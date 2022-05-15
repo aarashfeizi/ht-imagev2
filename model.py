@@ -67,6 +67,7 @@ class GeneralTopLevelModule(nn.Module):
         self.attQ_layer4 = None
 
         self.attQs = []
+        self.atts = []
 
     def forward(self, imgs):
         embeddings = self.encoder(imgs)
