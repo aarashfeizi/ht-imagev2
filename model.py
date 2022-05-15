@@ -1,5 +1,6 @@
 from functools import partial
 
+import numpy as np
 import torch
 import torch.nn as nn
 from timm.models.vision_transformer import VisionTransformer
@@ -212,16 +213,26 @@ class MultiEmbTopModule(GeneralTopLevelModule):
 
         big_emb_size = 0
 
-        self.attQ_layer1 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[1][0])
-        self.attQ_layer2 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[2][0])
-        self.attQ_layer3 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[3][0])
-        self.attQ_layer4 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[4][0])
+        self.att_layer1 = MultiHeadAttention(emb_size=FEATURE_MAP_SIZES[1][0], heads=4)
+        self.att_layer2 = MultiHeadAttention(emb_size=FEATURE_MAP_SIZES[2][0], heads=4)
+        self.att_layer3 = MultiHeadAttention(emb_size=FEATURE_MAP_SIZES[3][0], heads=4)
+        self.att_layer4 = MultiHeadAttention(emb_size=FEATURE_MAP_SIZES[4][0], heads=4)
 
-        self.attQs = [self.attQ_layer1,
-                      self.attQ_layer2,
-                      self.attQ_layer3,
-                      self.attQ_layer4]
+        self.atts = [self.att_layer1,
+                     self.att_layer2,
+                     self.att_layer3,
+                     self.att_layer4]
 
+        # self.attQ_layer1 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[1][0])
+        # self.attQ_layer2 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[2][0])
+        # self.attQ_layer3 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[3][0])
+        # self.attQ_layer4 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[4][0])
+
+        # self.attQs = [self.attQ_layer1,
+        #               self.attQ_layer2,
+        #               self.attQ_layer3,
+        #               self.attQ_layer4]
+        #
         for k, v in FEATURE_MAP_SIZES.items():
             big_emb_size += v[0]
 
@@ -272,22 +283,27 @@ class MultiEmbTopModule(GeneralTopLevelModule):
                 batch_size = B
             act = self.maxpool_layers[H0](act)
             _, _, H, W = act.shape
-            act1Q = self.attQs[idx](act)
-            act1Q = act1Q.reshape(B, 1, C, H * W)
-            act1Q = act1Q.transpose(3, 2)
+            act = act.reshape(B, C, H * W)
+            act = act.transpose(-1, -2)
+            new_act = self.atts[idx](act) # att_act's shape is (B, B, H*W, C)
 
-            act2K = act.reshape(1, B, C, H * W)
-            heatmap = act1Q @ act2K
-            # heatmap is (B, B, H*W, H*W) the attention coefficients of every image according to another image
-
-            heatmap = heatmap.softmax(dim=3)
-
-            act = act.reshape(1, B, C, H * W)
-            act = act.transpose(3, 2)
-
+            # act1Q = self.attQs[idx](act)
+            # act1Q = act1Q.reshape(B, 1, C, H * W)
+            # act1Q = act1Q.transpose(3, 2)
+            #
+            # act2K = act.reshape(1, B, C, H * W)
+            # heatmap = (act1Q @ act2K) / np.sqrt(C)
+            # # heatmap is (B, B, H*W, H*W) the attention coefficients of every image according to another image
+            #
+            # heatmap = heatmap.softmax(dim=-1)
+            #
+            # act = act.reshape(1, B, C, H * W)
+            # act = act.transpose(3, 2)
+            # att_act =
             # activations is being updated to a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
-            new_act = (heatmap @ act) + act  # add original with attention activation
-            new_activations.append(torch.diagonal(new_act.transpose(-1, -2).reshape(B, B, C * H * W)).transpose(0, 1).reshape(B, C, H, W))
+            new_act = new_act + act  # add original with attention activation
+            new_activations.append(
+                torch.diagonal(new_act.transpose(-1, -2).reshape(B, B, C * H * W)).transpose(0, 1).reshape(B, C, H, W))
 
             layer_embeddings.append(new_act.transpose(-1, -2).mean(dim=-1))
 
@@ -302,7 +318,8 @@ class MultiEmbTopModule(GeneralTopLevelModule):
 
         # normalize embeddings
         if self.l2normalize:
-            all_embeddings = all_embeddings / all_embeddings.norm(dim=-1, keepdim=True).reshape(batch_size, batch_size, 1)
+            all_embeddings = all_embeddings / all_embeddings.norm(dim=-1, keepdim=True).reshape(batch_size, batch_size,
+                                                                                                1)
 
         # Find cosine similarities between embeddings as predictions
         # cosine_similarities is a (B, B) matrix, ranging from -1 to 1
@@ -321,9 +338,167 @@ class MultiEmbTopModule(GeneralTopLevelModule):
         embeddings, activations = self.forward(imgs, is_feat=True)
         return embeddings, activations
 
+
 def get_top_module(args):
     encoder = backbones.get_bb_network(args)
     if args.get('ml_self_att'):
         return MultiEmbTopModule(args, encoder)
     else:
         return SingleEmbTopModule(args, encoder)
+
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, emb_size, heads=1, k=True, q=True, v=True, o=True):
+        """
+
+        :param emb_size: total embedding size
+        :param heads: number of heads
+        :param k: include w_k
+        :param q: include w_q
+        :param v: include w_v
+        :param o: include w_o
+        """
+        super().__init__()
+        self.emb_size = emb_size
+        self.heads = heads
+        self.head_emb_size = self.emb_size / self.heads
+        assert self.emb_size % self.heads == 0
+        self.softmax = nn.Softmax(dim=-1)
+        self.w_k = nn.Identity()
+        self.w_q = nn.Identity()
+        self.w_v = nn.Identity()
+        self.w_o = nn.Identity()
+
+        if k:
+            self.w_k = nn.Linear(self.emb_size, self.emb_size)
+        if q:
+            self.w_q = nn.Linear(self.emb_size, self.emb_size)
+        if v:
+            self.w_v = nn.Linear(self.emb_size, self.emb_size)
+
+        if o and heads > 1:
+            self.w_o = nn.Linear(self.emb_size, self.emb_size)
+
+    def multi_head_reshape(self, x):
+        B, N, D = x.shape
+        assert D == self.emb_size
+        x = x.reshape(B, N, self.heads, -1)
+        x = x.transpose(1, 2)
+        return x
+
+    def reverse_multi_head_reshape(self, x):
+        B, H, N, d = x.shape
+        assert d == self.head_emb_size
+        assert H == self.heads
+        x = x.transpose(1, 2)
+        x = x.reshape(B, N, -1)
+
+        return x
+
+    def forward(self, x):
+        """
+
+        :param x: tensor with shape (batch_size, sequences, emb_size)
+        :return: attended tensor with shape (batch_size, sequences, emb_size)
+        """
+        B, N, D = x.shape
+        assert D == self.emb_size
+        Q = self.w_q(x)
+        K = self.w_k(x)
+        V = self.w_v(x)
+
+        if self.heads != 1:
+            Q = self.multi_head_reshape(Q)
+            K = self.multi_head_reshape(K)
+            V = self.multi_head_reshape(V)
+
+        attention = Q @ K.transpose(-1, -2)
+        attention /= np.sqrt(self.head_emb_size)
+
+        att_V = attention @ V
+
+        if self.heads != 1:
+            att_V = self.reverse_multi_head_reshape(att_V)
+
+        return self.w_o(att_V)
+
+class BatchMultiHeadAttention(nn.Module):
+    def __init__(self, emb_size, heads=1, k=True, q=True, v=True, o=True):
+        """
+
+        :param emb_size: total embedding size
+        :param heads: number of heads
+        :param k: include w_k
+        :param q: include w_q
+        :param v: include w_v
+        :param o: include w_o
+        """
+        super().__init__()
+        self.emb_size = emb_size
+        self.heads = heads
+        self.head_emb_size = self.emb_size / self.heads
+        assert self.emb_size % self.heads == 0
+        self.softmax = nn.Softmax(dim=-1)
+        self.w_k = nn.Identity()
+        self.w_q = nn.Identity()
+        self.w_v = nn.Identity()
+        self.w_o = nn.Identity()
+
+        if k:
+            self.w_k = nn.Linear(self.emb_size, self.emb_size)
+        if q:
+            self.w_q = nn.Linear(self.emb_size, self.emb_size)
+        if v:
+            self.w_v = nn.Linear(self.emb_size, self.emb_size)
+
+        if o and heads > 1:
+            self.w_o = nn.Linear(self.emb_size, self.emb_size)
+
+    def multi_head_reshape(self, x):
+        B, _, N, D = x.shape
+        assert D == self.emb_size
+        x = x.reshape(B, 1, N, self.heads, -1)
+        x = x.transpose(-2, -3) # N and heads
+        return x
+
+    def reverse_multi_head_reshape(self, x):
+        B1, B2, H, N, d = x.shape
+        assert d == self.head_emb_size
+        assert H == self.heads
+        assert B1 == B2
+        x = x.transpose(-2, -3) # N and heads
+        x = x.reshape(B1, B2, N, -1)
+
+        return x
+
+    def forward(self, x):
+        """
+
+        :param x: tensor with shape (batch_size, sequences, emb_size)
+        :return: attended tensor with shape (batch_size, sequences, emb_size)
+        """
+        B, N, D = x.shape
+
+        assert D == self.emb_size
+        Q = self.w_q(x)
+        K = self.w_k(x)
+        V = self.w_v(x)
+
+        Q = Q.reshape(B, 1, N, D)
+        K = K.reshape(B, 1, N, D)
+        V = V.reshape(B, 1, N, D)
+
+        if self.heads != 1:
+            Q = self.multi_head_reshape(Q)
+            K = self.multi_head_reshape(K)
+            V = self.multi_head_reshape(V)
+
+        attention = Q @ K.transpose(-1, -2).transpose(0, 1) # attention is (B, B, H, N, N)
+        attention /= np.sqrt(self.head_emb_size)
+
+        att_V = attention @ V
+
+        if self.heads != 1:
+            att_V = self.reverse_multi_head_reshape(att_V)
+
+        return self.w_o(att_V)
