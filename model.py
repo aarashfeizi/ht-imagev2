@@ -214,10 +214,10 @@ class MultiEmbTopModule(GeneralTopLevelModule):
 
         big_emb_size = 0
 
-        self.att_layer1 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[1][0], heads=4)
-        self.att_layer2 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[2][0], heads=4)
-        self.att_layer3 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[3][0], heads=4)
-        self.att_layer4 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[4][0], heads=4)
+        self.att_layer1 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[1][0], heads=args.get('ml_self_att_head_number'))
+        self.att_layer2 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[2][0], heads=args.get('ml_self_att_head_number'))
+        self.att_layer3 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[3][0], heads=args.get('ml_self_att_head_number'))
+        self.att_layer4 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[4][0], heads=args.get('ml_self_att_head_number'))
 
         self.atts = [self.att_layer1,
                      self.att_layer2,
