@@ -470,7 +470,12 @@ class Trainer:
                 else:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
-        for epoch in range(starting_epoch, self.epochs + 1):
+        if self.epochs == 0:
+            assert self.early_stopping_tol > 0
+            max_epochs = 10000 + 1
+        else:
+            max_epochs = self.epochs + 1
+        for epoch in range(starting_epoch, max_epochs):
 
             self.current_epoch = epoch
 
@@ -536,7 +541,7 @@ class Trainer:
             total_vals_auroc /= len(self.val_loaders_dict)
 
             if (val and total_vals_auroc > best_val_auroc_score) or \
-                    (not val and epoch == self.epochs):
+                    (not val and epoch == max_epochs - 1):
                 # best_val_acc = val_acc
                 best_val_auroc_score = total_vals_auroc
                 if self.args.get('save_model'):
@@ -545,7 +550,7 @@ class Trainer:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
             if (val and total_vals_Rat1 > best_val_Rat1) or \
-                    (not val and epoch == self.epochs):
+                    (not val and epoch == max_epochs - 1):
                 # best_val_acc = val_acc
                 best_val_Rat1 = total_vals_Rat1
                 self.early_stopping_counter = 0
