@@ -30,6 +30,8 @@ class Trainer:
         self.cov_loss = None
         self.cov_loss_coefficient = args.get('cov_coef')
         self.var_loss_coefficient = args.get('var_coef')
+        self.early_stopping_tol = args.get('early_stopping_tol')
+        self.early_stopping_counter = 0
 
         if args.get('cov'):
             self.cov_loss = losses.covariance.COV_Loss(self.emb_size, static_mean=args.get('cov_static_mean'))
@@ -546,14 +548,19 @@ class Trainer:
                     (not val and epoch == self.epochs):
                 # best_val_acc = val_acc
                 best_val_Rat1 = total_vals_Rat1
+                self.early_stopping_counter = 0
                 if self.args.get('save_model'):
                     utils.save_model(net, self.current_epoch, 'recall', self.save_path)
                 else:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            else:
+                if self.early_stopping_tol > 0:
+                    self.early_stopping_counter += 1
 
             self.__tb_draw_histograms(net)
 
             self.__tb_draw_histograms(self.loss_function)
+
 
             if (self.k_inc_freq != 0) and \
                     epoch % self.k_inc_freq == 0:
@@ -565,6 +572,11 @@ class Trainer:
                 train_loader = utils.get_data(self.args, mode='train', transform=train_transforms, sampler_mode='kbatch')
                 self.train_loader = train_loader
 
+
+            if self.early_stopping_tol > 0 and \
+                    self.early_stopping_counter > self.early_stopping_tol:
+                print(f'Early stoppping! {self.early_stopping_counter} epochs without r@1 improvement')
+                break
             # if self.scheduler:
             #     self.scheduler.step()
             # else:
