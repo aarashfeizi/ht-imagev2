@@ -549,7 +549,7 @@ class Trainer:
                 else:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
-            if (val and total_vals_Rat1 > best_val_Rat1) or \
+            if (val and total_vals_Rat1 >= best_val_Rat1) or \
                     (not val and epoch == max_epochs - 1):
                 # best_val_acc = val_acc
                 best_val_Rat1 = total_vals_Rat1

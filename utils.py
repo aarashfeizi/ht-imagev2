@@ -382,7 +382,12 @@ def get_model_name(args):
         name += f'-bce_bw{args.get("bce_weight")}'
 
     if args.get('ml_self_att'):
-        name += f"_M{args.get('ml_self_att_head_number')}LocSelfAtt"
+        layers_to_use = args.get('ml_self_att_layers_to_use')
+        ltu = ''
+        if layers_to_use < 4:
+            ltu = f'{layers_to_use}'
+        name += f"_M{args.get('ml_self_att_head_number')}LocSelfAtt{ltu}"
+
 
     if args.get('multlayer_emb'):
         name += f'-MLTEMB'

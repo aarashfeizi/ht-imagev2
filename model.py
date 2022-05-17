@@ -207,10 +207,13 @@ class MultiEmbTopModule(GeneralTopLevelModule):
         self.maxpool_4 = nn.MaxPool2d((4, 4))
         self.maxpool_2 = nn.MaxPool2d((2, 2))
         self.maxpool_1 = nn.MaxPool2d((1, 1))
+
+        self.identity = nn.Identity()
+
         self.maxpool_layers = {56: self.maxpool_8,
                                28: self.maxpool_4,
                                14: self.maxpool_2,
-                               7: self.maxpool_1}
+                               7: self.identity}
 
         big_emb_size = 0
 
@@ -224,6 +227,29 @@ class MultiEmbTopModule(GeneralTopLevelModule):
                      self.att_layer3,
                      self.att_layer4]
 
+        self.layer_to_use = args.get('ml_self_att_layers_to_use')  # 4
+
+        if self.layer_to_use < 4:
+            self.maxpool_8 = None
+            self.maxpool_layers[56] = None
+            self.att_layer1 = None
+            self.atts[0] = None
+
+        if self.layer_to_use < 3:
+            self.maxpool_4 = None
+            self.att_layer2 = None
+            self.atts[1] = None
+
+            self.maxpool_2 = self.identity
+            self.maxpool_layers[28] = None
+            self.maxpool_layers[14] = self.identity
+
+        if self.layer_to_use < 2:
+            self.maxpool_2 = self.identity
+            self.maxpool_layers[14] = self.identity
+            self.att_layer3 = None
+            self.atts[2] = None
+
         # self.attQ_layer1 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[1][0])
         # self.attQ_layer2 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[2][0])
         # self.attQ_layer3 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[3][0])
@@ -234,8 +260,10 @@ class MultiEmbTopModule(GeneralTopLevelModule):
         #               self.attQ_layer3,
         #               self.attQ_layer4]
         #
+        thresh = 4 - self.layer_to_use
         for k, v in FEATURE_MAP_SIZES.items():
-            big_emb_size += v[0]
+            if k > thresh:
+                big_emb_size += v[0]
 
         self.final_projector = nn.Linear(big_emb_size, args.get('emb_size'))
 
@@ -282,6 +310,9 @@ class MultiEmbTopModule(GeneralTopLevelModule):
             B, C, H0, W0 = act.shape
             if batch_size == 0:
                 batch_size = B
+            if self.maxpool_layers[H0] is None:
+                continue
+
             act = self.maxpool_layers[H0](act)
             _, _, H, W = act.shape
             act = act.reshape(B, C, H * W)
@@ -331,7 +362,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
 
         # todo currently, outputed final embeddings from the model are NOT being used. Maybe use concatenating embeddings and passing it to an mlp for difference?
         if is_feat:
-            all_activations = {'org': activations, 'att': new_activations}
+            all_activations = {'org': activations[4 - self.layer_to_use:], 'att': new_activations}
             return all_embeddings, all_activations
         else:
             return all_embeddings
