@@ -370,7 +370,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
             all_activations = {'org': activations[4 - self.layer_to_use:], 'att': new_activations}
             return all_embeddings, all_activations
         elif get_pairwise_acts:
-            org_activations = [a.repeat(batch_size * batch_size, 1, 1, 1) for a in activations[4 - self.layer_to_use:]]
+            org_activations = [a.repeat(batch_size, 1, 1, 1) for a in activations[4 - self.layer_to_use:]]
             org_to_return = []
             for a in org_activations:
                 B2, C, H, W = a.shape
