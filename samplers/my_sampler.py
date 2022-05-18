@@ -29,34 +29,46 @@ class BalancedTripletSampler(RandomIdentitySampler):
     Produce batches of [Anchor, Positive, Negative]
     """
 
-    def __init__(self, dataset, batch_size, num_instances, **kwargs):
+    def __init__(self, dataset, batch_size, num_instances, shuffle=True, **kwargs):
         super().__init__(dataset, batch_size, num_instances, **kwargs)
         self.K = 2  # anchor and positive
         self.num_labels_per_batch = self.batch_size // 3 # batch of triplets
         self.max_iters = ((dataset.__len__() * 3) // batch_size)
+        self.batch_indexes = None
+        self.shuffle = shuffle
 
     def prepare_batch(self):
-        batch_idxs_dict = defaultdict(list)
 
-        for label in self.labels:
-            idxs = copy.deepcopy(self.data_dict[label])
-            if len(idxs) < self.K:
-                idxs.extend(np.random.choice(idxs, size=self.K - len(idxs), replace=True))
-            random.shuffle(idxs)
+        if self.batch_indexes is not None and not self.shuffle:
+            batch_idxs_dict = copy.deepcopy(self.batch_indexes)
+        else:
 
-            batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
+            batch_idxs_dict = defaultdict(list)
 
-        for label in self.labels:
-            other_labels = list(set(self.labels) - set([label]))
-            triplets = []
-            for pair in batch_idxs_dict[label]:
-                neg_label = np.random.choice(other_labels, size=1)[0]
-                pair.extend(np.random.choice(self.data_dict[neg_label], size=1))
-                triplets.append(pair)
+            for label in self.labels:
+                idxs = copy.deepcopy(self.data_dict[label])
+                if len(idxs) < self.K:
+                    idxs.extend(np.random.choice(idxs, size=self.K - len(idxs), replace=True))
+                if self.shuffle:
+                    random.shuffle(idxs)
 
-            batch_idxs_dict[label] = triplets
+                batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
+
+            for label in self.labels:
+                other_labels = list(set(self.labels) - set([label]))
+                triplets = []
+                for pair in batch_idxs_dict[label]:
+                    neg_label = np.random.choice(other_labels, size=1)[0]
+                    pair.extend(np.random.choice(self.data_dict[neg_label], size=1))
+                    triplets.append(pair)
+
+                batch_idxs_dict[label] = triplets
+
+            if self.batch_indexes is None and not self.shuffle:
+                self.batch_indexes = copy.deepcopy(batch_idxs_dict)
 
         avai_labels = copy.deepcopy(self.labels)
+
         return batch_idxs_dict, avai_labels
 
 
@@ -181,9 +193,9 @@ class DrawHeatmapSampler(RandomIdentitySampler):
             yield batch
 
 class Draw2XHeatmapSampler(BalancedTripletSampler):
-    def __init__(self, dataset, batch_size, num_instances, idxes=None, **kwargs):
-        super().__init__(dataset, batch_size, num_instances, **kwargs)
+    def __init__(self, dataset, batch_size, num_instances, **kwargs):
+        super().__init__(dataset, batch_size, num_instances, shuffle=False, **kwargs)
         self.batch_size = 3
         self.num_labels_per_batch = self.batch_size // 3  # batch of triplets
-        self.batch_idxes = idxes # not used
         self.max_iters = 10
+
