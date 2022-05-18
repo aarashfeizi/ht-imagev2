@@ -367,6 +367,9 @@ class MultiEmbTopModule(GeneralTopLevelModule):
 
         # todo currently, outputed final embeddings from the model are NOT being used. Maybe use concatenating embeddings and passing it to an mlp for difference?
         if is_feat:
+            all_activations = {'org': activations[4 - self.layer_to_use:], 'att': new_activations}
+            return all_embeddings, all_activations
+        elif get_pairwise_acts:
             org_activations = [a.repeat(batch_size * batch_size, 1, 1, 1) for a in activations[4 - self.layer_to_use:]]
             org_to_return = []
             for a in org_activations:
@@ -374,10 +377,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
                 assert B2 == batch_size * batch_size
                 org_to_return.append(a.reshape(batch_size, batch_size, C, H, W))
 
-            all_activations = {'org': org_to_return, 'att': new_activations}
-            return all_embeddings, all_activations
-        elif get_pairwise_acts:
-            all_activations = {'org': activations[4 - self.layer_to_use:], 'att': all_new_acts}
+            all_activations = {'org': org_to_return, 'att': all_new_acts}
             return all_embeddings, all_activations
         else:
             return all_embeddings
