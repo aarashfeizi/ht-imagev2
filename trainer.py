@@ -213,12 +213,12 @@ class Trainer:
             heatmaps2 = {}
             if type(activations) is dict:
                 for k, v in activations.items():  # 'org' and 'att'
-                    b1, b2, _, _ = v[0].shape
+                    b1, b2, _, _, _ = v[0].shape
                     assert b1 == b2
                     for i1 in range(b1):
                         for i2 in range(b2):
-                            v_img1 = [temp[i1:i1 + 1, i2:i2 + 1, :, :] for temp in v]
-                            v_img2 = [temp[i2:i2 + 1, i1:i1 + 1, :, :] for temp in v]
+                            v_img1 = [temp[i1, i2:i2 + 1, :, :, :] for temp in v]
+                            v_img2 = [temp[i2, i1:i1 + 1, :, :, :] for temp in v]
                             heatmaps1 = utils.get_all_heatmaps([v_img1], org_imgs[i1])
                             heatmaps2 = utils.get_all_heatmaps([v_img2], org_imgs[i2])
 

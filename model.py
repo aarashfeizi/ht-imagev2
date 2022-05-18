@@ -338,7 +338,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
             new_act = new_act + act  # add original with attention activation
 
             if get_pairwise_acts:
-                all_new_acts.append(new_act)
+                all_new_acts.append(new_act.transpose(-1, -2).reshape(B, B, C, H, W))
 
             new_activations.append(
                 torch.diagonal(new_act.transpose(-1, -2).reshape(B, B, C * H * W)).transpose(0, 1).reshape(B, C, H, W))
@@ -367,7 +367,14 @@ class MultiEmbTopModule(GeneralTopLevelModule):
 
         # todo currently, outputed final embeddings from the model are NOT being used. Maybe use concatenating embeddings and passing it to an mlp for difference?
         if is_feat:
-            all_activations = {'org': activations[4 - self.layer_to_use:], 'att': new_activations}
+            org_activations = [a.repeat(batch_size * batch_size, 1, 1, 1) for a in activations[4 - self.layer_to_use:]]
+            org_to_return = []
+            for a in org_activations:
+                B2, C, H, W = a.shape
+                assert B2 == batch_size * batch_size
+                org_to_return.append(a.reshape(batch_size, batch_size, C, H, W))
+
+            all_activations = {'org': org_to_return, 'att': new_activations}
             return all_embeddings, all_activations
         elif get_pairwise_acts:
             all_activations = {'org': activations[4 - self.layer_to_use:], 'att': all_new_acts}
