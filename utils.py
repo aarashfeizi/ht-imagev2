@@ -697,6 +697,10 @@ def get_heatmaped_img(acts, img):
 
     return pic
 
+def concat_imgs(img1, img2):
+    final_img = cv2.hconcat([img1, img2])
+    return final_img
+
 
 def reduce_normalize_activation(t, mode='avg'):
     """

@@ -194,12 +194,14 @@ class Trainer:
             e, activations = net.forward_with_pairwise_activations(imgs)  # returns embeddings, [f1, f2, f3, f4]
 
             img_names = []
-            import pdb
-            pdb.set_trace()
+
             for path in paths:
                 _, img_name = os.path.split(path)
                 img_name = img_name[:img_name.find('.')]
-                img_names.append(img_name)
+                for path2 in paths:
+                    _, img_name2 = os.path.split(path2)
+                    img_name2 = img_name2[:img_name2.find('.')]
+                    img_names.append(img_name + 'VS' + img_name2)
 
             org_imgs = []
 
@@ -207,18 +209,27 @@ class Trainer:
                 org_imgs.append(utils.transform_only_img(path))
 
             name_imgs = []
+            heatmaps1 = {}
+            heatmaps2 = {}
             if type(activations) is dict:
-                for k, v in activations.items():
-                    heatmaps = utils.get_all_heatmaps([v], org_imgs)
+                for k, v in activations.items():  # 'org' and 'att'
+                    b1, b2, _, _ = v.shape
+                    assert b1 == b2
+                    for i1 in range(b1):
+                        for i2 in range(b2):
+                            v_img1 = [temp[i1:i1 + 1, i2:i2 + 1, :, :] for temp in v]
+                            v_img2 = [temp[i2:i2 + 1, i1:i1 + 1, :, :] for temp in v]
+                            heatmaps1 = utils.get_all_heatmaps([v_img1], org_imgs[i1])
+                            heatmaps2 = utils.get_all_heatmaps([v_img2], org_imgs[i2])
 
-                    for name, heatmap in zip(img_names, heatmaps):
-                        name_imgs.extend([(f'img_{name}_{k}/{n}', i) for n, i in heatmap.items()])
+                    for name, heatmap1, heatmap2 in zip(img_names, heatmaps1, heatmaps2):
+                        name_imgs.extend([(f'img_{name}_{k}/{n}', utils.concat_imgs(heatmap1[n], heatmaps2[n])) for n, _ in heatmap1.items()])
 
-            else:
-                heatmaps = utils.get_all_heatmaps([activations], org_imgs)
-
-                for name, heatmap in zip(img_names, heatmaps):
-                    name_imgs.extend([(f'img_{name}/{n}', i) for n, i in heatmap.items()])
+            # else:
+            #     heatmaps = utils.get_all_heatmaps([activations], org_imgs)
+            #
+            #     for name, heatmap in zip(img_names, heatmaps):
+            #         name_imgs.extend([(f'img_{name}/{n}', i) for n, i in heatmap.items()])
 
             self.__tb_draw_img(name_imgs)
 
