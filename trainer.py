@@ -198,7 +198,7 @@ class Trainer:
                     _, img_name2 = os.path.split(path2)
                     img_name2 = img_name2[:img_name2.find('.')]
                     img_names.append(img_name + '-VS-' + img_name2)
-                    names[i][j] = img_name + f'L{lbls[i]}' + '-VS-' + img_name2 + f'L{lbls[i]}'
+                    names[i][j] = img_name + f'L{lbls[i]}' + '-VS-' + img_name2 + f'L{lbls[j]}'
 
             org_imgs = []
 
