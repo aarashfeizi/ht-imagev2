@@ -109,7 +109,7 @@ def main():
         if all_args.get('draw_heatmaps'):
             trainer.set_heatmap_loader(val_loader_4heatmap)
         if all_args.get('draw_heatmaps2x'):
-            trainer.set_heatmap_loader(val_loader_4_2xheatmap)
+            trainer.set_heatmap2x_loader(val_loader_4_2xheatmap)
 
 
         trainer.train(net, val=(not all_args.get('no_validation')))
