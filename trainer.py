@@ -102,19 +102,19 @@ class Trainer:
 
         if self.args.get('backbone') == 'resnet50':
             learnable_params = [{'params': netmod.encoder.rest.parameters(),
-                                 'lr': self.args.get('bb_learning_rate'),
+                                 'lr': self.args.get('learning_rate'),
                                  'weight_decay': self.args.get('weight_decay'),
                                  'new': False}]
 
             if netmod.encoder.last_conv is not None:
                 learnable_params += [{'params': netmod.encoder.last_conv.parameters(),
-                                      'lr': self.args.get('learning_rate'),
+                                      'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
                                       'weight_decay': self.args.get('weight_decay'),
                                       'new': True}]
 
             if netmod.final_projector is not None:
                 learnable_params += [{'params': netmod.final_projector.parameters(),
-                                      'lr': self.args.get('learning_rate'),
+                                      'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
                                       'weight_decay': self.args.get('weight_decay'),
                                       'new': True}]
 
@@ -123,21 +123,21 @@ class Trainer:
             if len(netmod.projs) != 0:
                 for p in netmod.projs:
                     learnable_params += [{'params': p.parameters(),
-                                          'lr': self.args.get('learning_rate'),
+                                          'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
                                           'weight_decay': self.args.get('weight_decay'),
                                           'new': True}]
             if len(netmod.attQs) != 0:
                 for p in netmod.attQs:
                     if p is not None:
                         learnable_params += [{'params': p.parameters(),
-                                              'lr': self.args.get('learning_rate'),
+                                              'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
                                               'weight_decay': self.args.get('weight_decay'),
                                               'new': True}]
             if len(netmod.atts) != 0:
                 for p in netmod.atts:
                     if p is not None:
                         learnable_params += [{'params': p.parameters(),
-                                              'lr': self.args.get('learning_rate'),
+                                              'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
                                               'weight_decay': self.args.get('weight_decay'),
                                               'new': True}]
         else:

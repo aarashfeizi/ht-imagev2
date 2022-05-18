@@ -55,6 +55,7 @@ def get_args():
     parser.add_argument('--optimizer', default='adam', choices=OPTIMIZER_LIST, help='optimizer to use')
     parser.add_argument('--ckpt_path', default=None, help="path to the checkpoint file")
     parser.add_argument('--learning_rate', type=float, default=0.001)
+    parser.add_argument('--new_lr_coef', type=float, default=1.0)
     parser.add_argument('--bb_learning_rate', type=float, default=0.00001)
     parser.add_argument('--weight_decay', type=float, default=0.0)
     parser.add_argument('--epochs', type=int, default=100)

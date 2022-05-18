@@ -335,6 +335,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
             # att_act =
             # activations is being updated to a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
             new_act = new_act + act  # add original with attention activation
+
             new_activations.append(
                 torch.diagonal(new_act.transpose(-1, -2).reshape(B, B, C * H * W)).transpose(0, 1).reshape(B, C, H, W))
 

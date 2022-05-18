@@ -344,9 +344,12 @@ def get_model_name(args):
             f"{args.get('metric')}_" \
             f"bs{args.get('batch_size')}_" \
             f"k{args.get('num_inst_per_class')}_" \
-            f"lr{args.get('learning_rate'):.2}_" \
-            f"bblr{args.get('bb_learning_rate'):.2}"
+            f"lr{args.get('learning_rate'):.2}_"
 
+
+    if args.get('new_lr_coef') != 1.0:
+        coef = args.get('new_lr_coef')
+        name += f'-newLRcoef{coef}'
 
     if args.get('early_stopping_tol') > 0:
         tol = args.get('early_stopping_tol')
