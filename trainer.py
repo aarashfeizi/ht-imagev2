@@ -219,8 +219,8 @@ class Trainer:
                         for i2 in range(b2):
                             v_img1 = [temp[i1, i2:i2 + 1, :, :, :] for temp in v]
                             v_img2 = [temp[i2, i1:i1 + 1, :, :, :] for temp in v]
-                            heatmaps1 = utils.get_all_heatmaps([v_img1], org_imgs[i1])
-                            heatmaps2 = utils.get_all_heatmaps([v_img2], org_imgs[i2])
+                            heatmaps1 = utils.get_all_heatmaps([v_img1], [org_imgs[i1]])
+                            heatmaps2 = utils.get_all_heatmaps([v_img2], [org_imgs[i2]])
 
                     for name, heatmap1, heatmap2 in zip(img_names, heatmaps1, heatmaps2):
                         name_imgs.extend([(f'img_{name}_{k}/{n}', utils.concat_imgs(heatmap1[n], heatmaps2[n])) for n, _ in heatmap1.items()])
