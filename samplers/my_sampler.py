@@ -184,5 +184,6 @@ class Draw2XHeatmapSampler(BalancedTripletSampler):
     def __init__(self, dataset, batch_size, num_instances, idxes=None, **kwargs):
         super().__init__(dataset, batch_size, num_instances, **kwargs)
         self.batch_size = 3
+        self.num_labels_per_batch = self.batch_size // 3  # batch of triplets
         self.batch_idxes = idxes # not used
         self.max_iters = 10
