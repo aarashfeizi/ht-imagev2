@@ -198,7 +198,7 @@ class Trainer:
                     _, img_name2 = os.path.split(path2)
                     img_name2 = img_name2[:img_name2.find('.')]
                     img_names.append(img_name + '-VS-' + img_name2)
-                    names[i][j] = img_name + f'L{lbls[i]}' + '-VS-' + img_name2 + f'L{lbls[j]}'
+                    names[i][j] = ''.join(map(str, map(int, lbls))) + img_name + f'L{int(lbls[i])}' + '-VS-' + img_name2 + f'L{int(lbls[j])}'
 
             org_imgs = []
 
@@ -206,8 +206,6 @@ class Trainer:
                 org_imgs.append(utils.transform_only_img(path))
 
             name_imgs = []
-            heatmaps1 = {}
-            heatmaps2 = {}
             if type(activations) is dict:
                 for k, v in activations.items():  # 'org' and 'att'
                     b1, b2, _, _, _ = v[0].shape
@@ -465,9 +463,6 @@ class Trainer:
         val_auroc_score = 0
         val_acc = 0
 
-        if self.heatmap2x:
-            self.draw_heatmaps2x(net)
-
         # validate before training
         if val:
             total_vals_Rat1 = 0.0
@@ -511,6 +506,9 @@ class Trainer:
 
                 # if self.heatmap2x:
                 #     self.draw_heatmaps2x(net)
+
+                if self.heatmap2x:
+                    self.draw_heatmaps2x(net)
 
                 if self.heatmap:
                     self.draw_heatmaps(net)
@@ -603,6 +601,9 @@ class Trainer:
 
                     if self.heatmap:
                         self.draw_heatmaps(net)
+
+                    if self.heatmap2x:
+                        self.draw_heatmaps2x(net)
 
             total_vals_Rat1 /= len(self.val_loaders_dict)
             total_vals_auroc /= len(self.val_loaders_dict)
