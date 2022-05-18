@@ -22,7 +22,7 @@ import transforms
 import datasets
 import metrics
 from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseSampler, DrawHeatmapSampler, \
-    HardTripletSampler
+    HardTripletSampler, Draw2XHeatmapSampler
 
 SHARING_STRATEGY = "file_system"
 torch.multiprocessing.set_sharing_strategy(SHARING_STRATEGY)
@@ -237,11 +237,12 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
                 'balanced_triplet': BalancedTripletSampler,
                 'hard_triplet': HardTripletSampler,
                 'db': DataBaseSampler,
-                'heatmap': DrawHeatmapSampler}
+                'heatmap': DrawHeatmapSampler,
+                'heatmap2x': Draw2XHeatmapSampler}
 
     dataset = datasets.load_dataset(args, mode, file_name,
                                     transform=transform,
-                                    for_heatmap=sampler_mode == 'heatmap')
+                                    for_heatmap=sampler_mode.startswith('heatmap'))
 
     sampler = SAMPLERS[sampler_mode](dataset=dataset,
                                      batch_size=args.get('batch_size'),

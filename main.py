@@ -60,6 +60,7 @@ def main():
                                     ordered_lbls=ordered_lbls)
 
     val_loader_4heatmap = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='heatmap')
+    val_loader_4_2xheatmap = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='heatmap2x')
 
     val_db_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='db')
     val2_db_loader = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='db')
@@ -107,6 +108,9 @@ def main():
 
         if all_args.get('draw_heatmaps'):
             trainer.set_heatmap_loader(val_loader_4heatmap)
+        if all_args.get('draw_heatmaps2x'):
+            trainer.set_heatmap_loader(val_loader_4_2xheatmap)
+
 
         trainer.train(net, val=(not all_args.get('no_validation')))
 
@@ -120,6 +124,10 @@ def main():
         if all_args.get('draw_heatmaps'):
             trainer.set_heatmap_loader(val_loader_4heatmap)
             trainer.draw_heatmaps(net)
+
+        if all_args.get('draw_heatmaps2x'):
+            trainer.set_heatmap2x_loader(val_loader_4_2xheatmap)
+            trainer.draw_heatmaps2x(net)
 
         for val_name, val_loader in val_loaders_dict.items():
             if val_loader is None:

@@ -26,6 +26,7 @@ class Trainer:
         self.cuda = args.get('cuda')
         self.epochs = args.get('epochs')
         self.heatmap = args.get('draw_heatmaps')
+        self.heatmap2x = args.get('draw_heatmaps2x')
         self.current_epoch = current_epoch
         self.cov_loss = None
         self.cov_loss_coefficient = args.get('cov_coef')
@@ -54,6 +55,7 @@ class Trainer:
         self.optimizer = None
         self.tensorboard_path = None
         self.heatmap_loader = None
+        self.heatmap2x_loader = None
         if args.get('ckpt_path') is None:  # new model
             self.save_path = None
         else:  # loading pretrained model mode
@@ -83,6 +85,9 @@ class Trainer:
 
     def set_heatmap_loader(self, loader):
         self.heatmap_loader = loader
+
+    def set_heatmap2x_loader(self, loader):
+        self.heatmap2x_loader = loader
 
     def set_train_loader(self, train_loader):
         self.train_loader = train_loader
@@ -176,10 +181,51 @@ class Trainer:
 
         self.tb_writer.flush()
 
+
+
+    def draw_heatmaps2x(self, net):
+        if self.heatmap2x_loader is None:
+            raise Exception('self.heatmap_loader is not set in trainer.py!!')
+
+        for i, (imgs, lbls, paths) in enumerate(self.heatmap2x_loader):
+            if self.cuda:
+                imgs = imgs.cuda()
+
+            e, activations = net.forward_with_pairwise_activations(imgs)  # returns embeddings, [f1, f2, f3, f4]
+
+            img_names = []
+            import pdb
+            pdb.set_trace()
+            for path in paths:
+                _, img_name = os.path.split(path)
+                img_name = img_name[:img_name.find('.')]
+                img_names.append(img_name)
+
+            org_imgs = []
+
+            for path in paths:
+                org_imgs.append(utils.transform_only_img(path))
+
+            name_imgs = []
+            if type(activations) is dict:
+                for k, v in activations.items():
+                    heatmaps = utils.get_all_heatmaps([v], org_imgs)
+
+                    for name, heatmap in zip(img_names, heatmaps):
+                        name_imgs.extend([(f'img_{name}_{k}/{n}', i) for n, i in heatmap.items()])
+
+            else:
+                heatmaps = utils.get_all_heatmaps([activations], org_imgs)
+
+                for name, heatmap in zip(img_names, heatmaps):
+                    name_imgs.extend([(f'img_{name}/{n}', i) for n, i in heatmap.items()])
+
+            self.__tb_draw_img(name_imgs)
+
     def draw_heatmaps(self, net):
         if self.heatmap_loader is None:
             raise Exception('self.heatmap_loader is not set in trainer.py!!')
-        
+
         for i, (imgs, lbls, paths) in enumerate(self.heatmap_loader):
             if self.cuda:
                 imgs = imgs.cuda()
@@ -352,7 +398,7 @@ class Trainer:
             bce_loss_value = self.bce_loss(embeddings, lbls, output_pred=binary_predictions, train=train)
 
             loss = (self.bce_weight / self.bce_weight + 1) * bce_loss_value + \
-                    (1 / self.bce_weight + 1) * loss
+                   (1 / self.bce_weight + 1) * loss
 
             each_loss_item['bce'] = bce_loss_value.item()
             each_loss_item[f'bce_{self.loss_name}'] = loss.item()
@@ -438,7 +484,7 @@ class Trainer:
                           f', val_R@K: ', r_at_k_score)
 
                     list_for_tb = [(f'{capitalized_val_name}/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss in
-                                        val_losses.items()]
+                                   val_losses.items()]
                     list_for_tb.append((f'{capitalized_val_name}/AUROC', val_auroc_score))
                     list_for_tb.append((f'{capitalized_val_name}/Accuracy', val_acc))
                     r_at_k_values = []
@@ -451,8 +497,12 @@ class Trainer:
 
                     self.__tb_update_value(list_for_tb)
 
+                if self.heatmap2x:
+                    self.draw_heatmaps2x(net)
+
                 if self.heatmap:
                     self.draw_heatmaps(net)
+
 
             total_vals_Rat1 /= len(self.val_loaders_dict)
             total_vals_auroc /= len(self.val_loaders_dict)

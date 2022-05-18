@@ -298,7 +298,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
                           self.proj_layer3,
                           self.proj_layer4]
 
-    def forward(self, imgs, is_feat=False):
+    def forward(self, imgs, is_feat=False, get_pairwise_acts=False):
         embeddings, activations = self.encoder(imgs, is_feat=True)
 
         # heatmaps = []
@@ -306,6 +306,7 @@ class MultiEmbTopModule(GeneralTopLevelModule):
         layer_embeddings = []
         batch_size = 0
         new_activations = []
+        all_new_acts = []
         for idx, act in enumerate(activations):
             B, C, H0, W0 = act.shape
             if batch_size == 0:
@@ -336,6 +337,9 @@ class MultiEmbTopModule(GeneralTopLevelModule):
             # activations is being updated to a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
             new_act = new_act + act  # add original with attention activation
 
+            if get_pairwise_acts:
+                all_new_acts.append(new_act)
+
             new_activations.append(
                 torch.diagonal(new_act.transpose(-1, -2).reshape(B, B, C * H * W)).transpose(0, 1).reshape(B, C, H, W))
 
@@ -365,13 +369,19 @@ class MultiEmbTopModule(GeneralTopLevelModule):
         if is_feat:
             all_activations = {'org': activations[4 - self.layer_to_use:], 'att': new_activations}
             return all_embeddings, all_activations
+        elif get_pairwise_acts:
+            all_activations = {'org': activations[4 - self.layer_to_use:], 'att': all_new_acts}
+            return all_embeddings, all_activations
         else:
             return all_embeddings
 
     def forward_with_activations(self, imgs):
-        embeddings, activations = self.forward(imgs, is_feat=True)
+        embeddings, activations = self.forward(imgs, is_feat=True, get_pairwise_acts=False)
         return embeddings, activations
 
+    def forward_with_pairwise_activations(self, imgs):
+        embeddings, activations = self.forward(imgs, is_feat=False, get_pairwise_acts=True)
+        return embeddings, activations
 
 def get_top_module(args):
     encoder = backbones.get_bb_network(args)
