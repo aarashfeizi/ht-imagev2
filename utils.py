@@ -344,7 +344,7 @@ def get_model_name(args):
             f"{args.get('metric')}_" \
             f"bs{args.get('batch_size')}_" \
             f"k{args.get('num_inst_per_class')}_" \
-            f"lr{args.get('learning_rate'):.2}_"
+            f"lr{args.get('learning_rate'):.2}"
 
 
     if args.get('new_lr_coef') != 1.0:
