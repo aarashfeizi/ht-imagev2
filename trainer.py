@@ -6,10 +6,10 @@ from sklearn.metrics import roc_auc_score
 from tqdm import tqdm
 
 import losses
+import optimizers
 import utils
 from SummaryWriter import SummaryWriter
 from metrics import Metric_Accuracy
-import optimizers
 
 
 class Trainer:
@@ -123,8 +123,6 @@ class Trainer:
                                       'weight_decay': self.args.get('weight_decay'),
                                       'new': True}]
 
-
-
             if len(netmod.projs) != 0:
                 for p in netmod.projs:
                     learnable_params += [{'params': p.parameters(),
@@ -181,8 +179,6 @@ class Trainer:
 
         self.tb_writer.flush()
 
-
-
     def draw_heatmaps2x(self, net):
         if self.heatmap2x_loader is None:
             raise Exception('self.heatmap_loader is not set in trainer.py!!')
@@ -194,14 +190,15 @@ class Trainer:
             e, activations = net.forward_with_pairwise_activations(imgs)  # returns embeddings, [f1, f2, f3, f4]
 
             img_names = []
-
-            for path in paths:
+            names = [['' for _ in range(len(paths))] for _ in range(len(paths))]
+            for i, path in enumerate(paths):
                 _, img_name = os.path.split(path)
                 img_name = img_name[:img_name.find('.')]
-                for path2 in paths:
+                for j, path2 in enumerate(paths):
                     _, img_name2 = os.path.split(path2)
                     img_name2 = img_name2[:img_name2.find('.')]
                     img_names.append(img_name + '-VS-' + img_name2)
+                    names[i][j] = img_name + f'L{lbls[i]}' + '-VS-' + img_name2 + f'L{lbls[i]}'
 
             org_imgs = []
 
@@ -222,8 +219,11 @@ class Trainer:
                             heatmaps1 = utils.get_all_heatmaps([v_img1], [org_imgs[i1]])
                             heatmaps2 = utils.get_all_heatmaps([v_img2], [org_imgs[i2]])
 
-                        for name, heatmap1, heatmap2 in zip(img_names, heatmaps1, heatmaps2):
-                            name_imgs.extend([(f'img_{name}_{k}/{n}', utils.concat_imgs(heatmap1[n], heatmap2[n])) for n, _ in heatmap1.items()])
+                            for heatmap1, heatmap2 in zip(heatmaps1, heatmaps2):
+                                name_imgs.extend(
+                                    [(f'img_{names[i1][i2]}_{k}/{n}', utils.concat_imgs(heatmap1[n], heatmap2[n])) for
+                                     n, _
+                                     in heatmap1.items()])
 
             # else:
             #     heatmaps = utils.get_all_heatmaps([activations], org_imgs)
@@ -241,12 +241,11 @@ class Trainer:
             if self.cuda:
                 imgs = imgs.cuda()
 
-            embeddings, activations = net.forward_with_activations(imgs) # returns embeddings, [f1, f2, f3, f4]
+            embeddings, activations = net.forward_with_activations(imgs)  # returns embeddings, [f1, f2, f3, f4]
 
             img_names = []
 
             for path in paths:
-
                 _, img_name = os.path.split(path)
                 img_name = img_name[:img_name.find('.')]
                 img_names.append(img_name)
@@ -328,7 +327,6 @@ class Trainer:
                     loss_sam.backward()
                     self.optimizer.second_step(zero_grad=True)
 
-
                 postfixes = {f'train_{self.loss_name}': f'{epoch_loss / (batch_id) :.4f}',
                              'train_acc': f'{acc.get_acc():.4f}'}
                 t.set_postfix(**postfixes)
@@ -358,7 +356,6 @@ class Trainer:
                 if self.cuda:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
-
 
                 img_embeddings = net(imgs)
                 preds, similarities = utils.get_preds(img_embeddings)
@@ -497,7 +494,8 @@ class Trainer:
                           f', val_auroc: ', val_auroc_score,
                           f', val_R@K: ', r_at_k_score)
 
-                    list_for_tb = [(f'{capitalized_val_name}/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss in
+                    list_for_tb = [(f'{capitalized_val_name}/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss
+                                   in
                                    val_losses.items()]
                     list_for_tb.append((f'{capitalized_val_name}/AUROC', val_auroc_score))
                     list_for_tb.append((f'{capitalized_val_name}/Accuracy', val_acc))
@@ -516,7 +514,6 @@ class Trainer:
 
                 if self.heatmap:
                     self.draw_heatmaps(net)
-
 
             total_vals_Rat1 /= len(self.val_loaders_dict)
             total_vals_auroc /= len(self.val_loaders_dict)
@@ -552,7 +549,8 @@ class Trainer:
             print(f'Epoch {self.current_epoch}-> loss: ', all_losses,
                   f', acc: ', epoch_acc)
 
-            update_tb_losses = [(f'Train/{lss_name}_Loss', lss / len(self.train_loader)) for lss_name, lss in epoch_losses.items()]
+            update_tb_losses = [(f'Train/{lss_name}_Loss', lss / len(self.train_loader)) for lss_name, lss in
+                                epoch_losses.items()]
             update_tb_losses.append(('Train/Accuracy', epoch_acc))
 
             self.__tb_update_value(update_tb_losses)
@@ -581,12 +579,15 @@ class Trainer:
 
                         all_val_losses = {lss_name: (lss / len(val_loader)) for lss_name, lss in val_losses.items()}
 
-                        print(f'VALIDATION on {capitalized_val_name} {self.current_epoch}-> {capitalized_val_name}_loss: ', all_val_losses,
-                              f', {capitalized_val_name}_acc: ', val_acc,
-                              f', {capitalized_val_name}_auroc: ', val_auroc_score,
-                              f', {capitalized_val_name}_R@K: ', r_at_k_score)
+                        print(
+                            f'VALIDATION on {capitalized_val_name} {self.current_epoch}-> {capitalized_val_name}_loss: ',
+                            all_val_losses,
+                            f', {capitalized_val_name}_acc: ', val_acc,
+                            f', {capitalized_val_name}_auroc: ', val_auroc_score,
+                            f', {capitalized_val_name}_R@K: ', r_at_k_score)
 
-                        list_for_tb = [(f'{capitalized_val_name}/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss in
+                        list_for_tb = [(f'{capitalized_val_name}/{lss_name}_Loss', lss / len(val_loader)) for
+                                       lss_name, lss in
                                        val_losses.items()]
                         list_for_tb.append((f'{capitalized_val_name}/AUROC', val_auroc_score))
                         list_for_tb.append((f'{capitalized_val_name}/Accuracy', val_acc))
@@ -632,17 +633,15 @@ class Trainer:
 
             self.__tb_draw_histograms(self.loss_function)
 
-
             if (self.k_inc_freq != 0) and \
                     epoch % self.k_inc_freq == 0:
-
                 self.args.set('num_inst_per_class', 2 * self.args.get('num_inst_per_class'))
 
                 train_transforms, _ = utils.TransformLoader(self.args).get_composed_transform(
                     mode='train')
-                train_loader = utils.get_data(self.args, mode='train', transform=train_transforms, sampler_mode='kbatch')
+                train_loader = utils.get_data(self.args, mode='train', transform=train_transforms,
+                                              sampler_mode='kbatch')
                 self.train_loader = train_loader
-
 
             if self.early_stopping_tol > 0 and \
                     self.early_stopping_counter > self.early_stopping_tol:
