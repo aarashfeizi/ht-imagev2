@@ -213,7 +213,7 @@ class Trainer:
             heatmaps2 = {}
             if type(activations) is dict:
                 for k, v in activations.items():  # 'org' and 'att'
-                    b1, b2, _, _ = v.shape
+                    b1, b2, _, _ = v[0].shape
                     assert b1 == b2
                     for i1 in range(b1):
                         for i2 in range(b2):
