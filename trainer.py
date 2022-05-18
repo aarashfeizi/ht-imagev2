@@ -223,7 +223,7 @@ class Trainer:
                             heatmaps2 = utils.get_all_heatmaps([v_img2], [org_imgs[i2]])
 
                     for name, heatmap1, heatmap2 in zip(img_names, heatmaps1, heatmaps2):
-                        name_imgs.extend([(f'img_{name}_{k}/{n}', utils.concat_imgs(heatmap1[n], heatmaps2[n])) for n, _ in heatmap1.items()])
+                        name_imgs.extend([(f'img_{name}_{k}/{n}', utils.concat_imgs(heatmap1[n], heatmap2[n])) for n, _ in heatmap1.items()])
 
             # else:
             #     heatmaps = utils.get_all_heatmaps([activations], org_imgs)
