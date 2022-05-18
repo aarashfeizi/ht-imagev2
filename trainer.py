@@ -201,7 +201,7 @@ class Trainer:
                 for path2 in paths:
                     _, img_name2 = os.path.split(path2)
                     img_name2 = img_name2[:img_name2.find('.')]
-                    img_names.append(img_name + 'VS' + img_name2)
+                    img_names.append(img_name + '-VS-' + img_name2)
 
             org_imgs = []
 
@@ -222,8 +222,8 @@ class Trainer:
                             heatmaps1 = utils.get_all_heatmaps([v_img1], [org_imgs[i1]])
                             heatmaps2 = utils.get_all_heatmaps([v_img2], [org_imgs[i2]])
 
-                    for name, heatmap1, heatmap2 in zip(img_names, heatmaps1, heatmaps2):
-                        name_imgs.extend([(f'img_{name}_{k}/{n}', utils.concat_imgs(heatmap1[n], heatmap2[n])) for n, _ in heatmap1.items()])
+                        for name, heatmap1, heatmap2 in zip(img_names, heatmaps1, heatmaps2):
+                            name_imgs.extend([(f'img_{name}_{k}/{n}', utils.concat_imgs(heatmap1[n], heatmap2[n])) for n, _ in heatmap1.items()])
 
             # else:
             #     heatmaps = utils.get_all_heatmaps([activations], org_imgs)
