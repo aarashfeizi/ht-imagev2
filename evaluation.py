@@ -466,14 +466,10 @@ def main():
 
             for i in range(0, all_args.get('num_of_dataset')):
                 val_set_name = all_args.get(f'all_{all_args.get("eval_mode")}_files')[i]
-                eval_ldrs.append(utils.get_data(all_args,
+                eval_ldrs.append(utils.get_data(all_args, mode=all_args.get('eval_mode'),
                                                 file_name=val_set_name,
                                                 transform=val_transforms,
                                                 sampler_mode='db'))
-                # eval_ldrs.append(utils.get_data(all_args, mode=all_args.get('eval_mode'),
-                #                                 file_name=val_set_name,
-                #                                 transform=val_transforms,
-                #                                 sampler_mode='db'))
 
             # if 'hotels' in all_args.get('dataset'):
             #     for i in range(1, args.num_of_dataset + 1):
