@@ -4,6 +4,9 @@
   "train_file": "my_splits/trainval.csv",
   "val_file": "my_splits/test1.csv",
   "test_file": "my_splits/test1.csv",
+  "all_train_files": [
+    "my_splits/trainval.csv"
+  ],
   "all_val_files": [
     "my_splits/test1.csv",
     "my_splits/test2.csv",
