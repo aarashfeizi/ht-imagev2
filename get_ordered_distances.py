@@ -53,7 +53,7 @@ def get_label_idx_orderings(net, loader, name, cuda=True, k=1000):
 
 if __name__ == '__main__':
     args = arg_parser.get_args_for_ordered_distance()
-    dataset_config = utils.load_config(os.path.join(args.config_path, args.dataset + '.json'))
+    dataset_config = utils.load_json(os.path.join(args.config_path, args.dataset + '.json'))
 
     all_args = utils.Global_Config_File(args=args, config_file=dataset_config, init_tb=False)
 

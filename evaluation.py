@@ -417,7 +417,7 @@ def main():
 
     kset = [int(k) for k in args.kset]
 
-    dataset_config = utils.load_config(os.path.join(args.config_path, args.dataset + '.json'))
+    dataset_config = utils.load_json(os.path.join(args.config_path, args.dataset + '.json'))
 
     all_args = utils.Global_Config_File(args=args, config_file=dataset_config)
 

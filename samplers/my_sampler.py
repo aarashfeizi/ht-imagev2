@@ -1,9 +1,11 @@
 import copy
+import json
 import random
 from collections import defaultdict
 
 import numpy as np
 
+import utils
 from samplers import RandomIdentitySampler
 
 
@@ -29,18 +31,18 @@ class BalancedTripletSampler(RandomIdentitySampler):
     Produce batches of [Anchor, Positive, Negative]
     """
 
-    def __init__(self, dataset, batch_size, num_instances, shuffle=True, **kwargs):
+    def __init__(self, dataset, batch_size, num_instances, **kwargs):
         super().__init__(dataset, batch_size, num_instances, **kwargs)
         self.K = 2  # anchor and positive
         self.num_labels_per_batch = self.batch_size // 3 # batch of triplets
         self.max_iters = ((dataset.__len__() * 3) // batch_size)
         self.batch_indexes = None
-        self.shuffle = shuffle
 
     def prepare_batch(self):
 
-        if self.batch_indexes is not None and not self.shuffle:
+        if self.batch_indexes:
             batch_idxs_dict = copy.deepcopy(self.batch_indexes)
+            avai_labels = copy.deepcopy(sorted(list(self.batch_indexes.keys())))
         else:
 
             batch_idxs_dict = defaultdict(list)
@@ -49,8 +51,7 @@ class BalancedTripletSampler(RandomIdentitySampler):
                 idxs = copy.deepcopy(self.data_dict[label])
                 if len(idxs) < self.K:
                     idxs.extend(np.random.choice(idxs, size=self.K - len(idxs), replace=True))
-                if self.shuffle:
-                    random.shuffle(idxs)
+                random.shuffle(idxs)
 
                 batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
 
@@ -60,14 +61,11 @@ class BalancedTripletSampler(RandomIdentitySampler):
                 for pair in batch_idxs_dict[label]:
                     neg_label = np.random.choice(other_labels, size=1)[0]
                     pair.extend(np.random.choice(self.data_dict[neg_label], size=1))
-                    triplets.append(pair)
+                    triplets.append(d)
 
                 batch_idxs_dict[label] = triplets
 
-            if self.batch_indexes is None and not self.shuffle:
-                self.batch_indexes = copy.deepcopy(batch_idxs_dict)
-
-        avai_labels = copy.deepcopy(self.labels)
+            avai_labels = copy.deepcopy(self.labels)
 
         return batch_idxs_dict, avai_labels
 
@@ -193,9 +191,27 @@ class DrawHeatmapSampler(RandomIdentitySampler):
             yield batch
 
 class Draw2XHeatmapSampler(BalancedTripletSampler):
-    def __init__(self, dataset, batch_size, num_instances, **kwargs):
-        super().__init__(dataset, batch_size, num_instances, shuffle=False, **kwargs)
+    def __init__(self, dataset, batch_size, num_instances, triplet_path='', **kwargs):
+        super().__init__(dataset, batch_size, num_instances, **kwargs)
         self.batch_size = 3
         self.num_labels_per_batch = self.batch_size // 3  # batch of triplets
         self.max_iters = 10
+        if triplet_path != '':
+            self.batch_indexes = utils.load_json(triplet_path)
+        else:
+            self.batch_indexes = None
 
+    def __iter__(self):
+        batch_idxs_dict, avai_labels = self.prepare_batch()
+        for _ in range(self.max_iters):
+            batch = []
+            if len(avai_labels) < self.num_labels_per_batch:
+                batch_idxs_dict, avai_labels = self.prepare_batch()
+
+            selected_labels = random.sample(avai_labels, self.num_labels_per_batch)
+            for label in selected_labels:
+                batch_idxs = batch_idxs_dict[label].pop(0)
+                batch.extend(batch_idxs)
+                if len(batch_idxs_dict[label]) == 0:
+                    avai_labels.remove(label)
+            yield batch

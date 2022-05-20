@@ -195,11 +195,16 @@ def make_dirs(path, force=False):
         return path
 
 
-def load_config(config_name):
+def load_json(config_name):
     config = json.load(open(config_name))
 
     return config
 
+def save_json(json_obj, fp):
+    with open(fp, 'w') as f:
+        json.dump(json_obj, f)
+
+    return
 
 def seed_worker(worker_id):
     torch.multiprocessing.set_sharing_strategy(SHARING_STRATEGY)

@@ -13,7 +13,7 @@ from trainer import Trainer
 
 def main():
     args = arg_parser.get_args()
-    dataset_config = utils.load_config(os.path.join(args.config_path, args.dataset + '.json'))
+    dataset_config = utils.load_json(os.path.join(args.config_path, args.dataset + '.json'))
 
     all_args = utils.Global_Config_File(args=args, config_file=dataset_config)
     utils.seed_all(all_args.get('seed'))
@@ -60,7 +60,7 @@ def main():
                                     ordered_lbls=ordered_lbls)
 
     val_loader_4heatmap = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='heatmap')
-    val_loader_4_2xheatmap = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='heatmap2x')
+    val_loader_4_2xheatmap = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='heatmap2x', triplet_path=all_args.get('triplet_path_heatmap2x'))
 
     val_db_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='db')
     val2_db_loader = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='db')
