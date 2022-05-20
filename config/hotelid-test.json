@@ -19,6 +19,12 @@
     "my_splits/test3.csv",
     "my_splits/test4.csv"
   ],
+  "controlled_recall_files": [
+    "my_splits/test1_605_3/",
+    "my_splits/test2_605_3/",
+    "my_splits/test3_605_3/",
+    "my_splits/test4_605_3/"
+  ],
   "loss_mode": "metric",
   "normalize_param": {
     "mean": [
@@ -51,7 +57,6 @@
     "my_splits/test2.csv": "./hotelid-test_my_splits_test2_resnet50_labels.npy",
     "my_splits/test3.csv": "./hotelid-test_my_splits_test3_resnet50_labels.npy",
     "my_splits/test4.csv": "./hotelid-test_my_splits_test4_resnet50_labels.npy"
-
   }
 }
 
