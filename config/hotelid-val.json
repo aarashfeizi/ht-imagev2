@@ -5,6 +5,9 @@
   "val_file": "my_splits/val1.csv",
   "val2_file": "my_splits/val3.csv",
   "test_file": "my_splits/test1.csv",
+  "all_train_files": [
+    "my_splits/train.csv",
+  ],
   "all_val_files": [
     "my_splits/val1.csv",
     "my_splits/val2.csv",

@@ -360,7 +360,7 @@ def main():
     parser.add_argument('-seed', '--seed', default=402, type=int)
     parser.add_argument('--run_times', default=1, type=int)
     parser.add_argument('-trained_with_mltp_gpu', '--trained_with_mltp_gpu', default=False, action='store_true')
-    parser.add_argument('--eval_mode', default='val', help="val or test", choices=['val', 'test'])
+    parser.add_argument('--eval_mode', default='val', help="val or test", choices=['val', 'test', 'train'])
 
     parser.add_argument('-gpu', '--gpu_ids', default='', help="gpu ids used to train")  # before: default="0,1,2,3"
 
@@ -466,10 +466,14 @@ def main():
 
             for i in range(0, all_args.get('num_of_dataset')):
                 val_set_name = all_args.get(f'all_{all_args.get("eval_mode")}_files')[i]
-                eval_ldrs.append(utils.get_data(all_args, mode=all_args.get('eval_mode'),
+                eval_ldrs.append(utils.get_data(all_args,
                                                 file_name=val_set_name,
                                                 transform=val_transforms,
                                                 sampler_mode='db'))
+                # eval_ldrs.append(utils.get_data(all_args, mode=all_args.get('eval_mode'),
+                #                                 file_name=val_set_name,
+                #                                 transform=val_transforms,
+                #                                 sampler_mode='db'))
 
             # if 'hotels' in all_args.get('dataset'):
             #     for i in range(1, args.num_of_dataset + 1):
