@@ -61,7 +61,7 @@ class BalancedTripletSampler(RandomIdentitySampler):
                 for pair in batch_idxs_dict[label]:
                     neg_label = np.random.choice(other_labels, size=1)[0]
                     pair.extend(np.random.choice(self.data_dict[neg_label], size=1))
-                    triplets.append(d)
+                    triplets.append(pair)
 
                 batch_idxs_dict[label] = triplets
 
@@ -195,23 +195,16 @@ class Draw2XHeatmapSampler(BalancedTripletSampler):
         super().__init__(dataset, batch_size, num_instances, **kwargs)
         self.batch_size = 3
         self.num_labels_per_batch = self.batch_size // 3  # batch of triplets
-        self.max_iters = 10
         if triplet_path != '':
             self.batch_indexes = utils.load_json(triplet_path)
         else:
             self.batch_indexes = None
 
-    def __iter__(self):
-        batch_idxs_dict, avai_labels = self.prepare_batch()
-        for _ in range(self.max_iters):
-            batch = []
-            if len(avai_labels) < self.num_labels_per_batch:
-                batch_idxs_dict, avai_labels = self.prepare_batch()
+        self.max_iters = self.get_all_triplets()
 
-            selected_labels = random.sample(avai_labels, self.num_labels_per_batch)
-            for label in selected_labels:
-                batch_idxs = batch_idxs_dict[label].pop(0)
-                batch.extend(batch_idxs)
-                if len(batch_idxs_dict[label]) == 0:
-                    avai_labels.remove(label)
-            yield batch
+    def get_all_triplets(self):
+        n = 0
+        for k, v in self.batch_indexes.items():
+            n += len(v)
+
+        return n
