@@ -47,3 +47,6 @@ class COV_Loss(nn.Module):
     def update_means(self, new_means, new_size):
         self.means = new_means.detach().cpu()
         self.new_size = new_size
+
+    def get_means(self):
+        return self.means
