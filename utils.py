@@ -381,7 +381,7 @@ def get_model_name(args):
             var_coef = args.get("var_coef")
 
         if args.get('cov_static_mean'):
-            name += f'-{cov_coef}cov6-{var_coef}var'
+            name += f'-{cov_coef}cov9-{var_coef}var'
         else:
             name += f'-{cov_coef}cov4-{var_coef}var'
 
@@ -908,7 +908,7 @@ def torch_get_cov_with_previous(t, previous_mean, size):
 
     N, D = t.shape
     # t_mean = t.mean(dim=0, keepdim=True)
-    t_sum = t.sum(dim=0, keepdim=True).detach()
+    t_sum = t.sum(dim=0, keepdim=True)
     t_mean = (previous_mean * size + t_sum) / (size + t.shape[0])
     t_prime = t - t_mean
 
