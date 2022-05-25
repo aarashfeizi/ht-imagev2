@@ -676,11 +676,11 @@ def get_avg_activations(acts, size=None):
 
         for batch_a in acts:
             temp_list = []
-            for a in batch_a:
-                if a.shape[0] != max_size:
+            if batch_a.shape[1] != max_size:
+                for a in batch_a:
                     a = cv2.resize(np.float32(a), (max_size, max_size))
                     temp_list.append(a)
-            reshaped_activations.append(np.stack(temp_list, axis=0))
+                reshaped_activations.append(np.stack(temp_list, axis=0))
 
     else: # len(sample_act.shape) == 2
         if size is None:
