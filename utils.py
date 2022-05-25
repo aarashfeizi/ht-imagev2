@@ -662,23 +662,45 @@ def transform_only_img(img_path):
 
 
 def get_avg_activations(acts, size=None):
-    if size is None:
-        max_size = 0
+    sample_act = list(acts)[0]
+    if len(sample_act.shape) == 3:
+        if size is None:
+            max_size = 0
+            for a in acts:
+                if a.shape[1] > max_size:
+                    max_size = a.shape[1]
+        else:
+            max_size = size
+
+        reshaped_activations = []
+
+        for batch_a in acts:
+            temp_list = []
+            for a in batch_a:
+                if a.shape[0] != max_size:
+                    a = cv2.resize(np.float32(a), (max_size, max_size))
+                    temp_list.append(a)
+            reshaped_activations.append(np.stack(temp_list, axis=0))
+
+    else: # len(sample_act.shape) == 2
+        if size is None:
+            max_size = 0
+            for a in acts:
+                if a.shape[0] > max_size:
+                    max_size = a.shape[0]
+        else:
+            max_size = size
+
+        reshaped_activations = []
+
         for a in acts:
-            if a.shape[0] > max_size:
-                max_size = a.shape[0]
-    else:
-        max_size = size
-
-    reshaped_activations = []
-
-    for a in acts:
-        if a.shape[0] != max_size:
-            a = cv2.resize(np.float32(a), (max_size, max_size))
-        reshaped_activations.append(a)
+            if a.shape[0] != max_size:
+                a = cv2.resize(np.float32(a), (max_size, max_size))
+            reshaped_activations.append(a)
 
     final_addition = copy.deepcopy(reshaped_activations[0])
     w_sum = 1
+    # weighted average
     for i, fa in enumerate(reshaped_activations[1:], 1):
         w = pow(2, i)
         final_addition += fa * w
@@ -702,8 +724,8 @@ def get_heatmaped_img(acts, img):
 
     return pic
 
-def concat_imgs(img1, img2):
-    final_img = cv2.hconcat([img1, img2])
+def concat_imgs(img_list):
+    final_img = cv2.hconcat(img_list)
     return final_img
 
 
@@ -716,9 +738,11 @@ def reduce_normalize_activation(t, mode='avg'):
 
     B, C, H, W = t.shape
     t = np.maximum(t, 0)
-    t_max = t.max(axis=-1).max(axis=-1).max(axis=-1)  # activations between 0 and 1
+    # t_max = t.max(axis=-1).max(axis=-1).max(axis=-1)  # activations between 0 and 1
+    # t_max = t_max.repeat(H * W).reshape((B, H, W))
 
-    t_max = t_max.repeat(H * W).reshape((B, H, W))
+    t_max = t.max()  # normalize all tensors in B together (global max is used)
+
 
     if mode == 'avg':
         ret = t.mean(axis=1)
@@ -733,6 +757,33 @@ def reduce_normalize_activation(t, mode='avg'):
         ret = ret.squeeze(axis=0)
 
     return ret
+
+def get_double_heatmaps(list_of_activationsets, imgss):
+    all_img_heatmaps = []
+    for acts, imgs in zip(list_of_activationsets, imgss):
+        dict_of_activations = {}
+        for i, a in enumerate(acts, 1):
+            a = a.detach().cpu().numpy()
+            dict_of_activations[f'l{i}'] = reduce_normalize_activation(a, mode='max') # each element is a (B, H, W) matrix where B != 1
+
+        # todo size being None causes 2 resizes instead of one
+        dict_of_activations['all'] = get_avg_activations(dict_of_activations.values(), size=None)
+
+        heatmaps_to_return = {}
+
+        imgs = [np.array(img) for img in imgs]
+
+        for layer_i, (label, act) in enumerate(dict_of_activations.items(), 1):
+            assert len(act) == len(imgs)
+            pics = []
+            for one_act, one_img in zip(act, imgs):
+                pics.append(get_heatmaped_img(one_act, one_img))
+            heatmaps_to_return[label] = concat_imgs(pics)
+
+        heatmaps_to_return['org'] = concat_imgs([img[:, :, :3] for img in imgs])
+        all_img_heatmaps.append(heatmaps_to_return)
+
+    return all_img_heatmaps
 
 
 def get_all_heatmaps(list_of_activationsets, imgs):

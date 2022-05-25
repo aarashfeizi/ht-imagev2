@@ -38,7 +38,6 @@ class COV_Loss(nn.Module):
         var_loss = (F.relu(-stds + self.margin).sum() / d)
 
         return cov_loss, var_loss
-        # todo add eps to main diagonal and subtract margin
 
     def reset_means(self):
         self.means = torch.zeros(size=(self.dim,))

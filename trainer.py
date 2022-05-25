@@ -198,7 +198,9 @@ class Trainer:
                     _, img_name2 = os.path.split(path2)
                     img_name2 = img_name2[:img_name2.find('.')]
                     img_names.append(img_name + '-VS-' + img_name2)
-                    names[i][j] = ''.join(map(str, map(int, lbls))) + img_name + f'L{int(lbls[i])}' + '-VS-' + img_name2 + f'L{int(lbls[j])}'
+                    names[i][j] = ''.join(map(str,
+                                              map(int,
+                                                  lbls))) + img_name + f'L{int(lbls[i])}' + '-VS-' + img_name2 + f'L{int(lbls[j])}'
 
             org_imgs = []
 
@@ -211,17 +213,18 @@ class Trainer:
                     b1, b2, _, _, _ = v[0].shape
                     assert b1 == b2
                     for i1 in range(b1):
-                        for i2 in range(b2):
+                        for i2 in range(i1, b2):
                             v_img1 = [temp[i1, i2:i2 + 1, :, :, :] for temp in v]
                             v_img2 = [temp[i2, i1:i1 + 1, :, :, :] for temp in v]
-                            heatmaps1 = utils.get_all_heatmaps([v_img1], [org_imgs[i1]])
-                            heatmaps2 = utils.get_all_heatmaps([v_img2], [org_imgs[i2]])
 
-                            for heatmap1, heatmap2 in zip(heatmaps1, heatmaps2):
-                                name_imgs.extend(
-                                    [(f'img_{names[i1][i2]}_{k}/{n}', utils.concat_imgs(heatmap1[n], heatmap2[n])) for
-                                     n, _
-                                     in heatmap1.items()])
+                            v_imgs = [torch.cat([t1, t2], dim=0) for (t1, t2) in zip(v_img1, v_img2)]
+
+                            heatmaps = utils.get_double_heatmaps([v_imgs], [[org_imgs[i1], org_imgs[i2]]])
+
+                            for heatmap in heatmaps:
+                                for n, p in heatmap.items():
+                                    name_imgs.extend(
+                                        [(f'img_{names[i1][i2]}_{k}/{n}', p)])
 
             # else:
             #     heatmaps = utils.get_all_heatmaps([activations], org_imgs)
