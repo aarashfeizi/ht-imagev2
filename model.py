@@ -335,7 +335,8 @@ class MultiEmbTopModule(GeneralTopLevelModule):
             # act = act.transpose(3, 2)
             # att_act =
             # activations is being updated to a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
-            new_act = new_act + act  # add original with attention activation
+
+            # new_act = new_act + act  # add original with attention activation
 
             if get_pairwise_acts:
                 all_new_acts.append(new_act.transpose(-1, -2).reshape(B, B, C, H, W))
