@@ -223,7 +223,7 @@ class Trainer:
                             for hp1, hp2 in zip(heatmap1, heatmap2):
                                     name_imgs.extend(
                                         [(f'img_{names[i1][i2]}_{k}/{n}',
-                                          utils.concat_imgs([hp1[n], hp2[n]]) for n, _ in hp1.items())])
+                                          utils.concat_imgs([hp1[n], hp2[n]])) for n, _ in hp1.items()])
 
                             # for getting joinly normalized heatmaps
                             # v_imgs = [torch.cat([t1, t2], dim=0) for (t1, t2) in zip(v_img1, v_img2)]
