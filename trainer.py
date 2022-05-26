@@ -217,14 +217,23 @@ class Trainer:
                             v_img1 = [temp[i1, i2:i2 + 1, :, :, :] for temp in v]
                             v_img2 = [temp[i2, i1:i1 + 1, :, :, :] for temp in v]
 
-                            v_imgs = [torch.cat([t1, t2], dim=0) for (t1, t2) in zip(v_img1, v_img2)]
+                            heatmap1 = utils.get_all_heatmaps([v_img1], [org_imgs[i1]])
+                            heatmap2 = utils.get_all_heatmaps([v_img2], [org_imgs[i2]])
 
-                            heatmaps = utils.get_double_heatmaps([v_imgs], [[org_imgs[i1], org_imgs[i2]]])
-
-                            for heatmap in heatmaps:
-                                for n, p in heatmap.items():
+                            for hp1, hp2 in zip(heatmap1, heatmap2):
                                     name_imgs.extend(
-                                        [(f'img_{names[i1][i2]}_{k}/{n}', p)])
+                                        [(f'img_{names[i1][i2]}_{k}/{n}',
+                                          utils.concat_imgs([hp1[n], hp2[n]]) for n, _ in hp1.items())])
+
+                            # for getting joinly normalized heatmaps
+                            # v_imgs = [torch.cat([t1, t2], dim=0) for (t1, t2) in zip(v_img1, v_img2)]
+                            #
+                            # heatmaps = utils.get_double_heatmaps([v_imgs], [[org_imgs[i1], org_imgs[i2]]])
+                            #
+                            # for heatmap in heatmaps:
+                            #     for n, p in heatmap.items():
+                            #         name_imgs.extend(
+                            #             [(f'img_{names[i1][i2]}_{k}/{n}', p)])
 
             # else:
             #     heatmaps = utils.get_all_heatmaps([activations], org_imgs)
