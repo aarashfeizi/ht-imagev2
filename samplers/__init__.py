@@ -50,6 +50,7 @@ class RandomIdentitySampler(Sampler):
             self.k_counter += 1
             if self.k_counter % self.k_dec_freq == 0:
                     self.K -= 1  # get it more difficult
+                    self.num_labels_per_batch = self.batch_size // self.K
                     self.k_counter = 0
 
     def __iter__(self):
