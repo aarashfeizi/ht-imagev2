@@ -71,6 +71,7 @@ def get_args():
     parser.add_argument('--ml_self_att_layers_to_use', type=int, default=4)
     parser.add_argument('--num_inst_per_class', type=int, default=2)
     parser.add_argument('--k_inc_freq', type=int, default=0)
+    parser.add_argument('--k_dec_freq', type=int, default=0)
     parser.add_argument('--loss', default='pnpp', choices=LOSSES_LIST)
     parser.add_argument('--cov', default=False, action='store_true')
     parser.add_argument('--cov_static_mean', default=False, action='store_true')

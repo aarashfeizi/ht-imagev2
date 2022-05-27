@@ -31,8 +31,8 @@ class BalancedTripletSampler(RandomIdentitySampler):
     Produce batches of [Anchor, Positive, Negative]
     """
 
-    def __init__(self, dataset, batch_size, num_instances, **kwargs):
-        super().__init__(dataset, batch_size, num_instances, **kwargs)
+    def __init__(self, dataset, batch_size, num_instances, k_dec_freq, **kwargs):
+        super().__init__(dataset, batch_size, num_instances, k_dec_freq, **kwargs)
         self.K = 2  # anchor and positive
         self.num_labels_per_batch = self.batch_size // 3 # batch of triplets
         self.max_iters = ((dataset.__len__() * 3) // batch_size)
@@ -76,7 +76,7 @@ class HardTripletSampler(RandomIdentitySampler):
     for each anch, have the max sim(anch, neg)
     """
 
-    def __init__(self, dataset, batch_size, num_instances, ordered_idxs=None, ordered_lbls=None, **kwargs):
+    def __init__(self, dataset, batch_size, num_instances, k_dec_freq, ordered_idxs=None, ordered_lbls=None, **kwargs):
         """
 
         :param ordered_idxs: ndarray, given a Dataset of size N, sim_indices is a ndarray of size N * K, representing the
@@ -85,7 +85,7 @@ class HardTripletSampler(RandomIdentitySampler):
          labels of the K nearest neighbors to each sample
         """
 
-        super().__init__(dataset, batch_size, num_instances, **kwargs)
+        super().__init__(dataset, batch_size, num_instances, k_dec_freq, **kwargs)
         self.K = 2  # anchor and positive
         self.num_labels_per_batch = self.batch_size // 3 # batch of triplets
         self.max_iters = ((dataset.__len__() * 3) // batch_size)
@@ -132,8 +132,8 @@ class HardTripletSampler(RandomIdentitySampler):
 
 
 class DataBaseSampler(RandomIdentitySampler):
-    def __init__(self, dataset, batch_size, num_instances, **kwargs):
-        super().__init__(dataset, batch_size, num_instances, **kwargs)
+    def __init__(self, dataset, batch_size, num_instances, k_dec_freq, **kwargs):
+        super().__init__(dataset, batch_size, num_instances, k_dec_freq, **kwargs)
         self.batch_size = batch_size
         self.dataset_size = dataset.__len__()
 
@@ -158,8 +158,8 @@ class DataBaseSampler(RandomIdentitySampler):
 
 
 class DrawHeatmapSampler(RandomIdentitySampler):
-    def __init__(self, dataset, batch_size, num_instances, idxes=None, **kwargs):
-        super().__init__(dataset, batch_size, num_instances, **kwargs)
+    def __init__(self, dataset, batch_size, num_instances, k_dec_freq, idxes=None, **kwargs):
+        super().__init__(dataset, batch_size, num_instances, k_dec_freq, **kwargs)
         self.batch_size = 1
         self.batch_idxes = idxes
         if self.batch_idxes is None:
@@ -191,8 +191,8 @@ class DrawHeatmapSampler(RandomIdentitySampler):
             yield batch
 
 class Draw2XHeatmapSampler(BalancedTripletSampler):
-    def __init__(self, dataset, batch_size, num_instances, triplet_path='', **kwargs):
-        super().__init__(dataset, batch_size, num_instances, **kwargs)
+    def __init__(self, dataset, batch_size, num_instances, k_dec_freq, triplet_path='', **kwargs):
+        super().__init__(dataset, batch_size, num_instances, k_dec_freq, **kwargs)
         self.batch_size = 3
         self.num_labels_per_batch = self.batch_size // 3  # batch of triplets
         if triplet_path != '':

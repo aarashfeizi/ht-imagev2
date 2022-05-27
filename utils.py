@@ -252,6 +252,7 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
     sampler = SAMPLERS[sampler_mode](dataset=dataset,
                                      batch_size=args.get('batch_size'),
                                      num_instances=args.get('num_inst_per_class'),
+                                     k_increase_freq=args.get('k_dec_freq')
                                      **kwargs)
 
     dataloader = DataLoader(dataset=dataset, shuffle=False, num_workers=args.get('workers'), batch_sampler=sampler,
@@ -416,6 +417,10 @@ def get_model_name(args):
 
     if args.get('k_inc_freq') != 0:
         name += f"_Kinc{args.get('k_inc_freq')}"
+
+
+    if args.get('k_dec_freq') != 0:
+        name += f"_Kdec{args.get('k_dec_freq')}"
 
     if args.get('xname') != '':
         name += f"_{args.get('xname')}"
