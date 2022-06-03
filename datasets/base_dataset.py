@@ -1,6 +1,7 @@
 import os
 import re
 
+import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data.dataset import Dataset
@@ -9,7 +10,7 @@ from torchvision import transforms
 import utils
 
 class BaseDataset(Dataset):
-    def __init__(self, args, mode, filename='', transform=None, get_paths=False):
+    def __init__(self, args, mode, filename='', transform=None, get_paths=False, pairwise_labels=False):
         if filename == '':
             self.data_file_path = args.get(f'{mode}_file')
         else:
@@ -23,6 +24,12 @@ class BaseDataset(Dataset):
         self.data_dict = self.make_data_dict()
         self.lbl2idx = None
         self.labels = list(self.data_dict.keys())
+        self.pairwise_labels_path = args.get(f'pairwise_label_path')
+        if pairwise_labels and self.pairwise_labels_path is not None:
+            self.pairwise_labels = np.load(self.pairwise_labels_path)
+            assert self.pairwise_labels.shape[0] == len(self.label_list)
+        else:
+            self.pairwise_labels = None
 
     def rename_labels(self):
         if self.lbl2idx is None:

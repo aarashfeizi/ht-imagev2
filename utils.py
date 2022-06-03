@@ -388,6 +388,9 @@ def get_model_name(args):
 
     name += f"_{args.get('loss')}"
 
+    if args.get('pairwise_labels'):
+        name += f'-PairLbl'
+
     if args.get('with_bce'):
         name += f'-bce_bw{args.get("bce_weight")}'
 

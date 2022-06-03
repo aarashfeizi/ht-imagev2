@@ -16,11 +16,31 @@ class KBatchSampler(RandomIdentitySampler):
 
         for label in self.labels:
             idxs = copy.deepcopy(self.data_dict[label])
-            if len(idxs) < self.K:
-                idxs.extend(np.random.choice(idxs, size=self.K - len(idxs), replace=True))
-            random.shuffle(idxs)
+            if self.pairwise_labels is not None:
+                pairwise_labels = self.pairwise_labels[idxs, :][:, idxs]
+                idxs1 = copy.deepcopy(np.where(pairwise_labels[0] == 1)[0])
+                idxs0 = copy.deepcopy(np.where(pairwise_labels[0] == 0)[0])
+                import pdb
+                pdb.set_trace()
+                for idxs_sub in [idxs0, idxs1]:
+                    if len(idxs_sub) == 0:
+                        continue
+                    if len(idxs_sub) < self.K:
+                        idxs_sub.extend(np.random.choice(idxs_sub, size=self.K - len(idxs_sub), replace=True))
 
-            batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
+                    random.shuffle(idxs_sub)
+
+                    if batch_idxs_dict.get(label) is None:
+                        batch_idxs_dict[label] = []
+
+                    batch_idxs_dict[label].extend([idxs_sub[i * self.K: (i + 1) * self.K] for i in range(len(idxs_sub) // self.K)])
+                pdb.set_trace()
+            else:
+                if len(idxs) < self.K:
+                    idxs.extend(np.random.choice(idxs, size=self.K - len(idxs), replace=True))
+                random.shuffle(idxs)
+
+                batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
 
         avai_labels = copy.deepcopy(self.labels)
         return batch_idxs_dict, avai_labels

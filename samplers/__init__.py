@@ -32,6 +32,7 @@ class RandomIdentitySampler(Sampler):
         self.num_labels_per_batch = self.batch_size // self.K
         self.max_iters = (dataset.__len__() // batch_size)
         self.labels = dataset.labels
+        self.pairwise_labels = dataset.pairwise_labels
 
     def __len__(self):
         return self.max_iters
