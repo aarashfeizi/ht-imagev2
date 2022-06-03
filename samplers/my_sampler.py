@@ -18,23 +18,10 @@ class KBatchSampler(RandomIdentitySampler):
             idxs = copy.deepcopy(self.data_dict[label])
             if self.pairwise_labels is not None:
                 pairwise_labels = self.pairwise_labels[idxs, :][:, idxs]
-                idxs1 = copy.deepcopy(np.where(pairwise_labels[0] == 1)[0])
-                idxs0 = copy.deepcopy(np.where(pairwise_labels[0] == 0)[0])
-                import pdb
-                pdb.set_trace()
-                for idxs_sub in [idxs0, idxs1]:
-                    if len(idxs_sub) == 0:
-                        continue
-                    if len(idxs_sub) < self.K:
-                        idxs_sub.extend(np.random.choice(idxs_sub, size=self.K - len(idxs_sub), replace=True))
-
-                    random.shuffle(idxs_sub)
-
-                    if batch_idxs_dict.get(label) is None:
-                        batch_idxs_dict[label] = []
-
-                    batch_idxs_dict[label].extend([idxs_sub[i * self.K: (i + 1) * self.K] for i in range(len(idxs_sub) // self.K)])
-                pdb.set_trace()
+                possible_pairs = list(zip(*np.where(pairwise_labels == 1)))
+                random.shuffle(possible_pairs)
+                possible_pairs = [list(p) for p in possible_pairs]
+                batch_idxs_dict[label] = possible_pairs
             else:
                 if len(idxs) < self.K:
                     idxs.extend(np.random.choice(idxs, size=self.K - len(idxs), replace=True))

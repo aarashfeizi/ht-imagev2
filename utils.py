@@ -390,6 +390,8 @@ def get_model_name(args):
     name += f"_{args.get('loss')}"
 
     if args.get('pairwise_labels'):
+        if args.get('num_inst_per_class') != 2:
+            raise Exception('Pairwise_labels only support k = 2')
         name += f'-PairLbl'
 
     if args.get('with_bce'):
