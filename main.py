@@ -36,7 +36,7 @@ def main():
     train_loader = utils.get_data(all_args, mode='train',
                                   transform=train_transforms,
                                   sampler_mode='kbatch',
-                                  paiwise_label=all_args.get('paiwise_label'))
+                                  pairwise_labels=all_args.get('pairwise_labels'))
 
     # if train_transforms_swap is not None:
     #     train_loader = utils.get_data(all_args, mode='train', transform=train_transforms, sampler_mode='kbatch')

@@ -10,6 +10,6 @@ DATASETS = {
 }
 
 
-def load_dataset(args, mode, filename, transform, for_heatmap=False, pairwise_label=False):
+def load_dataset(args, mode, filename, transform, for_heatmap=False, pairwise_labels=False):
     return DATASETS[args.get('dataset')](args, mode, filename, transform, get_paths=for_heatmap,
-                                         pairwise_labels=pairwise_label)
+                                         pairwise_labels=pairwise_labels)
