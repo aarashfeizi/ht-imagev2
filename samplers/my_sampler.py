@@ -19,7 +19,7 @@ class KBatchSampler(RandomIdentitySampler):
             if self.pairwise_labels is not None:
                 pairwise_labels = self.pairwise_labels[idxs, :][:, idxs]
                 possible_pairs = list(zip(*np.where(pairwise_labels == 1)))
-                possible_pairs = set([sorted(p) for p in possible_pairs])
+                possible_pairs = set([tuple(sorted(p)) for p in possible_pairs])
                 possible_pairs = [list(p) for p in possible_pairs]
                 random.shuffle(possible_pairs)
                 batch_idxs_dict[label] = possible_pairs
