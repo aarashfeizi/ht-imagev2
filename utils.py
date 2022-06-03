@@ -236,7 +236,7 @@ def open_img(path):
     return img
 
 
-def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
+def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch', paiwise_label=False,
              **kwargs):  # 'kbatch', 'balanced_triplet', 'db'
     SAMPLERS = {'kbatch': KBatchSampler,
                 'balanced_triplet': BalancedTripletSampler,
@@ -247,7 +247,8 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
 
     dataset = datasets.load_dataset(args, mode, file_name,
                                     transform=transform,
-                                    for_heatmap=sampler_mode.startswith('heatmap'))
+                                    for_heatmap=sampler_mode.startswith('heatmap'),
+                                    pairwise_label=paiwise_label)
 
     sampler = SAMPLERS[sampler_mode](dataset=dataset,
                                      batch_size=args.get('batch_size'),
