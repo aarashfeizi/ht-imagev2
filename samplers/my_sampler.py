@@ -17,7 +17,7 @@ class KBatchSampler(RandomIdentitySampler):
         for label in self.labels:
             idxs = copy.deepcopy(self.data_dict[label])
             if self.pairwise_labels is not None:
-                idx_map = {idx: c for c, idx in enumerate(idxs)}
+                idx_map = {c: idx for c, idx in enumerate(idxs)}
                 pairwise_labels = self.pairwise_labels[idxs, :][:, idxs]
                 possible_pairs = list(zip(*np.where(pairwise_labels == 1)))
                 possible_pairs = set([tuple(map(idx_map.get, sorted(p))) for p in possible_pairs])
