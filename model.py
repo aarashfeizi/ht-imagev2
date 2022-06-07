@@ -203,6 +203,8 @@ class MultiEmbTopModule(GeneralTopLevelModule):
     def __init__(self, args, encoder):
         super(MultiEmbTopModule, self).__init__(args, encoder)
 
+        self.only_att = args.get('only_att')
+
         self.maxpool_8 = nn.MaxPool2d((8, 8))
         self.maxpool_4 = nn.MaxPool2d((4, 4))
         self.maxpool_2 = nn.MaxPool2d((2, 2))
@@ -336,7 +338,8 @@ class MultiEmbTopModule(GeneralTopLevelModule):
             # att_act =
             # activations is being updated to a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
 
-            # new_act = new_act + act  # add original with attention activation
+            if not self.only_att:
+                new_act = new_act + act  # add original with attention activation
 
             if get_pairwise_acts:
                 all_new_acts.append(new_act.transpose(-1, -2).reshape(B, B, C, H, W))

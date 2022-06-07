@@ -404,6 +404,9 @@ def get_model_name(args):
             ltu = f'{layers_to_use}'
         name += f"_M{args.get('ml_self_att_head_number')}LocSelfAtt{ltu}"
 
+        if args.get('only_att'):
+            name += 'OnlyATT'
+
 
     if args.get('multlayer_emb'):
         name += f'-MLTEMB'

@@ -21,7 +21,9 @@ class KBatchSampler(RandomIdentitySampler):
                 pairwise_labels = self.pairwise_labels[idxs, :][:, idxs]
                 possible_pairs = list(zip(*np.where(pairwise_labels == 1)))
                 possible_pairs = set([tuple(map(idx_map.get, sorted(p))) for p in possible_pairs if p[0] != p[1]])
+
                 if len(possible_pairs) == 0:
+
                     continue
                 possible_pairs = [list(p) for p in possible_pairs]
                 random.shuffle(possible_pairs)

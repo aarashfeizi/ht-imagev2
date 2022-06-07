@@ -70,6 +70,7 @@ def get_args():
     parser.add_argument('--pairwise_labels', default=False, action='store_true')
     parser.add_argument('--ml_self_att_head_number', type=int, default=4)
     parser.add_argument('--ml_self_att_layers_to_use', type=int, default=4)
+    parser.add_argument('--only_att', default=False, action='store_true')
     parser.add_argument('--num_inst_per_class', type=int, default=2)
     parser.add_argument('--k_inc_freq', type=int, default=0)
     parser.add_argument('--k_dec_freq', type=int, default=0)
