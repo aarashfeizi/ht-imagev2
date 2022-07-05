@@ -1618,9 +1618,11 @@ def _setup_angle(x, name, req_sizes=(2, )):
     return [float(d) for d in x]
 
 class RandomSwap(object):
-    def __init__(self, p=0.5, size=3):
+    def __init__(self, p=0.5, size=3, mask_prob=-1, mask=False):
         self.p = p
         self.size = size
+        self.mask_prob = mask_prob
+        self.mask = mask
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
@@ -1629,7 +1631,7 @@ class RandomSwap(object):
 
     def __call__(self, img):
         if torch.rand(1) < self.p:
-            return F.swap(img, self.size)
+            return F.swap(img, self.size, self.mask_prob)
         return img
 
     def __repr__(self):

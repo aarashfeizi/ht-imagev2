@@ -23,8 +23,8 @@ class KBatchSampler(RandomIdentitySampler):
                 possible_pairs = set([tuple(map(idx_map.get, sorted(p))) for p in possible_pairs if p[0] != p[1]])
 
                 if len(possible_pairs) == 0:
-
                     continue
+
                 possible_pairs = [list(p) for p in possible_pairs]
                 random.shuffle(possible_pairs)
                 batch_idxs_dict[label] = possible_pairs
@@ -62,11 +62,24 @@ class BalancedTripletSampler(RandomIdentitySampler):
 
             for label in self.labels:
                 idxs = copy.deepcopy(self.data_dict[label])
-                if len(idxs) < self.K:
-                    idxs.extend(np.random.choice(idxs, size=self.K - len(idxs), replace=True))
-                random.shuffle(idxs)
+                if self.pairwise_labels is not None:
+                    idx_map = {c: idx for c, idx in enumerate(idxs)}
+                    pairwise_labels = self.pairwise_labels[idxs, :][:, idxs]
+                    possible_pairs = list(zip(*np.where(pairwise_labels == 1)))
+                    possible_pairs = set([tuple(map(idx_map.get, sorted(p))) for p in possible_pairs if p[0] != p[1]])
 
-                batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
+                    if len(possible_pairs) == 0:
+                        continue
+
+                    possible_pairs = [list(p) for p in possible_pairs]
+                    random.shuffle(possible_pairs)
+                    batch_idxs_dict[label] = possible_pairs
+                else:
+                    if len(idxs) < self.K:
+                        idxs.extend(np.random.choice(idxs, size=self.K - len(idxs), replace=True))
+                    random.shuffle(idxs)
+
+                    batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
 
             for label in self.labels:
                 other_labels = list(set(self.labels) - set([label]))
@@ -75,6 +88,17 @@ class BalancedTripletSampler(RandomIdentitySampler):
                     neg_label = np.random.choice(other_labels, size=1)[0]
                     pair.extend(np.random.choice(self.data_dict[neg_label], size=1))
                     triplets.append(pair)
+
+                    # add negative from same class, but with a pairwise_label of 0
+                    if self.pairwise_labels is not None:
+                        anchor = pair[0]
+                        pos = pair[1]
+                        pairwise_labels_for_anchor = self.pairwise_labels[anchor, :]
+                        potential_negatives = np.where(pairwise_labels_for_anchor == 0)[0]
+                        if len(potential_negatives) > 0:
+                            negative = np.random.choice(potential_negatives, size=1)[0]
+                            new_pair = tuple([anchor, pos, negative])
+                            triplets.append(new_pair)
 
                 batch_idxs_dict[label] = triplets
 

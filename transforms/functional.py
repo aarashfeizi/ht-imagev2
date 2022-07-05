@@ -1050,20 +1050,27 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
         output = to_pil_image(output)
     return output
 
-def swap(img, crop):
-    def crop_image(image, cropnum):
+
+def swap(img, crop, mask_prob=-1):
+    def crop_image(image, cropnum, p):
         width, high = image.size
         crop_x = [int((width / cropnum[0]) * i) for i in range(cropnum[0] + 1)]
         crop_y = [int((high / cropnum[1]) * i) for i in range(cropnum[1] + 1)]
         im_list = []
         for j in range(len(crop_y) - 1):
             for i in range(len(crop_x) - 1):
-                im_list.append(image.crop((crop_x[i], crop_y[j], min(crop_x[i + 1], width), min(crop_y[j + 1], high))))
+                img_crop = image.crop((crop_x[i], crop_y[j], min(crop_x[i + 1], width), min(crop_y[j + 1], high)))
+
+                if torch.rand(1) < p: # mask out this patch
+                    img_np = np.array(img_crop).fill(0)
+                    img_crop = Image.fromarray(img_np)
+
+                im_list.append(img_crop)
         return im_list
 
     widthcut, highcut = img.size
     # img = img.crop((10, 10, widthcut-10, highcut-10))
-    images = crop_image(img, crop)
+    images = crop_image(img, crop, mask_prob)
     pro = 5
     if pro >= 5:
         tmpx = []

@@ -83,6 +83,8 @@ def get_args():
     parser.add_argument('--bce_weight', type=float, default=1.0)
     parser.add_argument('--aug_swap', type=int, default=1)  # split image into (aug_swap * aug_swap squares) and shuffle them
     parser.add_argument('--aug_swap_prob', type=float, default=0.5)
+    parser.add_argument('--aug_mask_prob', type=float, default=-1.0)
+
 
 
     parser.add_argument('--temperature', type=float, default=1.0)
