@@ -35,7 +35,10 @@ class KBatchSampler(RandomIdentitySampler):
 
                 batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
 
-        avai_labels = copy.deepcopy(self.labels)
+        if set(self.labels) != set(list(batch_idxs_dict.keys())):
+            print(f'{len(set(list(batch_idxs_dict.keys())) - set(self.labels))} labels are not being used!!')
+
+        avai_labels = copy.deepcopy(list(batch_idxs_dict.keys()))
         return batch_idxs_dict, avai_labels
 
 
@@ -102,7 +105,10 @@ class BalancedTripletSampler(RandomIdentitySampler):
 
                 batch_idxs_dict[label] = triplets
 
-            avai_labels = copy.deepcopy(self.labels)
+            if set(self.labels) != set(list(batch_idxs_dict.keys())):
+                print(f'{len(set(list(batch_idxs_dict.keys())) - set(self.labels))} labels are not being used!!')
+
+            avai_labels = copy.deepcopy(list(batch_idxs_dict.keys()))
 
         return batch_idxs_dict, avai_labels
 
