@@ -1,6 +1,7 @@
 {
   "dataset_path": "../../datasets/hotelid-2021/",
   "nb_classes": 3150,
+  "log_path": "./",
   "pairwise_label_path": "hotel_pairwise_labels/train_final_pairwise_labels_thresh06.npy",
   "train_file": "my_splits/train.csv",
   "val_file": "my_splits/val1.csv",

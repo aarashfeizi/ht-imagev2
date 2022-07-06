@@ -16,11 +16,11 @@ from PIL import Image
 from matplotlib import pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 from torch.utils.data import DataLoader
-# from torchvision import transforms
-import transforms
 
 import datasets
 import metrics
+# from torchvision import transforms
+import transforms
 from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseSampler, DrawHeatmapSampler, \
     HardTripletSampler, Draw2XHeatmapSampler
 
@@ -41,8 +41,8 @@ class Global_Config_File:
             self.__initialize_env()
 
     def __initialize_env(self):
-        self.global_config_file['tensorboard_path'] = 'tensorboard_' + self.global_config_file.get('dataset')
-        self.global_config_file['save_path'] = 'save_' + self.global_config_file.get('dataset')
+        self.global_config_file['tensorboard_path'] = os.path.join(self.global_config_file.get('log_path'), 'tensorboard_' + self.global_config_file.get('dataset'))
+        self.global_config_file['save_path'] = os.path.join(self.global_config_file.get('log_path'), 'save_' + self.global_config_file.get('dataset'))
 
         make_dirs(self.global_config_file['tensorboard_path'])
         make_dirs(self.global_config_file['save_path'])

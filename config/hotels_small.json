@@ -1,6 +1,7 @@
 {
   "dataset_path": "../../datasets/hotels50k/",
   "nb_classes": 2468,
+  "log_path": "./",
   "train_file": "v5_splits/train_small.csv",
   "val_file": "v5_splits/val1_small.csv",
   "test_file": "v5_splits/test1_small.csv",

@@ -1,6 +1,7 @@
 {
   "dataset_path": "../../datasets/CUB/",
   "nb_classes": 100,
+  "log_path": "./",
   "train_file": "train.txt",
   "val_file": "test.txt",
   "test_file": "test.txt",
