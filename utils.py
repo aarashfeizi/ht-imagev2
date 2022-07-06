@@ -126,7 +126,7 @@ class TransformLoader:
         elif transform_type == 'RandomErasing':
             return method(p=self.random_erase_prob, scale=(0.1, 0.75), ratio=(0.3, 3.3))  # TODO RANDOM ERASE!!!
         elif transform_type == 'RandomSwap':
-            return method(size=self.random_swap, mask_prob=self.random_mask_prob)
+            return method(size=self.random_swap, p=self.random_swap_prob, mask_prob=self.random_mask_prob)
         elif transform_type == 'RandomHorizontalFlip':
             return method(p=0.5)
         else:

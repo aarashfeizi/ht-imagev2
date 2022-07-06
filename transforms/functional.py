@@ -1062,7 +1062,8 @@ def swap(img, crop, mask_prob=-1):
                 img_crop = image.crop((crop_x[i], crop_y[j], min(crop_x[i + 1], width), min(crop_y[j + 1], high)))
 
                 if torch.rand(1) < p: # mask out this patch
-                    img_np = np.array(img_crop).fill(0)
+                    img_np = np.array(img_crop)
+                    img_np.fill(0)
                     img_crop = Image.fromarray(img_np)
 
                 im_list.append(img_crop)
