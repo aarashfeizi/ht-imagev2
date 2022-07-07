@@ -36,7 +36,8 @@ def main():
     train_loader = utils.get_data(all_args, mode='train',
                                   transform=train_transforms,
                                   sampler_mode='kbatch',
-                                  pairwise_labels=all_args.get('pairwise_labels'))
+                                  pairwise_labels=all_args.get('pairwise_labels'),
+                                  use_pairwise_label=True)
 
     # if train_transforms_swap is not None:
     #     train_loader = utils.get_data(all_args, mode='train', transform=train_transforms, sampler_mode='kbatch')
@@ -45,8 +46,10 @@ def main():
     val2_db_loader = None
 
     if not all_args.get('hard_triplet'):
-        val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet')
-        val2_loader = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='balanced_triplet')
+        val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet',
+                                  use_pairwise_label=all_args.get('eval_with_pairwise'))
+        val2_loader = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='balanced_triplet',
+                                  use_pairwise_label=all_args.get('eval_with_pairwise'))
 
     else:
         if all_args.get('ordered_idxs') is not None:
@@ -70,7 +73,8 @@ def main():
 
     test_loader = None
     if args.test:
-        test_loader = utils.get_data(all_args, mode='test', transform=val_transforms, sampler_mode='balanced_triplet')
+        test_loader = utils.get_data(all_args, mode='test', transform=val_transforms, sampler_mode='balanced_triplet',
+                                     use_pairwise_label=all_args.get('eval_with_pairwise'))
 
     net = model.get_top_module(args=all_args)
 

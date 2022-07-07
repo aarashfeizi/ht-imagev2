@@ -255,7 +255,8 @@ def open_img(path):
     return img
 
 
-def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch', pairwise_labels=False, **kwargs):  # 'kbatch', 'balanced_triplet', 'db'
+def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
+             pairwise_labels=False, use_pairwise_label=False, **kwargs):  # 'kbatch', 'balanced_triplet', 'db'
     SAMPLERS = {'kbatch': KBatchSampler,
                 'balanced_triplet': BalancedTripletSampler,
                 'hard_triplet': HardTripletSampler,
@@ -272,6 +273,7 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch', pa
                                      batch_size=args.get('batch_size'),
                                      num_instances=args.get('num_inst_per_class'),
                                      k_dec_freq=args.get('k_dec_freq'),
+                                     use_pairwise_label=use_pairwise_label,
                                      **kwargs)
 
     dataloader = DataLoader(dataset=dataset, shuffle=False, num_workers=args.get('workers'), batch_sampler=sampler,
@@ -416,12 +418,15 @@ def get_model_name(args):
         else:
             name += f'-{cov_coef}cov4-{var_coef}var'
 
+
     name += f"_{args.get('loss')}"
 
     if args.get('pairwise_labels'):
         if args.get('num_inst_per_class') != 2:
             raise Exception('Pairwise_labels only support k = 2')
         name += f'-PairLbl'
+        if args.get('eval_with_pairwise'):
+            name += '-EP'
 
     if args.get('with_bce'):
         name += f'-bce_bw{args.get("bce_weight")}'
