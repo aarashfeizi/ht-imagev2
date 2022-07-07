@@ -17,6 +17,12 @@ class BaseDataset(Dataset):
             self.data_file_path = filename
 
         self.root = args.get('dataset_path')
+        if args.get('aug_swap') > 1 and mode == 'train':
+            self.swap_prob = args.get('aug_swap_prob')
+            assert self.swap_prob > 0
+        else:
+            self.swap_prob = 0.0
+
         self.get_paths = get_paths
         self.path_list = []
         self.label_list = []
@@ -85,15 +91,38 @@ class BaseDataset(Dataset):
         return len(self.path_list)
 
     def __getitem__(self, idx):
+        swap_label = 0.0
         img_path = os.path.join(self.root, self.path_list[idx])
         lbl = torch.tensor(self.label_list[idx], dtype=torch.float32)
 
         img = utils.open_img(img_path)
 
-        if self.transform is not None:
-            img = self.transform(img)
-
-        if self.get_paths:
-            return img, lbl, img_path
+        if self.swap_prob > 0:
+            if self.transform is not None:
+                img, swap_label = self.do_swap_transform(img)
+            swap_label = torch.tensor(swap_label, dtype=torch.float32)
         else:
-            return img, lbl
+            if self.transform is not None:
+                img = self.transform(img)
+
+        if self.swap_prob > 0:
+            if self.get_paths:
+                return img, lbl, swap_label, img_path
+            else:
+                return img, lbl, swap_label
+        else:
+            if self.get_paths:
+                return img, lbl, img_path
+            else:
+                return img, lbl
+
+
+    def do_swap_transform(self, img):
+        swapped = 0.0
+        img = self.transform[0](img)  # all transforms before swapping
+        if torch.rand(1) < self.swap_prob:
+            img = self.transform[1](img)  # swapping
+            swapped = 1.0
+        img = self.transform[2](img)  # all transforms after swapping
+
+        return img, swapped

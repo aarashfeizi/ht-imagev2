@@ -31,8 +31,10 @@ class Trainer:
         self.cov_loss = None
         self.cov_loss_coefficient = args.get('cov_coef')
         self.var_loss_coefficient = args.get('var_coef')
+        self.swap_loss_coefficient = args.get('swap_coef')
         self.early_stopping_tol = args.get('early_stopping_tol')
         self.early_stopping_counter = 0
+        self.aug_swap = args.get('aug_swap') > 1
 
         if args.get('cov'):
             self.cov_loss = losses.covariance.COV_Loss(self.emb_size, static_mean=args.get('cov_static_mean'))
@@ -289,21 +291,29 @@ class Trainer:
         epoch_loss = 0
 
         acc = Metric_Accuracy()
+        swap_lbls = None
 
         with tqdm(total=len(self.train_loader), desc=f'{self.current_epoch}/{self.epochs}') as t:
-            for batch_id, (imgs, lbls) in enumerate(self.train_loader, 1):
+            for batch_id, batch in enumerate(self.train_loader, 1):
+                if self.aug_swap:
+                    (imgs, lbls, swap_lbls) = batch
+                else:
+                    (imgs, lbls) = batch
+
                 if self.cuda:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
+                    if self.aug_swap:
+                        swap_lbls = swap_lbls.cuda()
 
                 if self.optimizer_name == 'adam':
                     utils.enable_running_stats(net)
 
-                img_embeddings = net(imgs)
+                img_embeddings, swap_preds = net(imgs)
                 preds, similarities = utils.get_preds(img_embeddings)
                 bce_labels = utils.make_batch_bce_labels(lbls)
 
-                loss, loss_items = self.get_loss_value(img_embeddings, preds, lbls)
+                loss, loss_items = self.get_loss_value(img_embeddings, preds, lbls, swap_predictions=swap_preds, swap_lbls=swap_lbls)
 
                 if torch.isnan(loss):
                     raise Exception(f'Loss became NaN on iteration {batch_id} of epoch {self.current_epoch}! :(')
@@ -329,7 +339,7 @@ class Trainer:
                     # second forward-backward step
                     utils.disable_running_stats(net)
 
-                    img_embeddings_sam = net(imgs)
+                    img_embeddings_sam, _ = net(imgs)
                     preds_sam, _ = utils.get_preds(img_embeddings_sam)
 
                     loss_sam, _ = self.get_loss_value(img_embeddings_sam, preds_sam, lbls)
@@ -367,10 +377,11 @@ class Trainer:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
 
-                img_embeddings = net(imgs)
+                img_embeddings, swap_preds = net(imgs)
                 preds, similarities = utils.get_preds(img_embeddings)
                 bce_labels = utils.make_batch_bce_labels(lbls)
-                loss, loss_items = self.get_loss_value(img_embeddings, preds, lbls, train=False)
+                all_zeros_lbls = torch.zeros_like(swap_preds)
+                loss, loss_items = self.get_loss_value(img_embeddings, preds, lbls, swap_predictions=swap_preds, swap_lbls=all_zeros_lbls, train=False)
 
                 if val_losses is None:
                     val_losses = loss_items
@@ -403,7 +414,7 @@ class Trainer:
 
         return val_losses, acc.get_acc(), auroc_score
 
-    def get_loss_value(self, embeddings, binary_predictions, lbls, train=True):
+    def get_loss_value(self, embeddings, binary_predictions, lbls, swap_predictions=None, swap_lbls=None, train=True):
         each_loss_item = {}
         if self.loss_name == 'bce' or self.loss_name == 'hardbce':
             loss = self.loss_function(embeddings, lbls, output_pred=binary_predictions, train=train)
@@ -428,6 +439,12 @@ class Trainer:
             each_loss_item['cov'] = cov_loss_value.item()
             each_loss_item['var'] = var_loss_value.item()
 
+        if swap_lbls is not None:
+            swap_loss = torch.nn.BCEWithLogitsLoss(swap_predictions.flatten(), swap_lbls.flatten())
+            loss += self.swap_loss_coefficient * swap_loss
+            each_loss_item['swap'] = swap_loss.item()
+
+
         # elif self.loss_name == 'trpl':
         #     loss = self.loss_function(embeddings, lbls)
         return loss, each_loss_item
@@ -445,7 +462,7 @@ class Trainer:
             if self.cuda:
                 imgs = imgs.cuda()
 
-            img_embeddings = net(imgs)
+            img_embeddings, _ = net(imgs)
 
             if len(img_embeddings.shape) == 3:
                 img_embeddings = utils.get_diag_3d_tensor(img_embeddings)

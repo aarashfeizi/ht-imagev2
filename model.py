@@ -43,141 +43,6 @@ class Projector(nn.Module):
         return x
 
 
-class GeneralTopLevelModule(nn.Module):
-    def __init__(self, args, encoder):
-        super(GeneralTopLevelModule, self).__init__()
-        self.metric = args.get('metric')
-        self.encoder = encoder
-        self.logits_net = None
-        self.temeperature = args.get('temperature')
-        self.multi_layer_emb = args.get('multlayer_emb')
-        self.equal_layer_contrib = args.get('eq_layer_contrib')
-        self.proj_layer1 = None
-        self.proj_layer2 = None
-        self.proj_layer3 = None
-        self.proj_layer4 = None
-
-        self.projs = []
-
-        self.final_projector = None
-
-        self.attQ_layer1 = None
-        self.attQ_layer2 = None
-        self.attQ_layer3 = None
-        self.attQ_layer4 = None
-
-        self.attQs = []
-        self.atts = []
-
-    def forward(self, imgs):
-        embeddings = self.encoder(imgs)
-        return embeddings
-
-    def forward_with_activations(self, imgs):
-        embeddings, activations = self.encoder(imgs, is_feat=True)  # returns embeddings, [f1, f2, f3, f4]
-        return embeddings, activations
-
-
-class SingleEmbTopModule(GeneralTopLevelModule):
-    def __init__(self, args, encoder):
-        super(SingleEmbTopModule, self).__init__(args, encoder)
-
-        if self.multi_layer_emb:
-            if self.equal_layer_contrib:
-                assert args.get('emb_size') % 4 == 0
-                partial_emb_size = args.get('emb_size') // 4
-
-                self.proj_layer1 = Projector(input_channels=FEATURE_MAP_SIZES[1][0],
-                                             output_channels=partial_emb_size,
-                                             pool='avg',
-                                             kernel_size=FEATURE_MAP_SIZES[1][1])
-
-                self.proj_layer2 = Projector(input_channels=FEATURE_MAP_SIZES[2][0],
-                                             output_channels=partial_emb_size,
-                                             pool='avg',
-                                             kernel_size=FEATURE_MAP_SIZES[2][1])
-
-                self.proj_layer3 = Projector(input_channels=FEATURE_MAP_SIZES[3][0],
-                                             output_channels=partial_emb_size,
-                                             pool='avg',
-                                             kernel_size=FEATURE_MAP_SIZES[3][1])
-
-                self.proj_layer4 = Projector(input_channels=FEATURE_MAP_SIZES[4][0],
-                                             output_channels=partial_emb_size,
-                                             pool='avg',
-                                             kernel_size=FEATURE_MAP_SIZES[4][1])
-
-                self.projs = [self.proj_layer1,
-                              self.proj_layer2,
-                              self.proj_layer3,
-                              self.proj_layer4]
-            else:
-                big_emb_size = 0
-                for k, v in FEATURE_MAP_SIZES.items():
-                    big_emb_size += v[0]
-
-                self.final_projector = nn.Linear(big_emb_size, args.get('emb_size'))
-
-        if args.get('metric') == 'mlp':
-            self.logits_net = nn.Sequential(nn.Linear(in_features=2 * args.get('emb_size'),
-                                                      out_features=args.get('emb_size')),
-                                            nn.ReLU(),
-                                            nn.Linear(in_features=args.get('emb_size'),
-                                                      out_features=1))
-
-    def get_normal_embeddings(self, imgs):
-        """
-
-        :param imgs:
-        :return: return a (B, dim) tensor, where dim is the emb_dim
-        """
-        return self.encoder(imgs)
-
-    def get_multilayer_embeddings_equal(self, imgs):
-        """
-
-        :param imgs:
-        :return: return a (B, dim) tensor, where dim is the emb_dim
-        """
-        embeddings, activations = self.encoder(imgs, is_feat=True)
-        smaller_embs = []
-        for a, p in zip(activations, self.projs):
-            smaller_embs.append(p(a))
-
-        embeddings = torch.cat(smaller_embs, dim=1).squeeze(dim=-1).squeeze(dim=-1)
-        return embeddings
-
-    def get_multilayer_embeddings_unequal(self, imgs):
-        """
-
-        :param imgs:
-        :return: return a (B, dim) tensor, where dim is the emb_dim
-        """
-        embeddings, activations = self.encoder(imgs, is_feat=True)
-        smaller_embs = []
-        for a in activations:
-            B, C, H, W = a.shape
-            smaller_embs.append(a.reshape(B, C, -1).mean(dim=-1))
-
-        embeddings = torch.cat(smaller_embs, dim=-1)
-
-        return embeddings
-
-    def forward(self, imgs):
-        embeddings = None
-        if self.multi_layer_emb:  # partial embeddings
-            if self.equal_layer_contrib:
-                embeddings = self.get_multilayer_embeddings_equal(imgs)
-            else:
-                embeddings = self.get_multilayer_embeddings_unequal(imgs)
-                embeddings = self.final_projector(embeddings)
-        else:
-            embeddings = self.get_normal_embeddings(imgs)
-        # preds, sims = self.get_preds(embeddings)
-
-        return embeddings
-
-
 class FanInOutAtt(nn.Module):
     def __init__(self, in_channels, out_channels=0):
         super(FanInOutAtt, self).__init__()
@@ -197,209 +62,6 @@ class FanInOutAtt(nn.Module):
         x = self.conv2(x)
 
         return x
-
-
-class MultiEmbTopModule(GeneralTopLevelModule):
-    def __init__(self, args, encoder):
-        super(MultiEmbTopModule, self).__init__(args, encoder)
-
-        self.only_att = args.get('only_att')
-
-        self.maxpool_8 = nn.MaxPool2d((8, 8))
-        self.maxpool_4 = nn.MaxPool2d((4, 4))
-        self.maxpool_2 = nn.MaxPool2d((2, 2))
-        self.maxpool_1 = nn.MaxPool2d((1, 1))
-
-        self.identity = nn.Identity()
-
-        self.maxpool_layers = {56: self.maxpool_8,
-                               28: self.maxpool_4,
-                               14: self.maxpool_2,
-                               7: self.identity}
-
-        big_emb_size = 0
-
-        self.att_layer1 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[1][0], heads=args.get('ml_self_att_head_number'))
-        self.att_layer2 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[2][0], heads=args.get('ml_self_att_head_number'))
-        self.att_layer3 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[3][0], heads=args.get('ml_self_att_head_number'))
-        self.att_layer4 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[4][0], heads=args.get('ml_self_att_head_number'))
-
-        self.atts = [self.att_layer1,
-                     self.att_layer2,
-                     self.att_layer3,
-                     self.att_layer4]
-
-        self.layer_to_use = args.get('ml_self_att_layers_to_use')  # 4
-
-        if self.layer_to_use < 4:
-            self.maxpool_8 = None
-            self.maxpool_layers[56] = None
-            self.att_layer1 = None
-            self.atts[0] = None
-
-        if self.layer_to_use < 3:
-            self.maxpool_4 = None
-            self.att_layer2 = None
-            self.atts[1] = None
-
-            self.maxpool_2 = self.identity
-            self.maxpool_layers[28] = None
-            self.maxpool_layers[14] = self.identity
-
-        if self.layer_to_use < 2:
-            self.maxpool_2 = self.identity
-            self.maxpool_layers[14] = self.identity
-            self.att_layer3 = None
-            self.atts[2] = None
-
-        # self.attQ_layer1 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[1][0])
-        # self.attQ_layer2 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[2][0])
-        # self.attQ_layer3 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[3][0])
-        # self.attQ_layer4 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[4][0])
-
-        # self.attQs = [self.attQ_layer1,
-        #               self.attQ_layer2,
-        #               self.attQ_layer3,
-        #               self.attQ_layer4]
-        #
-        thresh = 4 - self.layer_to_use
-        for k, v in FEATURE_MAP_SIZES.items():
-            if k > thresh:
-                big_emb_size += v[0]
-
-        self.final_projector = nn.Linear(big_emb_size, args.get('emb_size'))
-
-        self.l2normalize = not args.get('cov')
-
-        if self.multi_layer_emb:
-            assert args.get('emb_size') % 4 == 0
-            partial_emb_size = args.get('emb_size') // 4
-
-            self.proj_layer1 = Projector(input_channels=FEATURE_MAP_SIZES[1][0],
-                                         output_channels=partial_emb_size,
-                                         pool='avg',
-                                         kernel_size=FEATURE_MAP_SIZES[1][1])
-
-            self.proj_layer2 = Projector(input_channels=FEATURE_MAP_SIZES[2][0],
-                                         output_channels=partial_emb_size,
-                                         pool='avg',
-                                         kernel_size=FEATURE_MAP_SIZES[2][1])
-
-            self.proj_layer3 = Projector(input_channels=FEATURE_MAP_SIZES[3][0],
-                                         output_channels=partial_emb_size,
-                                         pool='avg',
-                                         kernel_size=FEATURE_MAP_SIZES[3][1])
-
-            self.proj_layer4 = Projector(input_channels=FEATURE_MAP_SIZES[4][0],
-                                         output_channels=partial_emb_size,
-                                         pool='avg',
-                                         kernel_size=FEATURE_MAP_SIZES[4][1])
-
-            self.projs = [self.proj_layer1,
-                          self.proj_layer2,
-                          self.proj_layer3,
-                          self.proj_layer4]
-
-    def forward(self, imgs, is_feat=False, get_pairwise_acts=False):
-        embeddings, activations = self.encoder(imgs, is_feat=True)
-
-        # heatmaps = []
-
-        layer_embeddings = []
-        batch_size = 0
-        new_activations = []
-        all_new_acts = []
-        for idx, act in enumerate(activations):
-            B, C, H0, W0 = act.shape
-            if batch_size == 0:
-                batch_size = B
-            if self.maxpool_layers[H0] is None:
-                continue
-
-            act = self.maxpool_layers[H0](act)
-            _, _, H, W = act.shape
-            act = act.reshape(B, C, H * W)
-            act = act.transpose(-1, -2)
-            new_act = self.atts[idx](act) # att_act's shape is (B, B, H*W, C)
-
-
-            # act1Q = self.attQs[idx](act)
-            # act1Q = act1Q.reshape(B, 1, C, H * W)
-            # act1Q = act1Q.transpose(3, 2)
-            #
-            # act2K = act.reshape(1, B, C, H * W)
-            # heatmap = (act1Q @ act2K) / np.sqrt(C)
-            # # heatmap is (B, B, H*W, H*W) the attention coefficients of every image according to another image
-            #
-            # heatmap = heatmap.softmax(dim=-1)
-            #
-            # act = act.reshape(1, B, C, H * W)
-            # act = act.transpose(3, 2)
-            # att_act =
-            # activations is being updated to a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
-
-            if not self.only_att:
-                new_act = new_act + act  # add original with attention activation
-
-            if get_pairwise_acts:
-                all_new_acts.append(new_act.transpose(-1, -2).reshape(B, B, C, H, W))
-
-            new_activations.append(
-                torch.diagonal(new_act.transpose(-1, -2).reshape(B, B, C * H * W)).transpose(0, 1).reshape(B, C, H, W))
-
-            layer_embeddings.append(new_act.transpose(-1, -2).mean(dim=-1))
-
-            # heatmaps.append(heatmap)
-
-        # create all_layer embeddings
-        all_embeddings = torch.cat(layer_embeddings, dim=2)
-
-        all_embeddings = self.final_projector(all_embeddings.reshape(batch_size * batch_size, -1)).reshape(batch_size,
-                                                                                                           batch_size,
-                                                                                                           -1)
-
-        # normalize embeddings
-        if self.l2normalize:
-            all_embeddings = all_embeddings / all_embeddings.norm(dim=-1, keepdim=True).reshape(batch_size, batch_size,
-                                                                                                1)
-
-        # Find cosine similarities between embeddings as predictions
-        # cosine_similarities is a (B, B) matrix, ranging from -1 to 1
-        # cosine_similarities = (all_embeddings * all_embeddings.transpose(0, 1)).sum(dim=-1)
-        #
-        # predictions = (cosine_similarities + 1) / 2
-
-        # todo currently, outputed final embeddings from the model are NOT being used. Maybe use concatenating embeddings and passing it to an mlp for difference?
-        if is_feat:
-            all_activations = {'org': activations[4 - self.layer_to_use:], 'att': new_activations}
-            return all_embeddings, all_activations
-        elif get_pairwise_acts:
-            org_activations = [a.repeat(batch_size, 1, 1, 1) for a in activations[4 - self.layer_to_use:]]
-            org_to_return = []
-            for a in org_activations:
-                B2, C, H, W = a.shape
-                assert B2 == batch_size * batch_size
-                org_to_return.append(a.reshape(batch_size, batch_size, C, H, W))
-
-            all_activations = {'org': org_to_return, 'att': all_new_acts}
-            return all_embeddings, all_activations
-        else:
-            return all_embeddings
-
-    def forward_with_activations(self, imgs):
-        embeddings, activations = self.forward(imgs, is_feat=True, get_pairwise_acts=False)
-        return embeddings, activations
-
-    def forward_with_pairwise_activations(self, imgs):
-        embeddings, activations = self.forward(imgs, is_feat=False, get_pairwise_acts=True)
-        return embeddings, activations
-
-def get_top_module(args):
-    encoder = backbones.get_bb_network(args)
-    if args.get('ml_self_att'):
-        return MultiEmbTopModule(args, encoder)
-    else:
-        return SingleEmbTopModule(args, encoder)
 
 
 class MultiHeadAttention(nn.Module):
@@ -557,3 +219,349 @@ class BatchMultiHeadAttention(nn.Module):
             att_V = self.reverse_multi_head_reshape(att_V)
 
         return self.w_o(att_V)
+
+
+class GeneralTopLevelModule(nn.Module):
+    def __init__(self, args, encoder):
+        super(GeneralTopLevelModule, self).__init__()
+        self.metric = args.get('metric')
+        self.encoder = encoder
+        self.logits_net = None
+        self.temeperature = args.get('temperature')
+        self.multi_layer_emb = args.get('multlayer_emb')
+        self.equal_layer_contrib = args.get('eq_layer_contrib')
+        self.proj_layer1 = None
+        self.proj_layer2 = None
+        self.proj_layer3 = None
+        self.proj_layer4 = None
+
+        self.projs = []
+
+        self.final_projector = None
+
+        self.attQ_layer1 = None
+        self.attQ_layer2 = None
+        self.attQ_layer3 = None
+        self.attQ_layer4 = None
+
+        self.attQs = []
+        self.atts = []
+
+        self.identity = nn.Identity()
+
+        if args.get('aug_swap') > 1:
+            self.swap_classifier = nn.Linear(2048, 1)
+        else:
+            self.swap_classifier = self.identity
+
+    def forward(self, imgs):
+        embeddings = self.encoder(imgs)
+        return embeddings
+
+    def forward_with_activations(self, imgs):
+        embeddings, activations = self.encoder(imgs, is_feat=True)  # returns embeddings, [f1, f2, f3, f4]
+        return embeddings, activations
+
+
+class SingleEmbTopModule(GeneralTopLevelModule):
+    def __init__(self, args, encoder):
+        super(SingleEmbTopModule, self).__init__(args, encoder)
+
+        if self.multi_layer_emb:
+            if self.equal_layer_contrib:
+                assert args.get('emb_size') % 4 == 0
+                partial_emb_size = args.get('emb_size') // 4
+
+                self.proj_layer1 = Projector(input_channels=FEATURE_MAP_SIZES[1][0],
+                                             output_channels=partial_emb_size,
+                                             pool='avg',
+                                             kernel_size=FEATURE_MAP_SIZES[1][1])
+
+                self.proj_layer2 = Projector(input_channels=FEATURE_MAP_SIZES[2][0],
+                                             output_channels=partial_emb_size,
+                                             pool='avg',
+                                             kernel_size=FEATURE_MAP_SIZES[2][1])
+
+                self.proj_layer3 = Projector(input_channels=FEATURE_MAP_SIZES[3][0],
+                                             output_channels=partial_emb_size,
+                                             pool='avg',
+                                             kernel_size=FEATURE_MAP_SIZES[3][1])
+
+                self.proj_layer4 = Projector(input_channels=FEATURE_MAP_SIZES[4][0],
+                                             output_channels=partial_emb_size,
+                                             pool='avg',
+                                             kernel_size=FEATURE_MAP_SIZES[4][1])
+
+                self.projs = [self.proj_layer1,
+                              self.proj_layer2,
+                              self.proj_layer3,
+                              self.proj_layer4]
+            else:
+                big_emb_size = 0
+                for k, v in FEATURE_MAP_SIZES.items():
+                    big_emb_size += v[0]
+
+                self.final_projector = nn.Linear(big_emb_size, args.get('emb_size'))
+
+        if args.get('metric') == 'mlp':
+            self.logits_net = nn.Sequential(nn.Linear(in_features=2 * args.get('emb_size'),
+                                                      out_features=args.get('emb_size')),
+                                            nn.ReLU(),
+                                            nn.Linear(in_features=args.get('emb_size'),
+                                                      out_features=1))
+
+    def get_normal_embeddings(self, imgs):
+        """
+
+        :param imgs:
+        :return: return a (B, dim) tensor, where dim is the emb_dim
+        """
+        return self.encoder(imgs)
+
+    def get_multilayer_embeddings_equal(self, imgs):
+        """
+
+        :param imgs:
+        :return: return a (B, dim) tensor, where dim is the emb_dim
+        """
+        embeddings, activations = self.encoder(imgs, is_feat=True)
+        smaller_embs = []
+        for a, p in zip(activations, self.projs):
+            smaller_embs.append(p(a))
+
+        embeddings = torch.cat(smaller_embs, dim=1).squeeze(dim=-1).squeeze(dim=-1)
+        return embeddings
+
+    def get_multilayer_embeddings_unequal(self, imgs):
+        """
+
+        :param imgs:
+        :return: return a (B, dim) tensor, where dim is the emb_dim
+        """
+        embeddings, activations = self.encoder(imgs, is_feat=True)
+        smaller_embs = []
+        for a in activations:
+            B, C, H, W = a.shape
+            smaller_embs.append(a.reshape(B, C, -1).mean(dim=-1))
+
+        embeddings = torch.cat(smaller_embs, dim=-1)
+
+        return embeddings
+
+    def forward(self, imgs):
+        embeddings = None
+        if self.multi_layer_emb:  # partial embeddings
+            if self.equal_layer_contrib:
+                embeddings = self.get_multilayer_embeddings_equal(imgs)
+            else:
+                embeddings = self.get_multilayer_embeddings_unequal(imgs)
+                embeddings = self.final_projector(embeddings)
+        else:
+            embeddings = self.get_normal_embeddings(imgs)
+        # preds, sims = self.get_preds(embeddings)
+
+        return embeddings
+
+
+class MultiEmbTopModule(GeneralTopLevelModule):
+    def __init__(self, args, encoder):
+        super(MultiEmbTopModule, self).__init__(args, encoder)
+
+        self.only_att = args.get('only_att')
+
+        self.maxpool_8 = nn.MaxPool2d((8, 8))
+        self.maxpool_4 = nn.MaxPool2d((4, 4))
+        self.maxpool_2 = nn.MaxPool2d((2, 2))
+        self.maxpool_1 = nn.MaxPool2d((1, 1))
+
+        self.maxpool_layers = {56: self.maxpool_8,
+                               28: self.maxpool_4,
+                               14: self.maxpool_2,
+                               7: self.identity}
+
+        big_emb_size = 0
+
+        self.att_layer1 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[1][0], heads=args.get('ml_self_att_head_number'))
+        self.att_layer2 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[2][0], heads=args.get('ml_self_att_head_number'))
+        self.att_layer3 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[3][0], heads=args.get('ml_self_att_head_number'))
+        self.att_layer4 = BatchMultiHeadAttention(emb_size=FEATURE_MAP_SIZES[4][0], heads=args.get('ml_self_att_head_number'))
+
+        self.atts = [self.att_layer1,
+                     self.att_layer2,
+                     self.att_layer3,
+                     self.att_layer4]
+
+        self.layer_to_use = args.get('ml_self_att_layers_to_use')  # 4
+
+        if self.layer_to_use < 4:
+            self.maxpool_8 = None
+            self.maxpool_layers[56] = None
+            self.att_layer1 = None
+            self.atts[0] = None
+
+        if self.layer_to_use < 3:
+            self.maxpool_4 = None
+            self.att_layer2 = None
+            self.atts[1] = None
+
+            self.maxpool_2 = self.identity
+            self.maxpool_layers[28] = None
+            self.maxpool_layers[14] = self.identity
+
+        if self.layer_to_use < 2:
+            self.maxpool_2 = self.identity
+            self.maxpool_layers[14] = self.identity
+            self.att_layer3 = None
+            self.atts[2] = None
+
+        # self.attQ_layer1 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[1][0])
+        # self.attQ_layer2 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[2][0])
+        # self.attQ_layer3 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[3][0])
+        # self.attQ_layer4 = FanInOutAtt(in_channels=FEATURE_MAP_SIZES[4][0])
+
+        # self.attQs = [self.attQ_layer1,
+        #               self.attQ_layer2,
+        #               self.attQ_layer3,
+        #               self.attQ_layer4]
+        #
+        thresh = 4 - self.layer_to_use
+        for k, v in FEATURE_MAP_SIZES.items():
+            if k > thresh:
+                big_emb_size += v[0]
+
+        self.final_projector = nn.Linear(big_emb_size, args.get('emb_size'))
+
+        self.l2normalize = not args.get('cov')
+
+        if self.multi_layer_emb:
+            assert args.get('emb_size') % 4 == 0
+            partial_emb_size = args.get('emb_size') // 4
+
+            self.proj_layer1 = Projector(input_channels=FEATURE_MAP_SIZES[1][0],
+                                         output_channels=partial_emb_size,
+                                         pool='avg',
+                                         kernel_size=FEATURE_MAP_SIZES[1][1])
+
+            self.proj_layer2 = Projector(input_channels=FEATURE_MAP_SIZES[2][0],
+                                         output_channels=partial_emb_size,
+                                         pool='avg',
+                                         kernel_size=FEATURE_MAP_SIZES[2][1])
+
+            self.proj_layer3 = Projector(input_channels=FEATURE_MAP_SIZES[3][0],
+                                         output_channels=partial_emb_size,
+                                         pool='avg',
+                                         kernel_size=FEATURE_MAP_SIZES[3][1])
+
+            self.proj_layer4 = Projector(input_channels=FEATURE_MAP_SIZES[4][0],
+                                         output_channels=partial_emb_size,
+                                         pool='avg',
+                                         kernel_size=FEATURE_MAP_SIZES[4][1])
+
+            self.projs = [self.proj_layer1,
+                          self.proj_layer2,
+                          self.proj_layer3,
+                          self.proj_layer4]
+
+    def forward(self, imgs, is_feat=False, get_pairwise_acts=False):
+        embeddings, activations = self.encoder(imgs, is_feat=True)
+        swap_preds = None
+        # heatmaps = []
+
+        if self.aug_swap:
+            swap_preds = self.swap_classifier(embeddings)
+
+        layer_embeddings = []
+        batch_size = 0
+        new_activations = []
+        all_new_acts = []
+        for idx, act in enumerate(activations):
+            B, C, H0, W0 = act.shape
+            if batch_size == 0:
+                batch_size = B
+            if self.maxpool_layers[H0] is None:
+                continue
+
+            act = self.maxpool_layers[H0](act)
+            _, _, H, W = act.shape
+            act = act.reshape(B, C, H * W)
+            act = act.transpose(-1, -2)
+            new_act = self.atts[idx](act) # att_act's shape is (B, B, H*W, C)
+
+
+            # act1Q = self.attQs[idx](act)
+            # act1Q = act1Q.reshape(B, 1, C, H * W)
+            # act1Q = act1Q.transpose(3, 2)
+            #
+            # act2K = act.reshape(1, B, C, H * W)
+            # heatmap = (act1Q @ act2K) / np.sqrt(C)
+            # # heatmap is (B, B, H*W, H*W) the attention coefficients of every image according to another image
+            #
+            # heatmap = heatmap.softmax(dim=-1)
+            #
+            # act = act.reshape(1, B, C, H * W)
+            # act = act.transpose(3, 2)
+            # att_act =
+            # activations is being updated to a list of tensors with size (B, B, C, H*W) -> activations of every image according to another image's activations
+
+            if not self.only_att:
+                new_act = new_act + act  # add original with attention activation
+
+            if get_pairwise_acts:
+                all_new_acts.append(new_act.transpose(-1, -2).reshape(B, B, C, H, W))
+
+            new_activations.append(
+                torch.diagonal(new_act.transpose(-1, -2).reshape(B, B, C * H * W)).transpose(0, 1).reshape(B, C, H, W))
+
+            layer_embeddings.append(new_act.transpose(-1, -2).mean(dim=-1))
+
+            # heatmaps.append(heatmap)
+
+        # create all_layer embeddings
+        all_embeddings = torch.cat(layer_embeddings, dim=2)
+
+        all_embeddings = self.final_projector(all_embeddings.reshape(batch_size * batch_size, -1)).reshape(batch_size,
+                                                                                                           batch_size,
+                                                                                                           -1)
+
+        # normalize embeddings
+        if self.l2normalize:
+            all_embeddings = all_embeddings / all_embeddings.norm(dim=-1, keepdim=True).reshape(batch_size, batch_size,
+                                                                                                1)
+
+        # Find cosine similarities between embeddings as predictions
+        # cosine_similarities is a (B, B) matrix, ranging from -1 to 1
+        # cosine_similarities = (all_embeddings * all_embeddings.transpose(0, 1)).sum(dim=-1)
+        #
+        # predictions = (cosine_similarities + 1) / 2
+
+        # todo currently, outputed final embeddings from the model are NOT being used. Maybe use concatenating embeddings and passing it to an mlp for difference?
+        if is_feat:
+            all_activations = {'org': activations[4 - self.layer_to_use:], 'att': new_activations}
+            return all_embeddings, all_activations
+        elif get_pairwise_acts:
+            org_activations = [a.repeat(batch_size, 1, 1, 1) for a in activations[4 - self.layer_to_use:]]
+            org_to_return = []
+            for a in org_activations:
+                B2, C, H, W = a.shape
+                assert B2 == batch_size * batch_size
+                org_to_return.append(a.reshape(batch_size, batch_size, C, H, W))
+
+            all_activations = {'org': org_to_return, 'att': all_new_acts}
+            return all_embeddings, all_activations, swap_preds
+        else:
+            return all_embeddings, swap_preds
+
+    def forward_with_activations(self, imgs):
+        embeddings, activations = self.forward(imgs, is_feat=True, get_pairwise_acts=False)
+        return embeddings, activations
+
+    def forward_with_pairwise_activations(self, imgs):
+        embeddings, activations = self.forward(imgs, is_feat=False, get_pairwise_acts=True)
+        return embeddings, activations
+
+def get_top_module(args):
+    encoder = backbones.get_bb_network(args)
+    if args.get('ml_self_att'):
+        return MultiEmbTopModule(args, encoder)
+    else:
+        return SingleEmbTopModule(args, encoder)

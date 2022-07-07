@@ -126,7 +126,7 @@ class TransformLoader:
         elif transform_type == 'RandomErasing':
             return method(p=self.random_erase_prob, scale=(0.1, 0.75), ratio=(0.3, 3.3))  # TODO RANDOM ERASE!!!
         elif transform_type == 'RandomSwap':
-            return method(size=self.random_swap, p=self.random_swap_prob, mask_prob=self.random_mask_prob)
+            return method(size=self.random_swap, p=1, mask_prob=self.random_mask_prob) # self.random_swap_prob is applied in __getitem__()
         elif transform_type == 'RandomHorizontalFlip':
             return method(p=0.5)
         else:
@@ -136,6 +136,8 @@ class TransformLoader:
                                color_jitter=False,
                                random_erase=0.0):
         transform_list = []
+        before_swap_transform_list = []
+        swap_transform_list = []
 
         if mode == 'train':
             transform_list = ['Resize', 'RandomResizedCrop', 'RandomHorizontalFlip']
@@ -146,7 +148,9 @@ class TransformLoader:
             transform_list.extend(['ColorJitter'])
 
         if self.random_swap != 1 and mode == 'train': # random_swap is number of crops on each edge
-            transform_list.extend(['RandomSwap'])
+            before_swap_transform_list = [t for t in transform_list]
+            swap_transform_list = ['RandomSwap']
+            transform_list = []
 
         transform_list.extend(['ToTensor'])
 
@@ -156,17 +160,31 @@ class TransformLoader:
 
         transform_list.extend(['Normalize'])
 
-        transform_funcs = [self.parse_transform(x) for x in transform_list]
-        transform = transforms.Compose(transform_funcs)
+        if len(swap_transform_list) > 0:
+            transform_funcs = [self.parse_transform(x) for x in before_swap_transform_list]
+            transform_before_swap = transforms.Compose(transform_funcs)
 
-        # if 'RandomSwap' in transform_list:
-        #     transform_list_wo_swap = transform_list.remove('RandomSwap')
-        #     transform_funcs_wo_swap = [self.parse_transform(x) for x in transform_list_wo_swap]
-        #     transform_wo_swap = transforms.Compose(transform_funcs_wo_swap)
-        #     return [transform, transform_wo_swap], \
-        #            [transform_list, transform_list_wo_swap]
+            transform_funcs = [self.parse_transform(x) for x in swap_transform_list]
+            transform_swap = transforms.Compose(transform_funcs)
 
-        return transform, transform_list
+            transform_funcs = [self.parse_transform(x) for x in transform_list]
+            transform_after_swap = transforms.Compose(transform_funcs)
+
+            return [transform_before_swap, transform_swap, transform_after_swap], \
+                   [before_swap_transform_list, swap_transform_list, transform_list]
+
+        else:
+            transform_funcs = [self.parse_transform(x) for x in transform_list]
+            transform = transforms.Compose(transform_funcs)
+
+            # if 'RandomSwap' in transform_list:
+            #     transform_list_wo_swap = transform_list.remove('RandomSwap')
+            #     transform_funcs_wo_swap = [self.parse_transform(x) for x in transform_list_wo_swap]
+            #     transform_wo_swap = transforms.Compose(transform_funcs_wo_swap)
+            #     return [transform, transform_wo_swap], \
+            #            [transform_list, transform_list_wo_swap]
+
+            return transform, transform_list
 
 
 def get_logger():  # params before: logname, env
@@ -237,8 +255,7 @@ def open_img(path):
     return img
 
 
-def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch', pairwise_labels=False,
-             **kwargs):  # 'kbatch', 'balanced_triplet', 'db'
+def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch', pairwise_labels=False, **kwargs):  # 'kbatch', 'balanced_triplet', 'db'
     SAMPLERS = {'kbatch': KBatchSampler,
                 'balanced_triplet': BalancedTripletSampler,
                 'hard_triplet': HardTripletSampler,
@@ -368,11 +385,17 @@ def get_model_name(args):
         swap_size = args.get('aug_swap')
         swap_prob = args.get('aug_swap_prob')
         mask_prob = args.get('aug_mask_prob')
-        if mask_prob < 0:
+        if mask_prob <= 0:
             masking = ''
         else:
             masking = f'mask{mask_prob}'
-        name += f'-{swap_prob}swap{swap_size}{masking}'
+
+        swap_loss = ''
+        if args.get('swap_coef') > 0.0:
+            swap_coef = args.get('swap_coef')
+            swap_loss = f'{swap_coef}SwLss'
+
+        name += f'-{swap_prob}swap{swap_size}{masking}{swap_loss}'
 
     if args.get('optimizer') != 'adam':
         opt = args.get('optimizer').upper()
