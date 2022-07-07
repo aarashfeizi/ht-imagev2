@@ -35,6 +35,7 @@ class Trainer:
         self.early_stopping_tol = args.get('early_stopping_tol')
         self.early_stopping_counter = 0
         self.aug_swap = args.get('aug_swap') > 1
+        self.pytorch_bce_with_logits = torch.nn.BCEWithLogitsLoss()
 
         if args.get('cov'):
             self.cov_loss = losses.covariance.COV_Loss(self.emb_size, static_mean=args.get('cov_static_mean'))
@@ -440,7 +441,7 @@ class Trainer:
             each_loss_item['var'] = var_loss_value.item()
 
         if swap_lbls is not None:
-            swap_loss = torch.nn.BCEWithLogitsLoss(swap_predictions.flatten(), swap_lbls.flatten())
+            swap_loss = self.pytorch_bce_with_logits(swap_predictions.flatten(), swap_lbls.flatten())
             loss += self.swap_loss_coefficient * swap_loss
             each_loss_item['swap'] = swap_loss.item()
 
