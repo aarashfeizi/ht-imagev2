@@ -381,7 +381,10 @@ class Trainer:
                 img_embeddings, swap_preds = net(imgs)
                 preds, similarities = utils.get_preds(img_embeddings)
                 bce_labels = utils.make_batch_bce_labels(lbls)
-                all_zeros_lbls = torch.zeros_like(swap_preds)
+                if swap_preds:
+                    all_zeros_lbls = torch.zeros_like(swap_preds)
+                else:
+                    all_zeros_lbls = None
                 loss, loss_items = self.get_loss_value(img_embeddings, preds, lbls, swap_predictions=swap_preds, swap_lbls=all_zeros_lbls, train=False)
 
                 if val_losses is None:
