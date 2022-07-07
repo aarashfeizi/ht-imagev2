@@ -250,8 +250,10 @@ class GeneralTopLevelModule(nn.Module):
         self.identity = nn.Identity()
 
         if args.get('aug_swap') > 1:
+            self.aug_swap = True
             self.swap_classifier = nn.Linear(2048, 1)
         else:
+            self.aug_swap = False
             self.swap_classifier = self.identity
 
     def forward(self, imgs):
