@@ -68,7 +68,7 @@ def get_args():
     parser.add_argument('--eq_layer_contrib', default=False, action='store_true')
     parser.add_argument('--ml_self_att', default=False, action='store_true')
     parser.add_argument('--pairwise_labels', default=False, action='store_true')
-    parser.add_argument('--eval_with_pairwise', default=False, action='store_true')
+    parser.add_argument('--eval_without_pairwise', default=False, action='store_true')
     parser.add_argument('--ml_self_att_head_number', type=int, default=4)
     parser.add_argument('--ml_self_att_layers_to_use', type=int, default=4)
     parser.add_argument('--only_att', default=False, action='store_true')

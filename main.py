@@ -47,9 +47,9 @@ def main():
 
     if not all_args.get('hard_triplet'):
         val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet',
-                                  use_pairwise_label=all_args.get('eval_with_pairwise'))
+                                  use_pairwise_label=not all_args.get('eval_without_pairwise'))
         val2_loader = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='balanced_triplet',
-                                  use_pairwise_label=all_args.get('eval_with_pairwise'))
+                                  use_pairwise_label=not all_args.get('eval_without_pairwise'))
 
     else:
         if all_args.get('ordered_idxs') is not None:
@@ -74,7 +74,7 @@ def main():
     test_loader = None
     if args.test:
         test_loader = utils.get_data(all_args, mode='test', transform=val_transforms, sampler_mode='balanced_triplet',
-                                     use_pairwise_label=all_args.get('eval_with_pairwise'))
+                                     use_pairwise_label=not all_args.get('eval_without_pairwise'))
 
     net = model.get_top_module(args=all_args)
 

@@ -425,8 +425,8 @@ def get_model_name(args):
         if args.get('num_inst_per_class') != 2:
             raise Exception('Pairwise_labels only support k = 2')
         name += f'-PairLbl'
-        if args.get('eval_with_pairwise'):
-            name += '-EP'
+        if args.get('eval_without_pairwise'):
+            name += '-EwoP'
 
     if args.get('with_bce'):
         name += f'-bce_bw{args.get("bce_weight")}'
