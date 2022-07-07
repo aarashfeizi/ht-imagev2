@@ -251,7 +251,7 @@ class GeneralTopLevelModule(nn.Module):
 
         if args.get('aug_swap') > 1:
             self.aug_swap = True
-            self.swap_classifier = nn.Linear(2048, 1)
+            self.swap_classifier = nn.Linear(args.get('emb_size'), 1)
         else:
             self.aug_swap = False
             self.swap_classifier = self.identity
