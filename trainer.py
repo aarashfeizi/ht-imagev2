@@ -381,7 +381,7 @@ class Trainer:
                 img_embeddings, swap_preds = net(imgs)
                 preds, similarities = utils.get_preds(img_embeddings)
                 bce_labels = utils.make_batch_bce_labels(lbls)
-                if swap_preds:
+                if swap_preds is not None:
                     all_zeros_lbls = torch.zeros_like(swap_preds)
                 else:
                     all_zeros_lbls = None
