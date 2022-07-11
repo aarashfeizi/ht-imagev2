@@ -85,6 +85,8 @@ class BalancedTripletSampler(RandomIdentitySampler):
                     batch_idxs_dict[label] = [idxs[i * self.K: (i + 1) * self.K] for i in range(len(idxs) // self.K)]
 
             for label in self.labels:
+                if batch_idxs_dict.get(label, None) is None:
+                    continue
                 other_labels = list(set(self.labels) - set([label]))
                 triplets = []
                 for pair in batch_idxs_dict[label]:
@@ -106,7 +108,7 @@ class BalancedTripletSampler(RandomIdentitySampler):
                 batch_idxs_dict[label] = triplets
 
             if set(self.labels) != set(list(batch_idxs_dict.keys())):
-                print(f'{len(set(list(batch_idxs_dict.keys())) - set(self.labels))} labels are not being used!!')
+                print(f'{len(set(self.labels) - set(list(batch_idxs_dict.keys())))} labels are not being used!!')
 
             avai_labels = copy.deepcopy(list(batch_idxs_dict.keys()))
 
