@@ -46,9 +46,9 @@ def main():
 
     if not all_args.get('hard_triplet'):
         val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet',
-                                  pairwise_label=not all_args.get('eval_without_pairwise'))
+                                  pairwise_labels=not all_args.get('eval_without_pairwise'))
         val2_loader = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='balanced_triplet',
-                                  pairwise_label=not all_args.get('eval_without_pairwise'))
+                                  pairwise_labels=not all_args.get('eval_without_pairwise'))
 
     else:
         if all_args.get('ordered_idxs') is not None:
