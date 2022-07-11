@@ -256,7 +256,7 @@ def open_img(path):
 
 
 def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
-             pairwise_labels=False, use_pairwise_label=False, **kwargs):  # 'kbatch', 'balanced_triplet', 'db'
+             pairwise_labels=False, **kwargs):  # 'kbatch', 'balanced_triplet', 'db'
     SAMPLERS = {'kbatch': KBatchSampler,
                 'balanced_triplet': BalancedTripletSampler,
                 'hard_triplet': HardTripletSampler,
@@ -273,7 +273,7 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
                                      batch_size=args.get('batch_size'),
                                      num_instances=args.get('num_inst_per_class'),
                                      k_dec_freq=args.get('k_dec_freq'),
-                                     use_pairwise_label=use_pairwise_label,
+                                     use_pairwise_label=pairwise_labels,
                                      **kwargs)
 
     dataloader = DataLoader(dataset=dataset, shuffle=False, num_workers=args.get('workers'), batch_sampler=sampler,
