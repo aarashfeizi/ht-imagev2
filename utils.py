@@ -616,7 +616,8 @@ def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine', Kset=
 
         for idx, lbl in enumerate(img_lbls):
             ret_lbls_1_or_0 = pairwise_labels[idx, :][I[idx]]
-            recall_at_k.update(lbl, ret_lbls_1_or_0)
+            class_lbls_1_0 = (img_lbls[I[idx]] == lbl).astype(int)
+            recall_at_k.update(lbl, np.bitwise_and(ret_lbls_1_or_0, class_lbls_1_0).astype(np.float32))
 
     total = recall_at_k.get_all_metrics()
     return total
