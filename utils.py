@@ -266,10 +266,11 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
 
     mode_splits = mode.split('-')
     eval_mode = mode_splits[0]
-    if eval_mode != 'train' and len(mode_splits) > 1 and mode_splits[1] == 'pairwise':
-        assert pairwise_labels
-    else:
-        assert not pairwise_labels
+    if eval_mode != 'train':
+        if len(mode_splits) > 1 and mode_splits[1] == 'pairwise':
+            assert pairwise_labels
+        else:
+            assert not pairwise_labels
 
     dataset = datasets.load_dataset(args, eval_mode, file_name,
                                     transform=transform,
