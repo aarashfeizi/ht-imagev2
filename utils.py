@@ -266,7 +266,7 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
 
     mode_splits = mode.split('-')
     eval_mode = mode_splits[0]
-    if len(mode_splits) > 1 and mode_splits[1] == 'pairwise':
+    if eval_mode != 'train' and len(mode_splits) > 1 and mode_splits[1] == 'pairwise':
         assert pairwise_labels
     else:
         assert not pairwise_labels
