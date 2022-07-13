@@ -45,10 +45,8 @@ def main():
     val2_db_loader = None
 
     if not all_args.get('hard_triplet'):
-        val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet',
-                                  pairwise_labels=not all_args.get('eval_without_pairwise'))
-        val2_loader = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='balanced_triplet',
-                                  pairwise_labels=not all_args.get('eval_without_pairwise'))
+        val_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet')
+        val2_loader = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='balanced_triplet')
 
     else:
         if all_args.get('ordered_idxs') is not None:
@@ -70,10 +68,22 @@ def main():
     val_db_loader = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='db')
     val2_db_loader = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='db')
 
+    val_loader_pairwise = None
+    val2_loader_pairwise = None
+    val_db_loader_pairwise = None
+    val2_db_loader_pairwise = None
+    if all_args.get('eval_with_pairwise'):
+        val_loader_pairwise = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet',
+                                    pairwise_labels=all_args.get('eval_with_pairwise'))
+        val2_loader_pairwise = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='balanced_triplet',
+                                     pairwise_labels=all_args.get('eval_with_pairwise'))
+        val_db_loader_pairwise = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='db', pairwise_labels=all_args.get('eval_with_pairwise'))
+        val2_db_loader_pairwise = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='db', pairwise_labels=all_args.get('eval_with_pairwise'))
+
     test_loader = None
     if args.test:
         test_loader = utils.get_data(all_args, mode='test', transform=val_transforms, sampler_mode='balanced_triplet',
-                                     pairwise_label=not all_args.get('eval_without_pairwise'))
+                                     pairwise_label=all_args.get('eval_with_pairwise'))
 
     net = model.get_top_module(args=all_args)
 
@@ -97,11 +107,17 @@ def main():
     all_val_loader_names = ['val', 'val2']
     all_val_loaders = [val_loader, val2_loader]
     all_val_db_loaders = [val_db_loader, val2_db_loader]
+    val_coef = 1
+    if all_args.get('eval_with_pairwise'):
+        val_coef = 2
+        all_val_loader_names = ['val', 'val-pairwise', 'val2', 'val2-pairwise']
+        all_val_loaders = [val_loader, val_loader_pairwise, val2_loader, val2_loader_pairwise]
+        all_val_db_loaders = [val_db_loader, val_db_loader_pairwise, val2_db_loader, val2_db_loader_pairwise]
 
     val_loaders_dict = {}
     val_db_loaders_dict = {}
 
-    for i in range(all_args.get('number_of_val')):
+    for i in range(all_args.get('number_of_val') * val_coef):
         val_loaders_dict[all_val_loader_names[i]] = all_val_loaders[i]
         val_db_loaders_dict[all_val_loader_names[i]] = all_val_db_loaders[i]
 

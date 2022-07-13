@@ -264,7 +264,14 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
                 'heatmap': DrawHeatmapSampler,
                 'heatmap2x': Draw2XHeatmapSampler}
 
-    dataset = datasets.load_dataset(args, mode, file_name,
+    mode_splits = mode.split('-')
+    eval_mode = mode_splits[0]
+    if len(mode_splits) > 1 and mode_splits[1] == 'pairwise':
+        assert pairwise_labels
+    else:
+        assert not pairwise_labels
+
+    dataset = datasets.load_dataset(args, eval_mode, file_name,
                                     transform=transform,
                                     for_heatmap=sampler_mode.startswith('heatmap'),
                                     pairwise_labels=pairwise_labels)
@@ -425,8 +432,8 @@ def get_model_name(args):
         if args.get('num_inst_per_class') != 2:
             raise Exception('Pairwise_labels only support k = 2')
         name += f'-PairLbl'
-        if args.get('eval_without_pairwise'):
-            name += '-EwoP'
+        if args.get('eval_with_pairwise'):
+            name += '-EvPr'
 
     if args.get('with_bce'):
         name += f'-bce_bw{args.get("bce_weight")}'
@@ -573,10 +580,16 @@ def get_faiss_knn(reps, k=1500, gpu=False, metric='cosine'):  # method "cosine" 
     return D, I, self_D
 
 
-def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine', Kset=[1, 2, 4, 8]):
+def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine', Kset=[1, 2, 4, 8], pairwise_labels=None):
     all_lbls = np.unique(img_lbls)
 
     num = img_lbls.shape[0]
+
+    is_pairwise = pairwise_labels is not None
+
+    if is_pairwise:
+        assert pairwise_labels.shape[0] == num
+        assert pairwise_labels.shape[1] == num
 
     k_max = min(1500, img_lbls.shape[0])
 
@@ -591,14 +604,20 @@ def get_recall_at_k(img_feats, img_lbls, sim_matrix=None, metric='cosine', Kset=
         sim_matrix += np.diag(np.ones(num) * minval)
         I = (-sim_matrix).argsort()[:, :-1]
 
-    recall_at_k = metrics.Accuracy_At_K(classes=np.array(all_lbls), ks=Kset)
+    recall_at_k = metrics.Accuracy_At_K(classes=np.array(all_lbls), ks=Kset, pairwise=is_pairwise)
+    if not is_pairwise:
 
-    for idx, lbl in enumerate(img_lbls):
-        ret_lbls = img_lbls[I[idx]]
-        recall_at_k.update(lbl, ret_lbls)
+        for idx, lbl in enumerate(img_lbls):
+            ret_lbls = img_lbls[I[idx]]
+            recall_at_k.update(lbl, ret_lbls)
+
+    else:
+
+        for idx, lbl in enumerate(img_lbls):
+            ret_lbls_1_or_0 = pairwise_labels[idx, :][I[idx]]
+            recall_at_k.update(lbl, ret_lbls_1_or_0)
 
     total = recall_at_k.get_all_metrics()
-
     return total
 
 

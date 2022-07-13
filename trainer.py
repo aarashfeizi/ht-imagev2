@@ -52,6 +52,11 @@ class Trainer:
 
         self.train_loader = train_loader
         self.val_loaders_dict = val_loaders
+        self.val_pairwise_lbls_dict = {}
+        if args.get('eval_with_pairwise'):
+            for k in self.val_loaders_dict.keys():
+                self.val_pairwise_lbls_dict[k] = np.load(args.get(f'{k}_pairwise_label_path'))
+
         self.val_db_loaders_dict = val_db_loaders
         self.optimizer_name = optimizer
         self.model_name = utils.get_model_name(self.args)
@@ -511,9 +516,14 @@ class Trainer:
 
                     embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
 
+                    p_labels = None
+                    if val_loader.dataset.sample_pairwise:
+                        p_labels = self.val_pairwise_lbls_dict.get(val_name, None)
+
                     r_at_k_score = utils.get_recall_at_k(embeddings, classes,
                                                          metric='cosine',
-                                                         sim_matrix=None)
+                                                         sim_matrix=None,
+                                                         pairwise_labels=p_labels)
 
                     all_val_losses = {lss_name: (lss / len(val_loader)) for lss_name, lss in val_losses.items()}
 

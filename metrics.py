@@ -33,11 +33,12 @@ class Metric_Accuracy:
 
 class Accuracy_At_K():
 
-    def __init__(self, ks=[1, 2, 4, 8], classes=np.array([])):
+    def __init__(self, ks=[1, 2, 4, 8], classes=np.array([]), pairwise=False):
         self.ks = ks
         self.k_valus = {i: 0 for i in self.ks}
 
         self.r_values = {i: 0 for i in self.ks}
+        self.pairwise = pairwise
 
         self.n = 0
 
@@ -53,7 +54,12 @@ class Accuracy_At_K():
         # all_lbl = sum(ret_lbls == lbl)
 
         for k in self.ks:
-            if lbl in ret_lbls[:k]:
+            if self.pairwise:
+                target_lbl = 1.0
+            else:
+                target_lbl = lbl
+
+            if target_lbl in ret_lbls[:k]:
                 self.k_valus[k] += 1
                 self.per_class_k_valuese[k][self.lbl2idx[lbl]] += 1
 

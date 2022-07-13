@@ -29,6 +29,7 @@ class BaseDataset(Dataset):
         self.transform = transform
         self.data_dict = self.make_data_dict()
         self.lbl2idx = None
+        self.sample_pairwise = pairwise_labels
         self.labels = list(self.data_dict.keys())
         self.pairwise_labels_path = args.get(f'{mode}_pairwise_label_path')
         if pairwise_labels and self.pairwise_labels_path is not None:

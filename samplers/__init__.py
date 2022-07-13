@@ -23,17 +23,18 @@ class RandomIdentitySampler(Sampler):
     - batch_size (int): number of examples in a batch.
     """
 
-    def __init__(self, dataset, batch_size, num_instances, k_dec_freq=0, use_pairwise_label=False, **kwargs):
+    def __init__(self, dataset, batch_size, num_instances, k_dec_freq=0, **kwargs):
         self.data_dict = dataset.data_dict
         self.batch_size = batch_size
         self.K = num_instances
         self.k_dec_freq = k_dec_freq
         self.k_counter = 0
-        self.use_pairwise_label = use_pairwise_label
         self.num_labels_per_batch = self.batch_size // self.K
         self.max_iters = (dataset.__len__() // batch_size)
         self.labels = dataset.labels
+        self.use_pairwise_label = dataset.sample_pairwise
         self.pairwise_labels = dataset.pairwise_labels
+
 
     def __len__(self):
         return self.max_iters

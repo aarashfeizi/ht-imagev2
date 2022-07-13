@@ -16,7 +16,7 @@ class KBatchSampler(RandomIdentitySampler):
 
         for label in self.labels:
             idxs = copy.deepcopy(self.data_dict[label])
-            if self.pairwise_labels is not None: # use_pairwise_label should be true for training and KBatchSampler is only used for training
+            if self.pairwise_labels is not None and self.use_pairwise_label: # use_pairwise_label should be true for training and KBatchSampler is only used for training
                 idx_map = {c: idx for c, idx in enumerate(idxs)}
                 pairwise_labels = self.pairwise_labels[idxs, :][:, idxs]
                 possible_pairs = list(zip(*np.where(pairwise_labels == 1)))
@@ -47,8 +47,8 @@ class BalancedTripletSampler(RandomIdentitySampler):
     Produce batches of [Anchor, Positive, Negative]
     """
 
-    def __init__(self, dataset, batch_size, num_instances, k_dec_freq, use_pairwise_label, **kwargs):
-        super().__init__(dataset, batch_size, num_instances, k_dec_freq, use_pairwise_label, **kwargs)
+    def __init__(self, dataset, batch_size, num_instances, k_dec_freq, **kwargs):
+        super().__init__(dataset, batch_size, num_instances, k_dec_freq, **kwargs)
         self.K = 2  # anchor and positive
         self.num_labels_per_batch = self.batch_size // 3 # batch of triplets
         self.max_iters = ((dataset.__len__() * 3) // batch_size)
@@ -95,7 +95,7 @@ class BalancedTripletSampler(RandomIdentitySampler):
                     triplets.append(pair)
 
                     # add negative from same class, but with a pairwise_label of 0
-                    if self.pairwise_labels is not None:
+                    if self.pairwise_labels is not None and self.use_pairwise_label:
                         anchor = pair[0]
                         pos = pair[1]
                         pairwise_labels_for_anchor = self.pairwise_labels[anchor, :]
@@ -203,8 +203,8 @@ class DataBaseSampler(RandomIdentitySampler):
 
 
 class DrawHeatmapSampler(RandomIdentitySampler):
-    def __init__(self, dataset, batch_size, num_instances, k_dec_freq, use_pairwise_label, idxes=None, **kwargs):
-        super().__init__(dataset, batch_size, num_instances, k_dec_freq, use_pairwise_label, **kwargs)
+    def __init__(self, dataset, batch_size, num_instances, k_dec_freq, idxes=None, **kwargs):
+        super().__init__(dataset, batch_size, num_instances, k_dec_freq, **kwargs)
         self.batch_size = 1
         self.batch_idxes = idxes
         if self.batch_idxes is None:
@@ -236,8 +236,8 @@ class DrawHeatmapSampler(RandomIdentitySampler):
             yield batch
 
 class Draw2XHeatmapSampler(BalancedTripletSampler):
-    def __init__(self, dataset, batch_size, num_instances, k_dec_freq, use_pairwise_label, triplet_path='', **kwargs):
-        super().__init__(dataset, batch_size, num_instances, k_dec_freq, use_pairwise_label, **kwargs)
+    def __init__(self, dataset, batch_size, num_instances, k_dec_freq,  triplet_path='', **kwargs):
+        super().__init__(dataset, batch_size, num_instances, k_dec_freq, **kwargs)
         self.batch_size = 3
         self.num_labels_per_batch = self.batch_size // 3  # batch of triplets
         if triplet_path != '':
