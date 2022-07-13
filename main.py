@@ -73,16 +73,20 @@ def main():
     val_db_loader_pairwise = None
     val2_db_loader_pairwise = None
     if all_args.get('eval_with_pairwise'):
-        val_loader_pairwise = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet',
+        val_loader_pairwise = utils.get_data(all_args, mode='val-pairwise', transform=val_transforms, sampler_mode='balanced_triplet',
                                     pairwise_labels=all_args.get('eval_with_pairwise'))
-        val2_loader_pairwise = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='balanced_triplet',
+        val2_loader_pairwise = utils.get_data(all_args, mode='val2-pairwise', transform=val_transforms, sampler_mode='balanced_triplet',
                                      pairwise_labels=all_args.get('eval_with_pairwise'))
-        val_db_loader_pairwise = utils.get_data(all_args, mode='val', transform=val_transforms, sampler_mode='db', pairwise_labels=all_args.get('eval_with_pairwise'))
-        val2_db_loader_pairwise = utils.get_data(all_args, mode='val2', transform=val_transforms, sampler_mode='db', pairwise_labels=all_args.get('eval_with_pairwise'))
+        val_db_loader_pairwise = utils.get_data(all_args, mode='val-pairwise', transform=val_transforms, sampler_mode='db',
+                                                pairwise_labels=all_args.get('eval_with_pairwise'))
+        val2_db_loader_pairwise = utils.get_data(all_args, mode='val2-pairwise', transform=val_transforms, sampler_mode='db',
+                                                 pairwise_labels=all_args.get('eval_with_pairwise'))
 
     test_loader = None
     if args.test:
         test_loader = utils.get_data(all_args, mode='test', transform=val_transforms, sampler_mode='balanced_triplet',
+                                     pairwise_label=False)
+        test_loader_pairwise = utils.get_data(all_args, mode='test-pairwise', transform=val_transforms, sampler_mode='balanced_triplet',
                                      pairwise_label=all_args.get('eval_with_pairwise'))
 
     net = model.get_top_module(args=all_args)
