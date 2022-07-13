@@ -73,13 +73,13 @@ def main():
     val_db_loader_pairwise = None
     val2_db_loader_pairwise = None
     if all_args.get('eval_with_pairwise'):
-        val_loader_pairwise = utils.get_data(all_args, mode='val-pairwise', transform=val_transforms, sampler_mode='balanced_triplet',
+        val_loader_pairwise = utils.get_data(all_args, mode='val_pairwise', transform=val_transforms, sampler_mode='balanced_triplet',
                                     pairwise_labels=all_args.get('eval_with_pairwise'))
-        val2_loader_pairwise = utils.get_data(all_args, mode='val2-pairwise', transform=val_transforms, sampler_mode='balanced_triplet',
+        val2_loader_pairwise = utils.get_data(all_args, mode='val2_pairwise', transform=val_transforms, sampler_mode='balanced_triplet',
                                      pairwise_labels=all_args.get('eval_with_pairwise'))
-        val_db_loader_pairwise = utils.get_data(all_args, mode='val-pairwise', transform=val_transforms, sampler_mode='db',
+        val_db_loader_pairwise = utils.get_data(all_args, mode='val_pairwise', transform=val_transforms, sampler_mode='db',
                                                 pairwise_labels=all_args.get('eval_with_pairwise'))
-        val2_db_loader_pairwise = utils.get_data(all_args, mode='val2-pairwise', transform=val_transforms, sampler_mode='db',
+        val2_db_loader_pairwise = utils.get_data(all_args, mode='val2_pairwise', transform=val_transforms, sampler_mode='db',
                                                  pairwise_labels=all_args.get('eval_with_pairwise'))
 
     test_loader = None
@@ -114,7 +114,7 @@ def main():
     val_coef = 1
     if all_args.get('eval_with_pairwise'):
         val_coef = 2
-        all_val_loader_names = ['val', 'val-pairwise', 'val2', 'val2-pairwise']
+        all_val_loader_names = ['val', 'val_pairwise', 'val2', 'val2_pairwise']
         all_val_loaders = [val_loader, val_loader_pairwise, val2_loader, val2_loader_pairwise]
         all_val_db_loaders = [val_db_loader, val_db_loader_pairwise, val2_db_loader, val2_db_loader_pairwise]
 

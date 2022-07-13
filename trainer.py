@@ -55,7 +55,8 @@ class Trainer:
         self.val_pairwise_lbls_dict = {}
         if args.get('eval_with_pairwise'):
             for k in self.val_loaders_dict.keys():
-                self.val_pairwise_lbls_dict[k] = np.load(args.get(f'{k}_pairwise_label_path'))
+                if 'pairwise' in k:
+                    self.val_pairwise_lbls_dict[k] = np.load(args.get(f'{k}_label_path'))
 
         self.val_db_loaders_dict = val_db_loaders
         self.optimizer_name = optimizer

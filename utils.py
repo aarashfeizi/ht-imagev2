@@ -264,7 +264,7 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
                 'heatmap': DrawHeatmapSampler,
                 'heatmap2x': Draw2XHeatmapSampler}
 
-    mode_splits = mode.split('-')
+    mode_splits = mode.split('_')
     eval_mode = mode_splits[0]
     if eval_mode != 'train':
         if len(mode_splits) > 1 and mode_splits[1] == 'pairwise':
