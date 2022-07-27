@@ -672,6 +672,11 @@ def get_xs_ys(target_labels, k=1, bce_labels=None):
         neg_idx = torch.where(row == 0)[0]
         pos_idx = torch.where(row == 1)[0]
 
+        if len(pos_idx) == 0:
+            print(f'skipping {i}... not enough positive samples')
+            continue
+
+
         challenging_neg_idx = None
         if bce_labels_copy is not None:
             bce_row = bce_labels_copy[i, :]
