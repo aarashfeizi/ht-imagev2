@@ -635,10 +635,13 @@ def main():
                     a2n = utils.get_a2n(ordered_lbls_idxs[idx - 1][0], ordered_lbls_idxs[idx - 1][1], labels)
                 else:
                     a2n = None
+                pw_lbls = pairwise_label_list[idx - 1]
+                if pw_lbls is not None:
+                    pw_lbls = torch.tensor(pw_lbls)
                 auc, t_and_p_labels = utils.calc_auroc(features,
                                                        torch.tensor(labels),
                                                        anch_2_hardneg_idx=a2n,
-                                                       pairwise_labels=torch.tensor(pairwise_label_list[idx - 1]))
+                                                       pairwise_labels=pw_lbls)
                 if idx not in auc_predictions.keys():
                     auc_predictions[idx] = {}
 
