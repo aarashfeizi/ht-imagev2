@@ -12,6 +12,17 @@
   "all_train_files": [
     "my_splits/train.csv"
   ],
+  "all_pairwise_val_labels": [
+    "hotel_pairwise_labels/only_cosinesim_val1_pairwise_lbls_thresh06.npy",
+    "hotel_pairwise_labels/only_cosinesim_val2_pairwise_lbls_thresh06.npy",
+    "hotel_pairwise_labels/only_cosinesim_val3_pairwise_lbls_thresh06.npy",
+  ],
+  "all_pairwise_test_labels": [
+    "hotel_pairwise_labels/only_cosinesim_test1_pairwise_lbls_thresh06.npy",
+    "hotel_pairwise_labels/only_cosinesim_test2_pairwise_lbls_thresh06.npy",
+    "hotel_pairwise_labels/only_cosinesim_test3_pairwise_lbls_thresh06.npy",
+    "hotel_pairwise_labels/only_cosinesim_test4_pairwise_lbls_thresh06.npy"
+  ],
   "all_val_files": [
     "my_splits/val1.csv",
     "my_splits/val2.csv",

@@ -2,12 +2,26 @@
   "dataset_path": "../../datasets/hotelid-2021/",
   "nb_classes": 4406,
   "log_path": "./",
-  "pairwise_label_path": "hotel_pairwise_labels/trainval_pairwise_labels.npy",
+  "train_pairwise_label_path": "hotel_pairwise_labels/trainval_pairwise_labels.npy",
+  "val_pairwise_label_path": "hotel_pairwise_labels/only_cosinesim_test1_pairwise_lbls_thresh06.npy",
+  "val2_pairwise_label_path": "hotel_pairwise_labels/only_cosinesim_test3_pairwise_lbls_thresh06.npy",
   "train_file": "my_splits/trainval.csv",
   "val_file": "my_splits/test1.csv",
   "test_file": "my_splits/test1.csv",
   "all_train_files": [
     "my_splits/trainval.csv"
+  ],
+  "all_pairwise_val_labels": [
+    "hotel_pairwise_labels/only_cosinesim_test1_pairwise_lbls_thresh06.npy",
+    "hotel_pairwise_labels/only_cosinesim_test2_pairwise_lbls_thresh06.npy",
+    "hotel_pairwise_labels/only_cosinesim_test3_pairwise_lbls_thresh06.npy",
+    "hotel_pairwise_labels/only_cosinesim_test4_pairwise_lbls_thresh06.npy"
+  ],
+  "all_pairwise_test_labels": [
+    "hotel_pairwise_labels/only_cosinesim_test1_pairwise_lbls_thresh06.npy",
+    "hotel_pairwise_labels/only_cosinesim_test2_pairwise_lbls_thresh06.npy",
+    "hotel_pairwise_labels/only_cosinesim_test3_pairwise_lbls_thresh06.npy",
+    "hotel_pairwise_labels/only_cosinesim_test4_pairwise_lbls_thresh06.npy"
   ],
   "all_val_files": [
     "my_splits/test1.csv",

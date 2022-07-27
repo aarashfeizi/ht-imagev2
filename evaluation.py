@@ -362,6 +362,8 @@ def main():
     parser.add_argument('-trained_with_mltp_gpu', '--trained_with_mltp_gpu', default=False, action='store_true')
     parser.add_argument('--eval_mode', default='val', help="val or test", choices=['val', 'test', 'train'])
 
+    parser.add_argument('--pairwise_lbls', default=False, action='store_true')
+
     parser.add_argument('-gpu', '--gpu_ids', default='', help="gpu ids used to train")  # before: default="0,1,2,3"
 
     parser.add_argument('-X', '--X', nargs='+', default=[],
@@ -434,6 +436,14 @@ def main():
     utils.make_dirs(os.path.join(eval_log_path, 'cache/'))
     checkpoint_name = os.path.split(all_args.get('checkpoint'))[1].split('.')[0]
     cache_path = os.path.join(eval_log_path, 'cache', f'{checkpoint_name}_' + all_args.get('name'))
+
+    pairwise_label_list = []
+    for i in range(0, all_args.get('num_of_dataset')):
+        if all_args.get('pairwise_lbls'):
+            pairwise_lbl = all_args.get(f'all_pairwise_{all_args.get("eval_mode")}_labels')[i]
+            pairwise_label_list.append(np.load(pairwise_lbl))
+        else:
+            pairwise_label_list.append(None)
 
     # provide model and extract embeddings here
     if len(all_args.get('X')) == 0:
@@ -590,6 +600,11 @@ def main():
     else:
         hard_neg_string = ''
 
+    if all_args.get('pairwise_lbls'):
+        pairwise_lbls_string = '_PWL'
+    else:
+        pairwise_lbls_string = ''
+
     different_seeds_auc = {}
     different_recs = {}
     # if all_args.get('eval_metric').upper() == 'AUC':
@@ -620,7 +635,10 @@ def main():
                     a2n = utils.get_a2n(ordered_lbls_idxs[idx - 1][0], ordered_lbls_idxs[idx - 1][1], labels)
                 else:
                     a2n = None
-                auc, t_and_p_labels = utils.calc_auroc(features, torch.tensor(labels), anch_2_hardneg_idx=a2n)
+                auc, t_and_p_labels = utils.calc_auroc(features,
+                                                       torch.tensor(labels),
+                                                       anch_2_hardneg_idx=a2n,
+                                                       pairwise_labels=pairwise_label_list[idx])
                 if idx not in auc_predictions.keys():
                     auc_predictions[idx] = {}
 
@@ -691,7 +709,7 @@ def main():
 
         if len(auc_predictions) > 1:
             fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
-            fig.suptitle(f'{all_args.get("name")} {hard_neg_string}')
+            fig.suptitle(f'{all_args.get("name")} {hard_neg_string}{pairwise_lbls_string}')
             for ax, (key, value) in zip([axes[0][0], axes[0][1], axes[1][0], axes[1][1]], auc_predictions.items()):
                 ax.hist(value[0]['pred_labels'][value[0]['true_labels'] == 1], bins=100, color='g', alpha=0.5)
                 ax.hist(value[0]['pred_labels'][value[0]['true_labels'] == 0], bins=100, color='r', alpha=0.5)
@@ -703,9 +721,9 @@ def main():
                      alpha=0.5)
             plt.hist(t_and_p_labels[0]['pred_labels'][t_and_p_labels[0]['true_labels'] == 0], bins=100, color='r',
                      alpha=0.5)
-            plt.title(f'{all_args.get("name")} {hard_neg_string}\nTest {title_name}: {t_and_p_labels[1]:.3} +- {t_and_p_labels[2]:.3}')
+            plt.title(f'{all_args.get("name")} {hard_neg_string}{pairwise_lbls_string}\nTest {title_name}: {t_and_p_labels[1]:.3} +- {t_and_p_labels[2]:.3}')
 
-        plt.savefig(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}_aucplot.pdf"))
+        plt.savefig(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}{pairwise_lbls_string}_aucplot.pdf"))
         plt.clf()
 
     if all_args.get('eval_metric').upper() == 'CONRET':
@@ -733,7 +751,7 @@ def main():
         cm = plt.get_cmap('gist_rainbow')
 
         fig, axes = plt.subplots(2, 2, figsize=(9.6, 7.2))
-        fig.suptitle(f'{all_args.get("name")} {hard_neg_string}')
+        fig.suptitle(f'{all_args.get("name")} {hard_neg_string}{pairwise_lbls_string}')
         drawn_labels = {}
         for idx, (ax, (features, labels), (key, value)) in enumerate(
                 zip([axes[0][0], axes[0][1], axes[1][0], axes[1][1]],
@@ -769,17 +787,17 @@ def main():
             norm_string = 'norm_'
         else:
             norm_string = ''
-        plt.savefig(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}_scatter_{norm_string}{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.pdf"))
+        plt.savefig(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}{pairwise_lbls_string}_scatter_{norm_string}{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.pdf"))
         plt.clf()
 
         scatter_text_to_write = ''
         for k, v in drawn_labels.items():
             scatter_text_to_write += f'Test {k}: {v}' + '\n'
 
-        with open(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}_scatter_{norm_string}{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.txt"), 'w') as f:
+        with open(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + f"{hard_neg_string}{pairwise_lbls_string}_scatter_{norm_string}{all_args.get('project_labels_start')}-{all_args.get('project_no_labels')}.txt"), 'w') as f:
             f.write(scatter_text_to_write)
 
-    with open(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + '_m' + all_args.get('eval_metric').upper() + f"{hard_neg_string}.txt"), 'w') as f:
+    with open(os.path.join(eval_log_path, f'{checkpoint_name}_' + all_args.get('name') + '_m' + all_args.get('eval_metric').upper() + f"{hard_neg_string}{pairwise_lbls_string}.txt"), 'w') as f:
         f.write(results)
 
 

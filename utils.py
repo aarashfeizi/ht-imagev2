@@ -429,12 +429,13 @@ def get_model_name(args):
 
     name += f"_{args.get('loss')}"
 
-    if args.get('pairwise_labels'):
+    if args.get('train_with_pairwise'):
         if args.get('num_inst_per_class') != 2:
             raise Exception('Pairwise_labels only support k = 2')
-        name += f'-PairLbl'
-        if args.get('eval_with_pairwise'):
-            name += '-EvPr'
+        name += f'-TrPr'
+
+    if args.get('eval_with_pairwise'):
+        name += '-EvPr'
 
     if args.get('with_bce'):
         name += f'-bce_bw{args.get("bce_weight")}'
@@ -649,25 +650,43 @@ def get_samples(l, k):
     return to_ret
 
 
-def get_xs_ys(bce_labels, k=1):
+def get_xs_ys(target_labels, k=1, bce_labels=None):
     """
 
-    :param bce_labels: tensor of (N, N) with 0s and 1s
+    :param target_labels: tensor of (N, N) with 0s and 1s
     :param k: number of pos and neg samples per anch
+    :param bce_labels: tensor of (N, N) with 0s and 1s (without considering pairwise labels)
     :return: an equal number of positive and negative pairs chosen randomly
 
     """
     xs = []
     ys = []
-    bce_labels_copy = copy.deepcopy(bce_labels)
-    bce_labels_copy.fill_diagonal_(-1)
-    for i, row in enumerate(bce_labels_copy):
+    target_labels_copy = copy.deepcopy(target_labels)
+    target_labels_copy.fill_diagonal_(-1)
+    bce_labels_copy = None
+    if bce_labels is not None:
+        bce_labels_copy = copy.deepcopy(bce_labels)
+        bce_labels_copy.fill_diagonal_(-1)
+    for i, row in enumerate(target_labels_copy):
+
         neg_idx = torch.where(row == 0)[0]
         pos_idx = torch.where(row == 1)[0]
 
+        challenging_neg_idx = None
+        if bce_labels_copy is not None:
+            bce_row = bce_labels_copy[i, :]
+            challenging_negatives = bce_row - row
+            challenging_neg_idx = torch.where(challenging_negatives == 1)[0]
+
         ys.extend(get_samples(neg_idx, k))
-        ys.extend(get_samples(pos_idx, k))
-        xs.extend(get_samples([i], 2 * k))
+
+        if challenging_neg_idx is None:
+            ys.extend(get_samples(neg_idx, k))
+        else:
+            ys.extend(get_samples(challenging_neg_idx, k))
+
+        ys.extend(get_samples(pos_idx, 2 * k))
+        xs.extend(get_samples([i], 4 * k))
 
     return xs, ys
 
@@ -696,23 +715,33 @@ def get_hard_xs_ys(bce_labels, a2n, k):
     return xs, ys
 
 
-def calc_auroc(embeddings, labels, k=1, anch_2_hardneg_idx=None):
+def calc_auroc(embeddings, labels, k=1, anch_2_hardneg_idx=None, pairwise_labels=None):
     """
 
     :param embeddings: all embeddings of a set to be tested
     :param labels: all labels of the set to be tested
+    :param pairwise_labels: a (N, N) binary matrix with pairwise labels
     :return: the AUROC score, where random would score 1/(k + 1)
     """
     from sklearn.metrics import roc_auc_score
     bce_labels = make_batch_bce_labels(labels)
+    if pairwise_labels is None:
+        pairwise = False
+        target_labels = bce_labels
+    else:
+        pairwise = True
+        target_labels = pairwise_labels
     similarities = cosine_similarity(embeddings)
 
     if anch_2_hardneg_idx is None:  # random
-        xs, ys = get_xs_ys(bce_labels, k=k)
+        if pairwise:
+            xs, ys = get_xs_ys(target_labels, k=k, bce_labels=bce_labels)
+        else:
+            xs, ys = get_xs_ys(target_labels, k=k, bce_labels=None)
     else:
-        xs, ys = get_hard_xs_ys(bce_labels, anch_2_hardneg_idx, k=k)
+        xs, ys = get_hard_xs_ys(target_labels, anch_2_hardneg_idx, k=k)
 
-    true_labels = bce_labels[xs, ys]
+    true_labels = target_labels[xs, ys]
     predicted_labels = similarities[xs, ys]
 
     return roc_auc_score(true_labels, predicted_labels), {'true_labels': true_labels,
