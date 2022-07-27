@@ -687,8 +687,8 @@ def get_xs_ys(target_labels, k=1, bce_labels=None):
 
         if challenging_neg_idx is None or \
                 len(challenging_neg_idx) == 0:
-            if len(challenging_neg_idx) == 0:
-                print('couldnt do challenging, 0!!')
+            # if len(challenging_neg_idx) == 0:
+                # print('couldnt do challenging, 0!!')
             ys.extend(get_samples(neg_idx, k))
         else:
             ys.extend(get_samples(challenging_neg_idx, k))
