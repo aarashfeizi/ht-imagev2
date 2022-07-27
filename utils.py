@@ -731,6 +731,10 @@ def calc_auroc(embeddings, labels, k=1, anch_2_hardneg_idx=None, pairwise_labels
     else:
         pairwise = True
         target_labels = pairwise_labels
+
+    if target_labels.dtype != torch.float32:
+        target_labels = target_labels.type(torch.float32)
+
     similarities = cosine_similarity(embeddings)
 
     if anch_2_hardneg_idx is None:  # random
