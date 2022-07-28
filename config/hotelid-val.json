@@ -15,7 +15,7 @@
   "all_pairwise_val_labels": [
     "hotel_pairwise_labels/only_cosinesim_val1_pairwise_lbls_thresh06.npy",
     "hotel_pairwise_labels/only_cosinesim_val2_pairwise_lbls_thresh06.npy",
-    "hotel_pairwise_labels/only_cosinesim_val3_pairwise_lbls_thresh06.npy",
+    "hotel_pairwise_labels/only_cosinesim_val3_pairwise_lbls_thresh06.npy"
   ],
   "all_pairwise_test_labels": [
     "hotel_pairwise_labels/only_cosinesim_test1_pairwise_lbls_thresh06.npy",
