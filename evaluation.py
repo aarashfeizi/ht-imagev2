@@ -407,11 +407,13 @@ def main():
     parser.add_argument('--normalize_project', default=False, action='store_true')
     parser.add_argument('--project_no_labels', type=int, default=30)
     parser.add_argument('--project_labels_start', type=int, default=0)
+    parser.add_argument('--aug_swap', type=int, default=1) # always set to 1 for no partitioning and swapping
 
     parser.add_argument('--eval_metric', default='auc', choices=['auc', 'ret', 'conret'])
 
 
     parser.add_argument('--metric', default='cosine', choices=['cosine', 'euclidean'])
+
 
     args = parser.parse_args()
 

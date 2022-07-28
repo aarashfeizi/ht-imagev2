@@ -39,8 +39,6 @@ def get_args():
     parser.add_argument('--early_stopping_tol', default=2, type=int, help="early stopping tolerance on validation")
 
 
-
-
     parser.add_argument('--test', default=False, action='store_true')
     parser.add_argument('--draw_heatmaps', default=False, action='store_true')
     parser.add_argument('--draw_heatmaps2x', default=False, action='store_true')
