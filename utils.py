@@ -24,6 +24,7 @@ import metrics
 import transforms
 from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseSampler, DrawHeatmapSampler, \
     HardTripletSampler, Draw2XHeatmapSampler
+from argparse import Namespace
 
 SHARING_STRATEGY = "file_system"
 torch.multiprocessing.set_sharing_strategy(SHARING_STRATEGY)
@@ -73,6 +74,10 @@ class Global_Config_File:
         self.global_config_file[key] = value
 
         return
+
+    def get_namespace(self):
+        ns = Namespace(**self.global_config_file)
+        return ns
 
 
 class TransformLoader:

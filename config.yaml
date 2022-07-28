@@ -1,0 +1,15 @@
+program: main.py
+method: random
+metric:
+  name: Val/R@1
+  goal: maximize
+parameters:
+  learning_rate:
+    min: 0.000001
+    max: 0.1
+  batch_size:
+    values: [16, 20]
+  num_inst_per_class:
+    values: [2, 4]
+
+
