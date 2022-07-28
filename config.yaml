@@ -11,5 +11,11 @@ parameters:
     values: [16, 20]
   num_inst_per_class:
     values: [2, 4]
+command:
+  - ${env}
+  - python3
+  - ${program}
+  - ${args}
+
 
 
