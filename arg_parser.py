@@ -24,6 +24,41 @@ METRIC_LIST = ['cosine',
 
 OPTIMIZER_LIST = ['adam', 'sam', 'sgd']
 
+HYPER_PARAMS = ['optimizer',
+                'learning_rate',
+                'new_lr_coef',
+                'bb_learning_rate',
+                'weight_decay',
+                'epochs',
+                'batch_size',
+                'emb_size',
+                'multlayer_emb',
+                'eq_layer_contrib',
+                'ml_self_att',
+                'train_with_pairwise',
+                'eval_with_pairwise',
+                'ml_self_att_head_number',
+                'ml_self_att_layers_to_use',
+                'only_att',
+                'num_inst_per_class',
+                'k_inc_freq',
+                'k_dec_freq',
+                'loss',
+                'cov',
+                'cov_static_mean',
+                'cov_coef',
+                'var_coef',
+                'swap_coef',
+                'with_bce',
+                'bce_weight',
+                'aug_swap',
+                'aug_swap_prob',
+                'aug_mask_prob',
+                'temperature',
+                'lnorm',
+                'metric',
+                'backbone']
+
 def get_args():
     parser = argparse.ArgumentParser()
 
@@ -84,9 +119,6 @@ def get_args():
     parser.add_argument('--aug_swap', type=int, default=1)  # split image into (aug_swap * aug_swap squares) and shuffle them
     parser.add_argument('--aug_swap_prob', type=float, default=0.5)
     parser.add_argument('--aug_mask_prob', type=float, default=-1.0)
-
-
-
     parser.add_argument('--temperature', type=float, default=1.0)
     parser.add_argument('--scale', type=float, default=3.0)
     parser.add_argument('--metric', default='cosine', choices=METRIC_LIST)

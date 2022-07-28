@@ -10,6 +10,14 @@ import model
 import utils
 from trainer import Trainer
 
+import wandb
+
+def initiate_wandb(args):
+    model_name = utils.get_model_name(args)
+    wandb.init(project=f"{model_name}")
+    wandb_config = utils.get_wandb_config(args)
+    wandb.config = wandb_config
+
 
 def main():
     args = arg_parser.get_args()
@@ -17,6 +25,8 @@ def main():
 
     all_args = utils.Global_Config_File(args=args, config_file=dataset_config)
     utils.seed_all(all_args.get('seed'))
+
+    initiate_wandb(all_args)
 
     logger = utils.get_logger()
     print(args)

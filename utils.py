@@ -17,6 +17,7 @@ from matplotlib import pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 from torch.utils.data import DataLoader
 
+import arg_parser
 import datasets
 import metrics
 # from torchvision import transforms
@@ -1106,3 +1107,12 @@ def enable_running_stats(model):
             module.momentum = module.backup_momentum
 
     model.apply(_enable)
+
+
+def get_wandb_config(args):
+    config = {}
+
+    for hp in arg_parser.HYPER_PARAMS:
+        config[hp] = args.get(hp)
+
+    return config
