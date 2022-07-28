@@ -409,6 +409,10 @@ def main():
     parser.add_argument('--project_labels_start', type=int, default=0)
     parser.add_argument('--aug_swap', type=int, default=1) # always set to 1 for no partitioning and swapping
 
+    parser.add_argument('--ml_self_att', default=False, action='store_true')
+    parser.add_argument('--ml_self_att_head_number', type=int, default=4)
+    parser.add_argument('--ml_self_att_layers_to_use', type=int, default=4)
+
     parser.add_argument('--eval_metric', default='auc', choices=['auc', 'ret', 'conret'])
 
 
