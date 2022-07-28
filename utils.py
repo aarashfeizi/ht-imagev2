@@ -37,7 +37,10 @@ class Global_Config_File:
 
         self.global_config_file = {}
 
-        self.__merge_config_files(args=args, config=config_file)
+        if len(config_file) == 0:
+            self.global_config_file = args
+        else:
+            self.__merge_config_files(args=args, config=config_file)
 
         if init_tb:
             self.__initialize_env()
