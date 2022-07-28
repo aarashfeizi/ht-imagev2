@@ -35,6 +35,9 @@ class Global_Config_File:
         config_file = config_file
         args = vars(args)
 
+        if '_items' in args:
+            args = args['_items']
+
         self.global_config_file = {}
 
         if len(config_file) == 0:
