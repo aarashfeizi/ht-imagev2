@@ -31,8 +31,8 @@ def main():
     all_args = utils.Global_Config_File(config_file={}, args=all_args_ns_new, init_tb=True)
 
     logger = utils.get_logger()
-    print(args)
-    logger.info(args)
+    print(all_args)
+    logger.info(all_args)
 
     train_transforms, train_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='train')
     # train_transforms_swap = None
