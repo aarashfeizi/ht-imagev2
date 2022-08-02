@@ -662,7 +662,7 @@ def get_samples(l, k):
     return to_ret
 
 
-def get_xs_ys(target_labels, k=1, bce_labels=None):
+def get_xs_ys(target_labels, k=1, bce_labels=None, pairwise_hard_neg=True):
     """
 
     :param target_labels: tensor of (N, N) with 0s and 1s
@@ -690,7 +690,7 @@ def get_xs_ys(target_labels, k=1, bce_labels=None):
 
 
         challenging_neg_idx = None
-        if bce_labels_copy is not None:
+        if bce_labels_copy is not None and pairwise_hard_neg:
             bce_row = bce_labels_copy[i, :]
             challenging_negatives = bce_row - row
             challenging_neg_idx = torch.where(challenging_negatives == 1)[0]
@@ -735,7 +735,7 @@ def get_hard_xs_ys(bce_labels, a2n, k):
     return xs, ys
 
 
-def calc_auroc(embeddings, labels, k=1, anch_2_hardneg_idx=None, pairwise_labels=None):
+def calc_auroc(embeddings, labels, k=1, anch_2_hardneg_idx=None, pairwise_labels=None, pairwise_hard_neg=True):
     """
 
     :param embeddings: all embeddings of a set to be tested
@@ -759,7 +759,7 @@ def calc_auroc(embeddings, labels, k=1, anch_2_hardneg_idx=None, pairwise_labels
 
     if anch_2_hardneg_idx is None:  # random
         if pairwise:
-            xs, ys = get_xs_ys(target_labels, k=k, bce_labels=bce_labels)
+            xs, ys = get_xs_ys(target_labels, k=k, bce_labels=bce_labels, pairwise_hard_neg=pairwise_hard_neg)
         else:
             xs, ys = get_xs_ys(target_labels, k=k, bce_labels=None)
     else:

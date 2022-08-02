@@ -363,6 +363,8 @@ def main():
     parser.add_argument('--eval_mode', default='val', help="val or test", choices=['val', 'test', 'train'])
 
     parser.add_argument('--pairwise_lbls', default=False, action='store_true')
+    parser.add_argument('--eval_pairwise_hard_neg', default=False, action='store_true')
+
 
     parser.add_argument('-gpu', '--gpu_ids', default='', help="gpu ids used to train")  # before: default="0,1,2,3"
 
@@ -608,6 +610,8 @@ def main():
 
     if all_args.get('pairwise_lbls'):
         pairwise_lbls_string = '_PWL'
+        if all_args.get('eval_pairwise_hard_neg'):
+            pairwise_lbls_string += '_HN'
     else:
         pairwise_lbls_string = ''
 
@@ -647,7 +651,8 @@ def main():
                 auc, t_and_p_labels = utils.calc_auroc(features,
                                                        torch.tensor(labels),
                                                        anch_2_hardneg_idx=a2n,
-                                                       pairwise_labels=pw_lbls)
+                                                       pairwise_labels=pw_lbls,
+                                                       pairwise_hard_neg=all_args.get('eval_pairwise_hard_neg'))
                 if idx not in auc_predictions.keys():
                     auc_predictions[idx] = {}
 
