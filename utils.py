@@ -36,7 +36,8 @@ wandb_dict = {}
 
 def wandb_log():
     global wandb_dict
-    wandb.log(wandb_dict)
+    if len(wandb_dict) > 0:
+        wandb.log(wandb_dict)
     wandb_dict = {}
 
 

@@ -580,6 +580,8 @@ class Trainer:
                 else:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
+            utils.wandb_log()
+
         if self.epochs == 0:
             assert self.early_stopping_tol > 0
             max_epochs = 10000 + 1
