@@ -34,13 +34,13 @@ torch.multiprocessing.set_sharing_strategy(SHARING_STRATEGY)
 
 wandb_dict = {}
 
-def __wandb_log():
+def wandb_log():
     global wandb_dict
     wandb.log(wandb_dict)
     wandb_dict = {}
 
 
-def __wandb_update_value(names_values):
+def wandb_update_value(names_values):
     for (name, value) in names_values:
         wandb_dict[name] = value
 
