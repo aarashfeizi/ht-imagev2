@@ -24,7 +24,7 @@ def main():
 
     # Pass them to wandb.init
     # model_name = utils.get_model_name(all_args_def)
-    wandb.init(config=all_args_def_ns)
+    wandb.init(config=all_args_def_ns, dir=os.path.join(all_args_def.get('log_path'), '/wandb/'))
 
     # Access all hyperparameter values through wandb.config
     all_args_ns_new = wandb.config
