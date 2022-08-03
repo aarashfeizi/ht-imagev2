@@ -26,8 +26,23 @@ from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseS
     HardTripletSampler, Draw2XHeatmapSampler
 from argparse import Namespace
 
+import wandb
+
 SHARING_STRATEGY = "file_system"
 torch.multiprocessing.set_sharing_strategy(SHARING_STRATEGY)
+
+
+wandb_dict = {}
+
+def __wandb_log():
+    global wandb_dict
+    wandb.log(wandb_dict)
+    wandb_dict = {}
+
+
+def __wandb_update_value(names_values):
+    for (name, value) in names_values:
+        wandb_dict[name] = value
 
 
 class Global_Config_File:

@@ -176,14 +176,6 @@ class Trainer:
 
         self.tb_writer.flush()
 
-    def __wandb_update_value(self, names_values):
-        wandb_dict = {}
-        for (name, value) in names_values:
-            wandb_dict[name] = value
-
-        wandb.log(wandb_dict)
-
-
     def __tb_update_value(self, names_values):
 
         for (name, value) in names_values:
@@ -261,7 +253,7 @@ class Trainer:
             #         name_imgs.extend([(f'img_{name}/{n}', i) for n, i in heatmap.items()])
 
             # self.__tb_draw_img(name_imgs)
-            self.__wandb_update_value(name_imgs)
+            utils.__wandb_update_value(name_imgs)
 
     def draw_heatmaps(self, net):
         if self.heatmap_loader is None:
@@ -300,7 +292,7 @@ class Trainer:
                     name_imgs.extend([(f'img_{name}/{n}', i) for n, i in heatmap.items()])
 
             # self.__tb_draw_img(name_imgs)
-            self.__wandb_update_value(name_imgs)
+            utils.__wandb_update_value(name_imgs)
 
     def __train_one_epoch(self, net):
         net.train()
@@ -559,7 +551,7 @@ class Trainer:
                     total_vals_auroc += val_auroc_score
 
                     # self.__tb_update_value(list_for_tb)
-                    self.__wandb_update_value(list_for_tb)
+                    utils.__wandb_update_value(list_for_tb)
 
                 # if self.heatmap2x:
                 #     self.draw_heatmaps2x(net)
@@ -613,7 +605,7 @@ class Trainer:
             update_tb_losses.append(('Train/Accuracy', epoch_acc))
 
             # self.__tb_update_value(update_tb_losses)
-            self.__wandb_update_value(update_tb_losses)
+            utils.__wandb_update_value(update_tb_losses)
 
             total_vals_Rat1 = 0.0
             total_vals_auroc = 0.0
@@ -660,7 +652,7 @@ class Trainer:
                         total_vals_auroc += val_auroc_score
 
                         # self.__tb_update_value(list_for_tb)
-                        self.__wandb_update_value(list_for_tb)
+                        utils.__wandb_update_value(list_for_tb)
 
                     if self.heatmap:
                         self.draw_heatmaps(net)
@@ -692,6 +684,8 @@ class Trainer:
             else:
                 if self.early_stopping_tol > 0:
                     self.early_stopping_counter += 1
+
+            utils.__wandb_log()
 
             self.__tb_draw_histograms(net)
 
