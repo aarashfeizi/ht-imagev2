@@ -42,7 +42,7 @@ def download_simsiam(net, checkpoint, save_path):
 
     msg = net.load_state_dict(state_dict, strict=False)
     assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}
-    save_pretreind_model(msg, save_path)
+    save_pretreind_model(net, save_path)
 
     
 def download_dino(net, checkpoint, save_path):
@@ -57,7 +57,7 @@ def download_dino(net, checkpoint, save_path):
 
     msg = net.load_state_dict(state_dict, strict=False)
     assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}
-    save_pretreind_model(msg, save_path)
+    save_pretreind_model(net, save_path)
 
     
 # def download_simclr():
