@@ -21,7 +21,7 @@ def main():
         args.config_path, args.dataset + '.json'))
 
     all_args_def = utils.Global_Config_File(
-        args=args, config_file=dataset_config, init_tb=False)
+        args=args, config_file=dataset_config, init_tb=not args.wandb)
     all_args_def_ns = all_args_def.get_namespace()
 
     utils.seed_all(all_args_def_ns.seed)
