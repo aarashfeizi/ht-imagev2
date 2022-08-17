@@ -14,7 +14,7 @@ def get_backbone(backbone_name, pretrained=False):
     
 MODEL_URLS = {'byol': 'https://storage.googleapis.com/deepmind-byol/checkpoints/pretrain_res50x1.pkl',
                 'simsiam': 'https://dl.fbaipublicfiles.com/simsiam/models/100ep/pretrain/checkpoint_0099.pth.tar',
-                'dino': 'https://dl.fbaipublicfiles.com/dinogg/dino_resnet50_pretrain/dino_resnet50_pretrain_full_checkpoint.pth',
+                'dino': 'https://dl.fbaipublicfiles.com/dino/dino_resnet50_pretrain/dino_resnet50_pretrain_full_checkpoint.pth',
                 'vicreg': None,
                 'simclr': 'https://storage.cloud.google.com/simclr-gcs/checkpoints/ResNet50_1x.zip',
                 'swav': None}
@@ -70,7 +70,7 @@ save_ssl_download = {
 
 
 def load_ssl_weight_to_model(model, method_name, arch_name):
-    import urllib
+    import urllib.request as req
     import pathlib
     utils.make_dirs('ssl_backbones')
 
@@ -87,7 +87,9 @@ def load_ssl_weight_to_model(model, method_name, arch_name):
             if MODEL_URLS[method_name] is not None:
                 suffixes = pathlib.Path(MODEL_URLS[method_name]).suffixes
                 suffix = ''.join(suffixes)
-                downloaded_chkp = urllib.urlretrieve(MODEL_URLS[method_name], "{arch_name}_{method_name}{suffix}")
+                downloaded_chkp_path = req.urlretrieve(MODEL_URLS[method_name], "{arch_name}_{method_name}{suffix}")
+                downloaded_chkp = torch.load(downloaded_chkp_path, map_location='cpu')
+                
 
             msg = save_ssl_download[method_name](model, downloaded_chkp, checkpoint_path)
         return msg
