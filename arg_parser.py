@@ -67,6 +67,16 @@ SSL_MODELS = ['default',
                 'vicreg',
                 'dino']
 
+eval_dataset_choices = ['cars', 'cub', 'hotels', 'hotels_small', 'hotelid-val', 'hotelid-test']
+eval_BASELINE_MODELS = ['ours',
+                   'softtriple',
+                   'proxy-anchor',
+                   'supcontrastive',
+                   'proxyncapp',
+                   'htv2',
+                   'ms',
+                   'resnet50']
+
 def get_args():
     parser = argparse.ArgumentParser()
 
@@ -197,7 +207,7 @@ def get_args_eval():
     parser.add_argument('-w', '--workers', default=10, type=int)
     parser.add_argument('--pin_memory', default=False, action='store_true')
 
-    parser.add_argument('-d', '--dataset', default=None, choices=dataset_choices)
+    parser.add_argument('-d', '--dataset', default=None, choices=eval_dataset_choices)
     parser.add_argument('--num_inst_per_class', default=5, type=int)
     parser.add_argument('--lnorm', default=False, action='store_true')
 
@@ -206,7 +216,7 @@ def get_args_eval():
 
     parser.add_argument('-num_of_dataset', '--num_of_dataset', type=int, default=4,
                         help="number of hotels val_datasets to go through")
-    parser.add_argument('--baseline', default='proxy-anchor', choices=BASELINE_MODELS)
+    parser.add_argument('--baseline', default='proxy-anchor', choices=eval_BASELINE_MODELS)
     parser.add_argument('--backbone', default='resnet50', choices=['bninception', 'resnet50'])
 
     parser.add_argument('--pca_to_dim', default=False, action='store_true')
@@ -388,7 +398,7 @@ def get_args_ssl_eval():
     parser.add_argument('-w', '--workers', default=10, type=int)
     parser.add_argument('--pin_memory', default=False, action='store_true')
 
-    parser.add_argument('-d', '--dataset', default=None, choices=dataset_choices)
+    parser.add_argument('-d', '--dataset', default=None, choices=eval_dataset_choices)
     parser.add_argument('--num_inst_per_class', default=5, type=int)
     parser.add_argument('--lnorm', default=False, action='store_true')
 
@@ -397,7 +407,7 @@ def get_args_ssl_eval():
 
     parser.add_argument('-num_of_dataset', '--num_of_dataset', type=int, default=4,
                         help="number of hotels val_datasets to go through")
-    parser.add_argument('--baseline', default='proxy-anchor', choices=BASELINE_MODELS)
+    parser.add_argument('--baseline', default='proxy-anchor', choices=eval_BASELINE_MODELS)
     parser.add_argument('--backbone', default='resnet50', choices=['bninception', 'resnet50'])
 
     parser.add_argument('--pca_to_dim', default=False, action='store_true')

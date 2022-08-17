@@ -96,15 +96,6 @@ COLORS_VALUES_0255 = [
 
 # todo: visualize embeddings after training with each model to see how they look softtriple, proxy, htv2
 
-dataset_choices = ['cars', 'cub', 'hotels', 'hotels_small', 'hotelid-val', 'hotelid-test']
-BASELINE_MODELS = ['ours',
-                   'softtriple',
-                   'proxy-anchor',
-                   'supcontrastive',
-                   'proxyncapp',
-                   'htv2',
-                   'ms',
-                   'resnet50']
 
 DATASET_SIZES = {'cars': {'test': 8131},
                  'cub': {'test': 5924},
