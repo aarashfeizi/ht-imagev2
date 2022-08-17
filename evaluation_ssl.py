@@ -357,7 +357,7 @@ def add_dicts(dict1, dict2):
 
 
 def main():
-    args = arg_parser.get_args_ssl()
+    args = arg_parser.get_args_ssl_eval()
     
     all_data = []
 
