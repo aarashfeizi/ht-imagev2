@@ -85,7 +85,7 @@ def load_ssl_weight_to_model(model, method_name, arch_name):
         else: 
             downloaded_chkp = None
             if MODEL_URLS[method_name] is not None:
-                suffixes = pathlib.Path(MODEL_URLS[method_name])
+                suffixes = pathlib.Path(MODEL_URLS[method_name]).suffixes
                 suffix = ''.join(suffixes)
                 downloaded_chkp = urllib.urlretrieve(MODEL_URLS[method_name], "{arch_name}_{method_name}{suffix}")
 
