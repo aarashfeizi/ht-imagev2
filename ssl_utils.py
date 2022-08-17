@@ -82,7 +82,7 @@ def load_ssl_weight_to_model(model, method_name, arch_name):
     else:
         if os.path.exists(checkpoint_path):
             checkpoint = torch.load(checkpoint_path, map_location='cpu')
-            msg = model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+            model.load_state_dict(checkpoint['model_state_dict'], strict=False)
         else: 
             downloaded_chkp = None
             if MODEL_URLS[method_name] is not None:
@@ -93,8 +93,8 @@ def load_ssl_weight_to_model(model, method_name, arch_name):
                 downloaded_chkp = torch.load(downloaded_chkp_path, map_location='cpu')
                 
 
-            msg = save_ssl_download[method_name](model, downloaded_chkp, checkpoint_path)
-        return msg
+            save_ssl_download[method_name](model, downloaded_chkp, checkpoint_path)
+        return model
     
 def set_net_to_eval(net):
     for module in filter(lambda m: type(m) == nn.BatchNorm2d, net.modules()):
