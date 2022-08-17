@@ -42,7 +42,7 @@ def download_simsiam(net, checkpoint, save_path):
 
     msg = net.load_state_dict(state_dict, strict=False)
     assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}
-    save_pretreind_model(net, save_path)
+    save_pretreind_model(msg, save_path)
 
     
 def download_dino(net, checkpoint, save_path):
@@ -57,7 +57,7 @@ def download_dino(net, checkpoint, save_path):
 
     msg = net.load_state_dict(state_dict, strict=False)
     assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}
-    save_pretreind_model(net, save_path)
+    save_pretreind_model(msg, save_path)
 
     
 # def download_simclr():
@@ -80,7 +80,7 @@ def load_ssl_weight_to_model(model, method_name, arch_name):
         return model
     else:
         if os.path.exists(checkpoint_path):
-            checkpoint = torch.load(f'{arch_name}_{method_name}.pth', map_location='cpu')
+            checkpoint = torch.load(checkpoint_path, map_location='cpu')
             msg = model.load_state_dict(checkpoint['model_state_dict'], strict=False)
         else: 
             downloaded_chkp = None
