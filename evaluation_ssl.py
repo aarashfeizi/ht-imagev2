@@ -408,6 +408,10 @@ def main():
                                                 arch_name=all_args.get('backbone'))
         net.fc = nn.Identity()
 
+
+        if all_args.get('cuda'):
+            net = net.cuda()
+
         checkpoint_name = f"{all_args.get('backbone')}_{all_args.get('method_name')}"
         cache_path = os.path.join(eval_log_path, 'ssl_cache', f'{checkpoint_name}')
 
