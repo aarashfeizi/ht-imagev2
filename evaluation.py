@@ -19,9 +19,10 @@ import baseline_model_loaders.proxy_anchor_models as pa
 import baseline_model_loaders.softtriple_models as st
 import baseline_model_loaders.sup_contrastive_models as sc
 import model as htv2
+
 # on hlr:
 # python evaluation.py -chk ../SupContrast/save/SupCon/hotels_models/SupCon_hotels_resnet50_lr_0.01_decay_0.0001_bsz_32_temp_0.1_trial_0_cosine/last.pth -name SupCon_hotels_resnet50_lr_0.01_decay_0.0001_bsz_32_temp_0.1_trial_0_cosine/ --kset 1 2 4 8 10 100 1000 --model_type resnet50 -d hotels -dr ../../datasets/ --baseline supcontrastive --gpu_ids 6
-import utils
+import utils, arg_parser
 
 ALPHA = 200.0
 
@@ -354,74 +355,7 @@ def add_dicts(dict1, dict2):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('-cuda', '--cuda', default=False, action='store_true')
-    parser.add_argument('-seed', '--seed', default=402, type=int)
-    parser.add_argument('--run_times', default=1, type=int)
-    parser.add_argument('-trained_with_mltp_gpu', '--trained_with_mltp_gpu', default=False, action='store_true')
-    parser.add_argument('--eval_mode', default='val', help="val or test", choices=['val', 'test', 'train'])
-
-    parser.add_argument('--pairwise_lbls', default=False, action='store_true')
-    parser.add_argument('--eval_pairwise_hard_neg', default=False, action='store_true')
-
-
-    parser.add_argument('-gpu', '--gpu_ids', default='', help="gpu ids used to train")  # before: default="0,1,2,3"
-
-    parser.add_argument('-X', '--X', nargs='+', default=[],
-                        help="Different features for datasets (order important)")
-    # parser.add_argument('-X_desc', '--X_desc', nargs='+', default=[],
-    #                     help="Different features desc for datasets (order important)") # for h5 or npz files
-
-    parser.add_argument('-Y', '--Y', nargs='+', default=[],
-                        help="Different labels for datasets (order important)")
-    # parser.add_argument('-Y_desc', '--Y_desc', nargs='+', default=[],
-    #                     help="Different labels desc for datasets (order important)")  # for h5 or npz files
-
-    parser.add_argument('-emb', '--emb_size', default=512, type=int)
-    parser.add_argument('-b', '--batch_size', default=32, type=int)
-    parser.add_argument('-w', '--workers', default=10, type=int)
-    parser.add_argument('--pin_memory', default=False, action='store_true')
-
-    parser.add_argument('-d', '--dataset', default=None, choices=dataset_choices)
-    parser.add_argument('--num_inst_per_class', default=5, type=int)
-    parser.add_argument('--lnorm', default=False, action='store_true')
-
-    parser.add_argument('--config_path', default='config/', help="config_path for datasets")
-    parser.add_argument('--project_path', default='./', help="current project path")
-
-    parser.add_argument('-num_of_dataset', '--num_of_dataset', type=int, default=4,
-                        help="number of hotels val_datasets to go through")
-    parser.add_argument('--baseline', default='proxy-anchor', choices=BASELINE_MODELS)
-    parser.add_argument('--backbone', default='resnet50', choices=['bninception', 'resnet50'])
-
-    parser.add_argument('--pca_to_dim', default=False, action='store_true')
-    parser.add_argument('--force_update', default=False, action='store_true')
-
-    parser.add_argument('-chk', '--checkpoint', default=None, help='Path to checkpoint')
-    parser.add_argument('--kset', nargs='+', default=[1, 2, 4, 8, 16, 32, 100])
-
-    parser.add_argument('-elp', '--eval_log_path', default='./eval_logs')
-    parser.add_argument('-name', '--name', default=None, type=str)
-
-    parser.add_argument('--hard_neg', default=False, action='store_true')
-    parser.add_argument('--project', default=False, action='store_true')
-    parser.add_argument('--normalize_project', default=False, action='store_true')
-    parser.add_argument('--project_no_labels', type=int, default=30)
-    parser.add_argument('--project_labels_start', type=int, default=0)
-    parser.add_argument('--aug_swap', type=int, default=1) # always set to 1 for no partitioning and swapping
-
-    parser.add_argument('--ml_self_att', default=False, action='store_true')
-    parser.add_argument('--ml_self_att_head_number', type=int, default=4)
-    parser.add_argument('--ml_self_att_layers_to_use', type=int, default=4)
-
-    parser.add_argument('--eval_metric', default='auc', choices=['auc', 'ret', 'conret'])
-
-
-    parser.add_argument('--metric', default='cosine', choices=['cosine', 'euclidean'])
-
-
-    args = parser.parse_args()
+    args = arg_parser.get_args_eval()
 
     all_data = []
 

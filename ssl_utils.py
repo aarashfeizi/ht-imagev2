@@ -1,6 +1,7 @@
 import utils
 import os
 import torch
+import torch.nn as nn
 from torchvision.models import resnet50
 
 
@@ -94,3 +95,9 @@ def load_ssl_weight_to_model(model, method_name, arch_name):
 
             msg = save_ssl_download[method_name](model, downloaded_chkp, checkpoint_path)
         return msg
+    
+def set_net_to_eval(net):
+    for module in filter(lambda m: type(m) == nn.BatchNorm2d, net.modules()):
+        module.eval()
+        module.train = lambda _: None
+    return True

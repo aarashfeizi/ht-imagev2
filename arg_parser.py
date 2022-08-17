@@ -167,6 +167,77 @@ def get_args():
 
     return args
 
+def get_args_eval():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-cuda', '--cuda', default=False, action='store_true')
+    parser.add_argument('-seed', '--seed', default=402, type=int)
+    parser.add_argument('--run_times', default=1, type=int)
+    parser.add_argument('-trained_with_mltp_gpu', '--trained_with_mltp_gpu', default=False, action='store_true')
+    parser.add_argument('--eval_mode', default='val', help="val or test", choices=['val', 'test', 'train'])
+
+    parser.add_argument('--pairwise_lbls', default=False, action='store_true')
+    parser.add_argument('--eval_pairwise_hard_neg', default=False, action='store_true')
+
+
+    parser.add_argument('-gpu', '--gpu_ids', default='', help="gpu ids used to train")  # before: default="0,1,2,3"
+
+    parser.add_argument('-X', '--X', nargs='+', default=[],
+                        help="Different features for datasets (order important)")
+    # parser.add_argument('-X_desc', '--X_desc', nargs='+', default=[],
+    #                     help="Different features desc for datasets (order important)") # for h5 or npz files
+
+    parser.add_argument('-Y', '--Y', nargs='+', default=[],
+                        help="Different labels for datasets (order important)")
+    # parser.add_argument('-Y_desc', '--Y_desc', nargs='+', default=[],
+    #                     help="Different labels desc for datasets (order important)")  # for h5 or npz files
+
+    parser.add_argument('-emb', '--emb_size', default=512, type=int)
+    parser.add_argument('-b', '--batch_size', default=32, type=int)
+    parser.add_argument('-w', '--workers', default=10, type=int)
+    parser.add_argument('--pin_memory', default=False, action='store_true')
+
+    parser.add_argument('-d', '--dataset', default=None, choices=dataset_choices)
+    parser.add_argument('--num_inst_per_class', default=5, type=int)
+    parser.add_argument('--lnorm', default=False, action='store_true')
+
+    parser.add_argument('--config_path', default='config/', help="config_path for datasets")
+    parser.add_argument('--project_path', default='./', help="current project path")
+
+    parser.add_argument('-num_of_dataset', '--num_of_dataset', type=int, default=4,
+                        help="number of hotels val_datasets to go through")
+    parser.add_argument('--baseline', default='proxy-anchor', choices=BASELINE_MODELS)
+    parser.add_argument('--backbone', default='resnet50', choices=['bninception', 'resnet50'])
+
+    parser.add_argument('--pca_to_dim', default=False, action='store_true')
+    parser.add_argument('--force_update', default=False, action='store_true')
+
+    parser.add_argument('-chk', '--checkpoint', default=None, help='Path to checkpoint')
+    parser.add_argument('--kset', nargs='+', default=[1, 2, 4, 8, 16, 32, 100])
+
+    parser.add_argument('-elp', '--eval_log_path', default='./eval_logs')
+    parser.add_argument('-name', '--name', default=None, type=str)
+
+    parser.add_argument('--hard_neg', default=False, action='store_true')
+    parser.add_argument('--project', default=False, action='store_true')
+    parser.add_argument('--normalize_project', default=False, action='store_true')
+    parser.add_argument('--project_no_labels', type=int, default=30)
+    parser.add_argument('--project_labels_start', type=int, default=0)
+    parser.add_argument('--aug_swap', type=int, default=1) # always set to 1 for no partitioning and swapping
+
+    parser.add_argument('--ml_self_att', default=False, action='store_true')
+    parser.add_argument('--ml_self_att_head_number', type=int, default=4)
+    parser.add_argument('--ml_self_att_layers_to_use', type=int, default=4)
+
+    parser.add_argument('--eval_metric', default='auc', choices=['auc', 'ret', 'conret'])
+
+
+    parser.add_argument('--metric', default='cosine', choices=['cosine', 'euclidean'])
+
+
+    args = parser.parse_args()
+
+    return args
 
 def get_args_for_ordered_distance():
     parser = argparse.ArgumentParser()
@@ -224,7 +295,7 @@ def get_args_ssl():
     parser.add_argument('--hard_triplet', default=False, action='store_true')
 
     # learning
-    parser.add_argument('--method_name', default='default', choices=SSL_MODELS)
+    parser.add_argument('--method_name', default='default', choices=SSL_MODELS) # does not support byol and simclr
     parser.add_argument('--optimizer', default='adam', choices=OPTIMIZER_LIST, help='optimizer to use')
     parser.add_argument('--ckpt_path', default=None, help="path to the checkpoint file")
     parser.add_argument('--learning_rate', type=float, default=0.001)
@@ -289,6 +360,70 @@ def get_args_ssl():
     #     'multisim': pml_losses.MultiSimilarityLoss, # alpha=2, beta=50, base=0.5
     #     'lifted': pml_losses.LiftedStructureLoss # neg_margin=1, pos_margin=0,
     # 'softtriple': centers_per_class = 10, la = 20, gamma = 0.1, margin = 0.01
+
+
+    args = parser.parse_args()
+
+    return args
+
+def get_args_ssl_eval():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-cuda', '--cuda', default=False, action='store_true')
+    parser.add_argument('-wandb', '--wandb', default=False, action='store_true')
+    parser.add_argument('-seed', '--seed', default=402, type=int)
+    parser.add_argument('--run_times', default=1, type=int)
+    parser.add_argument('-trained_with_mltp_gpu', '--trained_with_mltp_gpu', default=False, action='store_true')
+    parser.add_argument('--eval_mode', default='val', help="val or test", choices=['val', 'test', 'train'])
+    parser.add_argument('--method_name', default='default', choices=SSL_MODELS) # does not support byol and simclr
+
+    parser.add_argument('--pairwise_lbls', default=False, action='store_true')
+    parser.add_argument('--eval_pairwise_hard_neg', default=False, action='store_true')
+
+
+    parser.add_argument('-gpu', '--gpu_ids', default='', help="gpu ids used to train")  # before: default="0,1,2,3"
+
+    parser.add_argument('-emb', '--emb_size', default=512, type=int)
+    parser.add_argument('-b', '--batch_size', default=32, type=int)
+    parser.add_argument('-w', '--workers', default=10, type=int)
+    parser.add_argument('--pin_memory', default=False, action='store_true')
+
+    parser.add_argument('-d', '--dataset', default=None, choices=dataset_choices)
+    parser.add_argument('--num_inst_per_class', default=5, type=int)
+    parser.add_argument('--lnorm', default=False, action='store_true')
+
+    parser.add_argument('--config_path', default='config/', help="config_path for datasets")
+    parser.add_argument('--project_path', default='./', help="current project path")
+
+    parser.add_argument('-num_of_dataset', '--num_of_dataset', type=int, default=4,
+                        help="number of hotels val_datasets to go through")
+    parser.add_argument('--baseline', default='proxy-anchor', choices=BASELINE_MODELS)
+    parser.add_argument('--backbone', default='resnet50', choices=['bninception', 'resnet50'])
+
+    parser.add_argument('--pca_to_dim', default=False, action='store_true')
+    parser.add_argument('--force_update', default=False, action='store_true')
+
+    parser.add_argument('-chk', '--checkpoint', default=None, help='Path to checkpoint')
+    parser.add_argument('--kset', nargs='+', default=[1, 2, 4, 8, 16, 32, 100])
+
+    parser.add_argument('-elp', '--eval_log_path', default='./eval_logs')
+    parser.add_argument('-name', '--name', default=None, type=str)
+
+    parser.add_argument('--hard_neg', default=False, action='store_true')
+    parser.add_argument('--project', default=False, action='store_true')
+    parser.add_argument('--normalize_project', default=False, action='store_true')
+    parser.add_argument('--project_no_labels', type=int, default=30)
+    parser.add_argument('--project_labels_start', type=int, default=0)
+    parser.add_argument('--aug_swap', type=int, default=1) # always set to 1 for no partitioning and swapping
+
+    parser.add_argument('--ml_self_att', default=False, action='store_true')
+    parser.add_argument('--ml_self_att_head_number', type=int, default=4)
+    parser.add_argument('--ml_self_att_layers_to_use', type=int, default=4)
+
+    parser.add_argument('--eval_metric', default='auc', choices=['auc', 'ret', 'conret'])
+
+
+    parser.add_argument('--metric', default='cosine', choices=['cosine', 'euclidean'])
 
 
     args = parser.parse_args()
