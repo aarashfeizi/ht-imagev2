@@ -83,10 +83,10 @@ def load_ssl_weight_to_model(model, method_name, arch_name):
             checkpoint = torch.load(f'{arch_name}_{method_name}.pth', map_location='cpu')
             msg = model.load_state_dict(checkpoint['model_state_dict'], strict=False)
         else: 
-            suffixes = pathlib.Path(MODEL_URLS[method_name])
-            suffix = ''.join(suffixes)
             downloaded_chkp = None
             if MODEL_URLS[method_name] is not None:
+                suffixes = pathlib.Path(MODEL_URLS[method_name])
+                suffix = ''.join(suffixes)
                 downloaded_chkp = urllib.urlretrieve(MODEL_URLS[method_name], "{arch_name}_{method_name}{suffix}")
 
             msg = save_ssl_download[method_name](model, downloaded_chkp, checkpoint_path)
