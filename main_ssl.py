@@ -1,4 +1,4 @@
-import arg_parser, utils
+import arg_parser, utils, ssl_utils
 import wandb
 import os, sys
 
@@ -32,11 +32,11 @@ def main():
     
     val_transforms, val_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='val')
 
-    model = utils.get_backbone(all_args.get('backbone'),
+    model = ssl_utils.get_backbone(all_args.get('backbone'),
                                             pretrained=(all_args.get('method_name') == 'default'))
 
 
-    model = utils.load_ssl_weight_to_model(model, all_args.get('method_name'))
+    model = ssl_utils.load_ssl_weight_to_model(model, all_args.get('method_name'))
 
     print('successfull!')
 
