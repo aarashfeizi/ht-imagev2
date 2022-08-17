@@ -72,6 +72,7 @@ def get_args():
 
     # logistics
     parser.add_argument('--cuda', default=False, action='store_true')
+    parser.add_argument('--wandb', default=False, action='store_true')
     parser.add_argument('--gpu_ids', default='', help="gpu ids used to train")  # before: default="0,1,2,3"
     parser.add_argument('--seed', type=int, default=402, help="set random seed")
     parser.add_argument('--config_path', default='config/', help="config_path for datasets")
@@ -201,6 +202,7 @@ def get_args_ssl():
 
     # logistics
     parser.add_argument('--cuda', default=False, action='store_true')
+    parser.add_argument('--wandb', default=False, action='store_true')
     parser.add_argument('--gpu_ids', default='', help="gpu ids used to train")  # before: default="0,1,2,3"
     parser.add_argument('--seed', type=int, default=402, help="set random seed")
     parser.add_argument('--config_path', default='config/', help="config_path for datasets")
@@ -209,7 +211,7 @@ def get_args_ssl():
     parser.add_argument('--save_model', default=False, action='store_true', help="save model or not")
     parser.add_argument('--no_validation', default=False, action='store_true', help="save model or not")
     parser.add_argument('--early_stopping_tol', default=2, type=int, help="early stopping tolerance on validation")
-
+    
 
     parser.add_argument('--test', default=False, action='store_true')
 

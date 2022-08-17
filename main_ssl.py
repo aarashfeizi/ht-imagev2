@@ -15,11 +15,14 @@ def main():
 
     # Pass them to wandb.init
     # model_name = utils.get_model_name(all_args_def)
-    wandb.init(config=all_args_def_ns, dir=os.path.join(all_args_def.get('log_path'), 'wandb/'))
+    if all_args_def.get('wandb'):
+        wandb.init(config=all_args_def_ns, dir=os.path.join(all_args_def.get('log_path'), 'wandb/'))
 
-    # Access all hyperparameter values through wandb.config
-    all_args_ns_new = wandb.config
-    all_args = utils.Global_Config_File(config_file={}, args=all_args_ns_new, init_tb=True)
+        # Access all hyperparameter values through wandb.config
+        all_args_ns_new = wandb.config
+        all_args = utils.Global_Config_File(config_file={}, args=all_args_ns_new, init_tb=True)
+    else:
+        all_args = all_args_def
 
     logger = utils.get_logger()
     print(all_args)
