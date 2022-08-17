@@ -36,7 +36,9 @@ def main():
                                             pretrained=(all_args.get('method_name') == 'default'))
 
 
-    model = ssl_utils.load_ssl_weight_to_model(model, all_args.get('method_name'))
+    model = ssl_utils.load_ssl_weight_to_model(model=model,
+                                                method_name=all_args.get('method_name'),
+                                                arch_name=all_args.get('backbone'))
 
     print('successfull!')
 
