@@ -87,7 +87,8 @@ def load_ssl_weight_to_model(model, method_name, arch_name):
             if MODEL_URLS[method_name] is not None:
                 suffixes = pathlib.Path(MODEL_URLS[method_name]).suffixes
                 suffix = ''.join(suffixes)
-                downloaded_chkp_path = req.urlretrieve(MODEL_URLS[method_name], "{arch_name}_{method_name}{suffix}")
+                print(f'Downloading... {arch_name}_{method_name}{suffix}')
+                downloaded_chkp_path = req.urlretrieve(MODEL_URLS[method_name], f"{arch_name}_{method_name}{suffix}")[0]
                 downloaded_chkp = torch.load(downloaded_chkp_path, map_location='cpu')
                 
 
