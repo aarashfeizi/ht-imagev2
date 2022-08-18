@@ -127,7 +127,7 @@ class Trainer:
             netmod = net.module
         else:
             netmod = net
-        if self.args.get('train_classification'):
+        if self.args.get('loss') == 'CE':
             learnable_params = [{'params': netmod.parameters(),
                     'lr': self.args.get('learning_rate'),
                     'weight_decay': self.args.get('weight_decay'),

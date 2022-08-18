@@ -162,8 +162,8 @@ def main():
                             val_db_loaders=val_db_loaders_dict,
                             force_new_dir=True,
                             optimizer=all_args.get('optimizer'))
-                            
-        if all_args.get('train_classification'):
+
+        if all_args.get('loss') == 'CE':
             trainer.set_val_classification_loader(val_classification_loader)
 
         trainer.train(net, val=(not all_args.get('no_validation')))

@@ -14,7 +14,8 @@ LOSSES_LIST = ['pnpp',
                'circle',
                'multisim',
                'lifted',
-               'softtriple']
+               'softtriple',
+               'CE']
 
 BACKBONE_LIST = ['resnet50', 'resnet18', 'deit_small']
 
