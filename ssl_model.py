@@ -18,8 +18,8 @@ class SSL_MODEL(nn.Module):
             for param in self.encoder.parameters():
                 param.requires_grad = False
         
-        self.classifier = nn.Sequential([nn.Linear(emb_size, num_classes), 
-                                        nn.Softmax()])
+        self.classifier = nn.Sequential(nn.Linear(emb_size, num_classes), 
+                                        nn.Softmax(dim=-1))
     
     def forward_backbone(self, x):
         return self.encoder(x)
