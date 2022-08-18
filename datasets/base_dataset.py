@@ -53,7 +53,7 @@ class BaseDataset(Dataset):
         self.labels = list(self.data_dict.keys())
 
         if self.classification:
-            self.label_list = F.one_hot(torch.tensor(self.label_list, dtype=torch.float32))
+            self.label_list = F.one_hot(torch.tensor(self.label_list, dtype=torch.int))
 
         return
 
