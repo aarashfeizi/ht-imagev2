@@ -5,6 +5,8 @@ import wandb
 import os
 import sys
 
+import ssl_model
+
 import torch
 import losses
 from trainer import Trainer
@@ -17,11 +19,13 @@ import wandb
 
 def main():
     args = arg_parser.get_args_ssl()
+
     dataset_config = utils.load_json(os.path.join(
         args.config_path, args.dataset + '.json'))
 
     all_args_def = utils.Global_Config_File(
         args=args, config_file=dataset_config, init_tb=not args.wandb)
+        
     all_args_def_ns = all_args_def.get_namespace()
 
     utils.seed_all(all_args_def_ns.seed)
@@ -49,13 +53,18 @@ def main():
     val_transforms, val_transforms_names = utils.TransformLoader(
         all_args).get_composed_transform(mode='val')
 
-    net = ssl_utils.get_backbone(all_args.get('backbone'),
+    encoder = ssl_utils.get_backbone(all_args.get('backbone'),
                                  pretrained=(all_args.get('method_name') == 'default'))
 
-    net = ssl_utils.load_ssl_weight_to_model(model=net,
+    encoder = ssl_utils.load_ssl_weight_to_model(model=encoder,
                                              method_name=all_args.get(
                                                  'method_name'),
                                              arch_name=all_args.get('backbone'))
+
+    net = ssl_model.SSL_MODEL(backbone=encoder,
+                                emb_size=2048,
+                                num_classes=all_args.get('nb_classes'),
+                                freeze_backbone=all_args.get('freeze_backbone'))
 
     print('successfull!')
 
@@ -64,7 +73,8 @@ def main():
 
     train_loader = utils.get_data(all_args, mode='train',
                                   transform=train_transforms,
-                                  sampler_mode='kbatch',
+                                #   sampler_mode='kbatch',
+                                  sampler_mode='classification',
                                   pairwise_labels=all_args.get('train_with_pairwise'))
 
     # if train_transforms_swap is not None:
@@ -72,6 +82,10 @@ def main():
 
     val2_loader = None
     val2_db_loader = None
+
+
+    val_classification_loader = utils.get_data(
+        all_args, mode='val', transform=val_transforms, sampler_mode='classification')
 
     val_loader = utils.get_data(
         all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet')
@@ -144,10 +158,13 @@ def main():
 
     if not all_args.get('test'):  # training
         trainer = Trainer(all_args, loss=loss, train_loader=train_loader,
-                          val_loaders=val_loaders_dict,
-                          val_db_loaders=val_db_loaders_dict,
-                          force_new_dir=True,
-                          optimizer=all_args.get('optimizer'))
+                            val_loaders=val_loaders_dict,
+                            val_db_loaders=val_db_loaders_dict,
+                            force_new_dir=True,
+                            optimizer=all_args.get('optimizer'))
+                            
+        if all_args.get('train_classification'):
+            trainer.set_val_classification_loader(val_classification_loader)
 
         trainer.train(net, val=(not all_args.get('no_validation')))
 

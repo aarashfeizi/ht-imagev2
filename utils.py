@@ -296,7 +296,8 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
                 'hard_triplet': HardTripletSampler,
                 'db': DataBaseSampler,
                 'heatmap': DrawHeatmapSampler,
-                'heatmap2x': Draw2XHeatmapSampler}
+                'heatmap2x': Draw2XHeatmapSampler,
+                'classification': None}
 
     mode_splits = mode.split('_')
     eval_mode = mode_splits[0]
@@ -309,16 +310,22 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
     dataset = datasets.load_dataset(args, eval_mode, file_name,
                                     transform=transform,
                                     for_heatmap=sampler_mode.startswith('heatmap'),
+                                    classification=(sampler_mode == 'classification'),
                                     pairwise_labels=pairwise_labels)
 
-    sampler = SAMPLERS[sampler_mode](dataset=dataset,
-                                     batch_size=args.get('batch_size'),
-                                     num_instances=args.get('num_inst_per_class'),
-                                     k_dec_freq=args.get('k_dec_freq'),
-                                     use_pairwise_label=pairwise_labels,
-                                     **kwargs)
+    if SAMPLERS[sampler_mode] is not None:
+        sampler = SAMPLERS[sampler_mode](dataset=dataset,
+                                        batch_size=args.get('batch_size'),
+                                        num_instances=args.get('num_inst_per_class'),
+                                        k_dec_freq=args.get('k_dec_freq'),
+                                        use_pairwise_label=pairwise_labels,
+                                        **kwargs)
+        batch_size = None
+    else:
+        sampler = None
+        batch_size = args.get('batch_size')
 
-    dataloader = DataLoader(dataset=dataset, shuffle=False, num_workers=args.get('workers'), batch_sampler=sampler,
+    dataloader = DataLoader(dataset=dataset, shuffle=False, num_workers=args.get('workers'), batch_sampler=sampler, batch_size=batch_size,
                             pin_memory=args.get('pin_memory'), worker_init_fn=seed_worker)
 
     return dataloader

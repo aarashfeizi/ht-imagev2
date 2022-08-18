@@ -3,6 +3,24 @@ import pandas as pd
 import torch
 
 
+class Classification_Accuracy:
+    def __init__(self):
+        self.correct = 0
+        self.all = 0
+
+    def update_acc(self, pred_lbls, true_lbls):
+        batch_corrects = sum(pred_lbls == true_lbls)
+        self.correct += batch_corrects
+        self.all += len(pred_lbls)
+    
+    def get_acc(self):
+        acc = self.correct / self.all
+        return acc
+    
+    def reset(self):
+        self.correct = 0
+        self.all = 0
+
 class Metric_Accuracy:
 
     def __init__(self):

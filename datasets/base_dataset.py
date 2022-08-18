@@ -4,13 +4,14 @@ import re
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn.functional as F
 from torch.utils.data.dataset import Dataset
 from torchvision import transforms
 
 import utils
 
 class BaseDataset(Dataset):
-    def __init__(self, args, mode, filename='', transform=None, get_paths=False, pairwise_labels=False):
+    def __init__(self, args, mode, filename='', transform=None, get_paths=False, pairwise_labels=False, classification=False):
         if filename == '':
             self.data_file_path = args.get(f'{mode}_file')
         else:
@@ -23,6 +24,7 @@ class BaseDataset(Dataset):
         else:
             self.swap_prob = 0.0
 
+        self.classification = classification
         self.get_paths = get_paths
         self.path_list = []
         self.label_list = []
@@ -49,6 +51,9 @@ class BaseDataset(Dataset):
         self.data_dict = new_data_dict
         self.label_list = [self.lbl2idx[l] for l in self.label_list]
         self.labels = list(self.data_dict.keys())
+
+        if self.classification:
+            self.label_list = F.one_hot(torch.tensor(self.label_list, dtype=torch.float32))
 
         return
 

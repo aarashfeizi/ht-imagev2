@@ -9,7 +9,7 @@ import losses
 import optimizers
 import utils
 from SummaryWriter import SummaryWriter
-from metrics import Metric_Accuracy
+from metrics import Metric_Accuracy, Classification_Accuracy
 
 import wandb
 
@@ -20,7 +20,7 @@ class Trainer:
     """
 
     def __init__(self, args, loss, train_loader, val_loaders,
-                 val_db_loaders, optimizer='adam', current_epoch=0, force_new_dir=True):
+                 val_db_loaders, optimizer='adam', current_epoch=0, force_new_dir=True, early_stopping_metric='rat1'):
         self.batch_size = args.get('batch_size')
         self.emb_size = args.get('emb_size')
         self.args = args
@@ -35,9 +35,16 @@ class Trainer:
         self.var_loss_coefficient = args.get('var_coef')
         self.swap_loss_coefficient = args.get('swap_coef')
         self.early_stopping_tol = args.get('early_stopping_tol')
-        self.early_stopping_counter = 0
+        self.early_stopping_counter = {'auc': 0,
+                                        'rat1': 0,
+                                        'class_acc': 0}
+        self.early_stopping_metric = early_stopping_metric
+        self.val_classification_loader = None
+        self.classification = False
+        self.fine_tune = not args.get('freeze_backbone')
         self.aug_swap = args.get('aug_swap') > 1
         self.pytorch_bce_with_logits = torch.nn.BCEWithLogitsLoss()
+        self.cross_entropy = torch.nn.CrossEntropyLoss()
 
         if args.get('cov'):
             self.cov_loss = losses.covariance.COV_Loss(self.emb_size, static_mean=args.get('cov_static_mean'))
@@ -109,56 +116,66 @@ class Trainer:
     def set_val_db_loader(self, val_db_loader):
         self.val_db_loaders_dict = val_db_loader
 
+    def set_val_classification_loader(self, val_classification_loader):
+        self.classification = True
+        self.early_stopping_metric = 'class_acc'
+        self.val_classification_loader = val_classification_loader
+
     def __set_optimizer(self, net):
 
         if type(net) == torch.nn.DataParallel:
             netmod = net.module
         else:
             netmod = net
-
-        if self.args.get('backbone') == 'resnet50':
-            learnable_params = [{'params': netmod.encoder.rest.parameters(),
-                                 'lr': self.args.get('learning_rate'),
-                                 'weight_decay': self.args.get('weight_decay'),
-                                 'new': False}]
-
-            if netmod.encoder.last_conv is not None:
-                learnable_params += [{'params': netmod.encoder.last_conv.parameters(),
-                                      'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
-                                      'weight_decay': self.args.get('weight_decay'),
-                                      'new': True}]
-
-            if netmod.final_projector is not None:
-                learnable_params += [{'params': netmod.final_projector.parameters(),
-                                      'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
-                                      'weight_decay': self.args.get('weight_decay'),
-                                      'new': True}]
-
-            if len(netmod.projs) != 0:
-                for p in netmod.projs:
-                    learnable_params += [{'params': p.parameters(),
-                                          'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
-                                          'weight_decay': self.args.get('weight_decay'),
-                                          'new': True}]
-            if len(netmod.attQs) != 0:
-                for p in netmod.attQs:
-                    if p is not None:
-                        learnable_params += [{'params': p.parameters(),
-                                              'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
-                                              'weight_decay': self.args.get('weight_decay'),
-                                              'new': True}]
-            if len(netmod.atts) != 0:
-                for p in netmod.atts:
-                    if p is not None:
-                        learnable_params += [{'params': p.parameters(),
-                                              'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
-                                              'weight_decay': self.args.get('weight_decay'),
-                                              'new': True}]
-        else:
+        if self.args.get('train_classification'):
             learnable_params = [{'params': netmod.parameters(),
-                                 'lr': self.args.get('learning_rate'),
-                                 'weight_decay': self.args.get('weight_decay'),
-                                 'new': False}]
+                    'lr': self.args.get('learning_rate'),
+                    'weight_decay': self.args.get('weight_decay'),
+                    'new': True}]
+        else:
+            if self.args.get('backbone') == 'resnet50':
+                learnable_params = [{'params': netmod.encoder.rest.parameters(),
+                                    'lr': self.args.get('learning_rate'),
+                                    'weight_decay': self.args.get('weight_decay'),
+                                    'new': False}]
+
+                if netmod.encoder.last_conv is not None:
+                    learnable_params += [{'params': netmod.encoder.last_conv.parameters(),
+                                        'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
+                                        'weight_decay': self.args.get('weight_decay'),
+                                        'new': True}]
+
+                if netmod.final_projector is not None:
+                    learnable_params += [{'params': netmod.final_projector.parameters(),
+                                        'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
+                                        'weight_decay': self.args.get('weight_decay'),
+                                        'new': True}]
+
+                if len(netmod.projs) != 0:
+                    for p in netmod.projs:
+                        learnable_params += [{'params': p.parameters(),
+                                            'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
+                                            'weight_decay': self.args.get('weight_decay'),
+                                            'new': True}]
+                if len(netmod.attQs) != 0:
+                    for p in netmod.attQs:
+                        if p is not None:
+                            learnable_params += [{'params': p.parameters(),
+                                                'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
+                                                'weight_decay': self.args.get('weight_decay'),
+                                                'new': True}]
+                if len(netmod.atts) != 0:
+                    for p in netmod.atts:
+                        if p is not None:
+                            learnable_params += [{'params': p.parameters(),
+                                                'lr': self.args.get('learning_rate') * self.args.get('new_lr_coef'),
+                                                'weight_decay': self.args.get('weight_decay'),
+                                                'new': True}]
+            else:
+                learnable_params = [{'params': netmod.parameters(),
+                                    'lr': self.args.get('learning_rate'),
+                                    'weight_decay': self.args.get('weight_decay'),
+                                    'new': False}]
 
         learnable_params += [{'params': self.loss_function.parameters(),
                               'lr': self.args.get('LOSS_lr'),
@@ -369,7 +386,88 @@ class Trainer:
 
         return epoch_losses, acc.get_acc()
 
-    def validate(self, net, val_name, val_loader):
+    
+    def __train_classifier_one_epoch(self, net): # for the classification task on SSL backbones
+        net.train()
+
+        epoch_losses = None
+
+        epoch_loss = 0
+
+        acc = Classification_Accuracy()
+        swap_lbls = None
+
+        with tqdm(total=len(self.train_loader), desc=f'{self.current_epoch}/{self.epochs}') as t:
+            for batch_id, batch in enumerate(self.train_loader, 1):
+                if self.aug_swap:
+                    (imgs, lbls, swap_lbls) = batch
+                else:
+                    (imgs, lbls) = batch
+
+                if self.cuda:
+                    imgs = imgs.cuda()
+                    lbls = lbls.cuda()
+                    if self.aug_swap:
+                        swap_lbls = swap_lbls.cuda()
+
+                if self.optimizer_name == 'adam':
+                    utils.enable_running_stats(net)
+
+                preds = net(imgs)
+
+                loss = self.cross_entropy(preds, lbls)
+                preds_lbls = preds.argmax(axis=1)
+                lbls_classes = lbls.argmax(axis=1)
+
+                if torch.isnan(loss):
+                    raise Exception(f'Loss became NaN on iteration {batch_id} of epoch {self.current_epoch}! :(')
+
+                loss_items = {'CE': loss.item()}
+
+
+                acc.update_acc(preds_lbls.flatten(), lbls_classes.flatten())
+
+                epoch_loss += loss.item()
+
+                if epoch_losses is None:
+                    epoch_losses = loss_items
+                else:
+                    for k, v in loss_items.items():
+                        epoch_losses[k] += v
+
+                if self.optimizer_name != 'sam':
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
+                else:
+                    loss.backward()
+                    self.optimizer.first_step(zero_grad=True)
+
+                    # second forward-backward step
+                    utils.disable_running_stats(net)
+
+                    img_embeddings_sam, _ = net(imgs)
+                    preds_sam, _ = utils.get_preds(img_embeddings_sam)
+
+                    loss_sam, _ = self.get_loss_value(img_embeddings_sam, preds_sam, lbls)
+
+                    loss_sam.backward()
+                    self.optimizer.second_step(zero_grad=True)
+
+                postfixes = {f'train_CE': f'{epoch_loss / (batch_id) :.4f}',
+                             'train_acc': f'{acc.get_acc():.4f}'}
+                t.set_postfix(**postfixes)
+
+                t.update()
+
+        if self.cov_loss and self.cov_loss.static_mean:
+            self.cov_loss.reset_means()
+
+        return epoch_losses, acc.get_acc()
+
+  
+
+    def validate(self, net, val_name, val_loader, only_emb=False):
         if self.val_loaders_dict is None:
             raise Exception('val_loader is not set in trainer!')
         net.eval()
@@ -388,7 +486,11 @@ class Trainer:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
 
-                img_embeddings, swap_preds = net(imgs)
+                if only_emb:
+                    img_embeddings = net(imgs)
+                    swap_preds = None
+                else:
+                    img_embeddings, swap_preds = net(imgs)
                 preds, similarities = utils.get_preds(img_embeddings)
                 bce_labels = utils.make_batch_bce_labels(lbls)
                 if swap_preds is not None:
@@ -427,6 +529,56 @@ class Trainer:
         auroc_score = roc_auc_score(true_links, predicted_links)
 
         return val_losses, acc.get_acc(), auroc_score
+
+    def validate_cls(self, net):
+        if self.val_classification_loader is None:
+            raise Exception('val_classification_loader is not set in trainer!')
+        net.eval()
+
+        val_losses = None
+        val_loss = 0
+
+        acc = Classification_Accuracy()
+
+        predicted_links = []
+        true_links = []
+
+        with tqdm(total=len(self.val_classification_loader), desc=f'{self.current_epoch} validating for classification...') as t:
+            for batch_id, (imgs, lbls) in enumerate(self.val_classification_loader, 1):
+                if self.cuda:
+                    imgs = imgs.cuda()
+                    lbls = lbls.cuda()
+
+                preds = net(imgs)
+
+                loss = self.cross_entropy(preds, lbls)
+
+                loss_items = {'val1_CE_loss': loss.item()}
+
+                if val_losses is None:
+                    val_losses = loss_items
+                else:
+                    for k, v in loss_items.items():
+                        val_losses[k] += v
+
+                class_preds = preds.argmax(axis=1)
+                class_lbls = lbls.argmax(axis=1)
+
+                acc.update_acc(class_preds.flatten(), class_lbls.flatten())
+
+                val_loss += loss.item()
+
+                postfixes = {f'val1_CE_loss': f'{val_loss / (batch_id) :.4f}',
+                             f'val1_acc': f'{acc.get_acc():.4f}'}
+                t.set_postfix(**postfixes)
+
+                t.update()
+
+        # if self.cov_loss and self.cov_loss.static_mean:
+        #     self.cov_loss.reset_means()
+
+
+        return val_losses, acc.get_acc()  
 
     def get_loss_value(self, embeddings, binary_predictions, lbls, swap_predictions=None, swap_lbls=None, train=True):
         each_loss_item = {}
@@ -503,6 +655,7 @@ class Trainer:
 
         best_val_Rat1 = -1
         best_val_auroc_score = -1
+        best_vals_class_ACC = -1
         val_auroc_score = 0
         val_acc = 0
 
@@ -511,50 +664,60 @@ class Trainer:
             total_vals_Rat1 = 0.0
             total_vals_auroc = 0.0
             with torch.no_grad():
+                if not self.classification or (self.classification and self.fine_tune):
+                    for val_name, val_loader in self.val_loaders_dict.items():
+                        if val_loader is None:
+                            continue
+                        capitalized_val_name = val_name[0].upper() + val_name[1:]
 
-                for val_name, val_loader in self.val_loaders_dict.items():
-                    if val_loader is None:
-                        continue
-                    capitalized_val_name = val_name[0].upper() + val_name[1:]
+                        if self.val_classification_loader is None:
+                            val_losses, val_acc, val_auroc_score = self.validate(net, capitalized_val_name, val_loader)
+                        else:
+                            val_losses, val_acc, val_auroc_score = self.validate(net.encoder, capitalized_val_name, val_loader)
 
-                    val_losses, val_acc, val_auroc_score = self.validate(net, capitalized_val_name, val_loader)
+                        embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
 
-                    embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
+                        p_labels = None
+                        if val_loader.dataset.sample_pairwise:
+                            p_labels = self.val_pairwise_lbls_dict.get(val_name, None)
 
-                    p_labels = None
-                    if val_loader.dataset.sample_pairwise:
-                        p_labels = self.val_pairwise_lbls_dict.get(val_name, None)
+                        r_at_k_score = utils.get_recall_at_k(embeddings, classes,
+                                                            metric='cosine',
+                                                            sim_matrix=None,
+                                                            pairwise_labels=p_labels)
 
-                    r_at_k_score = utils.get_recall_at_k(embeddings, classes,
-                                                         metric='cosine',
-                                                         sim_matrix=None,
-                                                         pairwise_labels=p_labels)
+                        all_val_losses = {lss_name: (lss / len(val_loader)) for lss_name, lss in val_losses.items()}
 
-                    all_val_losses = {lss_name: (lss / len(val_loader)) for lss_name, lss in val_losses.items()}
+                        print(f'VALIDATION on {capitalized_val_name} {self.current_epoch}-> val_loss: ', all_val_losses,
+                            f', val_acc: ', val_acc,
+                            f', val_auroc: ', val_auroc_score,
+                            f', val_R@K: ', r_at_k_score)
 
-                    print(f'VALIDATION on {capitalized_val_name} {self.current_epoch}-> val_loss: ', all_val_losses,
-                          f', val_acc: ', val_acc,
-                          f', val_auroc: ', val_auroc_score,
-                          f', val_R@K: ', r_at_k_score)
+                        list_for_tb = [(f'{capitalized_val_name}/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss
+                                    in
+                                    val_losses.items()]
+                        list_for_tb.append((f'{capitalized_val_name}/AUROC', val_auroc_score))
+                        list_for_tb.append((f'{capitalized_val_name}/Accuracy', val_acc))
+                        r_at_k_values = []
+                        for k, v in r_at_k_score.items():
+                            r_at_k_values.append(v)
+                            list_for_tb.append((f'{capitalized_val_name}/{k}', v))
 
-                    list_for_tb = [(f'{capitalized_val_name}/{lss_name}_Loss', lss / len(val_loader)) for lss_name, lss
-                                   in
-                                   val_losses.items()]
-                    list_for_tb.append((f'{capitalized_val_name}/AUROC', val_auroc_score))
-                    list_for_tb.append((f'{capitalized_val_name}/Accuracy', val_acc))
-                    r_at_k_values = []
-                    for k, v in r_at_k_score.items():
-                        r_at_k_values.append(v)
-                        list_for_tb.append((f'{capitalized_val_name}/{k}', v))
+                        total_vals_Rat1 += r_at_k_values[0]
+                        total_vals_auroc += val_auroc_score
 
-                    total_vals_Rat1 += r_at_k_values[0]
-                    total_vals_auroc += val_auroc_score
+                        # self.__tb_update_value(list_for_tb)
+                        utils.wandb_update_value(list_for_tb)
 
-                    # self.__tb_update_value(list_for_tb)
+                    # if self.heatmap2x:
+                    #     self.draw_heatmaps2x(net)
+
+                list_for_tb = []
+                if self.classification:
+                    val_cls_losses, val_cls_acc = self.validate_cls(net)
+                    list_for_tb.append((f'Val1/CE_loss', val_cls_losses['val1_CE_loss']))
+                    list_for_tb.append((f'Val1/Class_Acc', val_cls_acc))
                     utils.wandb_update_value(list_for_tb)
-
-                # if self.heatmap2x:
-                #     self.draw_heatmaps2x(net)
 
                 if self.heatmap2x:
                     self.draw_heatmaps2x(net)
@@ -579,6 +742,14 @@ class Trainer:
                     utils.save_model(net, self.current_epoch, 'recall', self.save_path)
                 else:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            if self.classification:
+                if val_cls_acc > best_vals_class_ACC:
+                    # best_val_acc = val_acc
+                    best_vals_class_ACC = val_cls_acc
+                    if self.args.get('save_model'):
+                        utils.save_model(net, self.current_epoch, 'classification', self.save_path)
+                    else:
+                        print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
             utils.wandb_log()
 
@@ -595,7 +766,10 @@ class Trainer:
 
             self.current_epoch = epoch
 
-            epoch_losses, epoch_acc = self.__train_one_epoch(net)
+            if self.classification:
+                epoch_losses, epoch_acc = self.__train_classifier_one_epoch(net)
+            else:
+                epoch_losses, epoch_acc = self.__train_one_epoch(net)
 
             all_losses = {lss_name: (lss / len(self.train_loader)) for lss_name, lss in epoch_losses.items()}
 
@@ -613,49 +787,55 @@ class Trainer:
             total_vals_auroc = 0.0
             if val:
                 with torch.no_grad():
+                    if not self.classification or (self.classification and self.fine_tune):
+                        for val_name, val_loader in self.val_loaders_dict.items():
+                            if val_loader is None:
+                                continue
+                            capitalized_val_name = val_name[0].upper() + val_name[1:]
+                            val_losses, val_acc, val_auroc_score = self.validate(net, capitalized_val_name, val_loader)
 
-                    for val_name, val_loader in self.val_loaders_dict.items():
-                        if val_loader is None:
-                            continue
-                        capitalized_val_name = val_name[0].upper() + val_name[1:]
-                        val_losses, val_acc, val_auroc_score = self.validate(net, capitalized_val_name, val_loader)
+                            embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
 
-                        embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
+                            r_at_k_score = utils.get_recall_at_k(embeddings, classes,
+                                                                metric='cosine',
+                                                                sim_matrix=None)
 
-                        r_at_k_score = utils.get_recall_at_k(embeddings, classes,
-                                                             metric='cosine',
-                                                             sim_matrix=None)
+                            # r_at_k_score.to_csv(
+                            #     os.path.join(self.save_path, f'{self.args.get("dataset")}_{mode}_per_class_total_avg_k@n.csv'),
+                            #     header=True,
+                            #     index=False)
 
-                        # r_at_k_score.to_csv(
-                        #     os.path.join(self.save_path, f'{self.args.get("dataset")}_{mode}_per_class_total_avg_k@n.csv'),
-                        #     header=True,
-                        #     index=False)
+                            all_val_losses = {lss_name: (lss / len(val_loader)) for lss_name, lss in val_losses.items()}
 
-                        all_val_losses = {lss_name: (lss / len(val_loader)) for lss_name, lss in val_losses.items()}
+                            print(
+                                f'VALIDATION on {capitalized_val_name} {self.current_epoch}-> {capitalized_val_name}_loss: ',
+                                all_val_losses,
+                                f', {capitalized_val_name}_acc: ', val_acc,
+                                f', {capitalized_val_name}_auroc: ', val_auroc_score,
+                                f', {capitalized_val_name}_R@K: ', r_at_k_score)
 
-                        print(
-                            f'VALIDATION on {capitalized_val_name} {self.current_epoch}-> {capitalized_val_name}_loss: ',
-                            all_val_losses,
-                            f', {capitalized_val_name}_acc: ', val_acc,
-                            f', {capitalized_val_name}_auroc: ', val_auroc_score,
-                            f', {capitalized_val_name}_R@K: ', r_at_k_score)
+                            list_for_tb = [(f'{capitalized_val_name}/{lss_name}_Loss', lss / len(val_loader)) for
+                                        lss_name, lss in
+                                        val_losses.items()]
+                            list_for_tb.append((f'{capitalized_val_name}/AUROC', val_auroc_score))
+                            list_for_tb.append((f'{capitalized_val_name}/Accuracy', val_acc))
+                            r_at_k_values = []
+                            for k, v in r_at_k_score.items():
+                                r_at_k_values.append(v)
+                                list_for_tb.append((f'{capitalized_val_name}/{k}', v))
 
-                        list_for_tb = [(f'{capitalized_val_name}/{lss_name}_Loss', lss / len(val_loader)) for
-                                       lss_name, lss in
-                                       val_losses.items()]
-                        list_for_tb.append((f'{capitalized_val_name}/AUROC', val_auroc_score))
-                        list_for_tb.append((f'{capitalized_val_name}/Accuracy', val_acc))
-                        r_at_k_values = []
-                        for k, v in r_at_k_score.items():
-                            r_at_k_values.append(v)
-                            list_for_tb.append((f'{capitalized_val_name}/{k}', v))
+                            total_vals_Rat1 += r_at_k_values[0]
+                            total_vals_auroc += val_auroc_score
 
-                        total_vals_Rat1 += r_at_k_values[0]
-                        total_vals_auroc += val_auroc_score
+                            # self.__tb_update_value(list_for_tb)
+                            utils.wandb_update_value(list_for_tb)
 
-                        # self.__tb_update_value(list_for_tb)
-                        utils.wandb_update_value(list_for_tb)
-
+                list_for_tb = []
+                if self.classification:
+                    val_cls_losses, val_cls_acc = self.validate_cls(net)
+                    list_for_tb.append((f'Val1/CE_loss', val_cls_losses['val1_CE_loss']))
+                    list_for_tb.append((f'Val1/Class_Acc', val_cls_acc))
+                    utils.wandb_update_value(list_for_tb)
                     if self.heatmap:
                         self.draw_heatmaps(net)
 
@@ -669,23 +849,42 @@ class Trainer:
                     (not val and epoch == max_epochs - 1):
                 # best_val_acc = val_acc
                 best_val_auroc_score = total_vals_auroc
+                self.early_stopping_counter['auc'] = 0
                 if self.args.get('save_model'):
                     utils.save_model(net, self.current_epoch, 'auc', self.save_path)
                 else:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            else:
+                if self.early_stopping_tol > 0:
+                    self.early_stopping_counter['auc'] += 1
 
             if (val and total_vals_Rat1 >= best_val_Rat1) or \
                     (not val and epoch == max_epochs - 1):
                 # best_val_acc = val_acc
                 best_val_Rat1 = total_vals_Rat1
-                self.early_stopping_counter = 0
+                self.early_stopping_counter['rat1'] = 0
                 if self.args.get('save_model'):
                     utils.save_model(net, self.current_epoch, 'recall', self.save_path)
                 else:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             else:
                 if self.early_stopping_tol > 0:
-                    self.early_stopping_counter += 1
+                    self.early_stopping_counter['rat1'] += 1
+
+
+            if self.classification:
+                if (val and val_cls_acc >= best_vals_class_ACC) or \
+                    (not val and epoch == max_epochs - 1):
+                    # best_val_acc = val_acc
+                    best_vals_class_ACC = val_cls_acc
+                    self.early_stopping_counter['class_acc'] = 0
+                    if self.args.get('save_model'):
+                        utils.save_model(net, self.current_epoch, 'classification', self.save_path)
+                    else:
+                        print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                else:
+                    if self.early_stopping_tol > 0:
+                        self.early_stopping_counter['class_acc'] += 1
 
             utils.wandb_log()
 
@@ -704,8 +903,8 @@ class Trainer:
                 self.train_loader = train_loader
 
             if self.early_stopping_tol > 0 and \
-                    self.early_stopping_counter > self.early_stopping_tol:
-                print(f'Early stoppping! {self.early_stopping_counter} epochs without r@1 improvement')
+                    self.early_stopping_counter[self.early_stopping_metric] > self.early_stopping_tol:
+                print(f'Early stoppping! {self.early_stopping_metric} has gone {self.early_stopping_counter[self.early_stopping_metric]} epochs without improvement')
                 break
             # if self.scheduler:
             #     self.scheduler.step()
