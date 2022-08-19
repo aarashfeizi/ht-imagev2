@@ -1,3 +1,4 @@
+import imp
 import os
 import re
 
@@ -7,6 +8,8 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data.dataset import Dataset
 from torchvision import transforms
+
+from sklearn.preprocessing import OneHotEncoder as OHE
 
 import utils
 
@@ -71,7 +74,8 @@ class BaseDataset(Dataset):
         self.labels = list(self.data_dict.keys())
 
         if self.classification and self.onehotencoder is None:
-            self.label_list = F.one_hot(torch.tensor(self.label_list, dtype=torch.int64))
+            self.onehotencoder = OHE()
+            self.label_list = self.onehotencoder.fit_transform(torch.tensor(self.label_list).reshape(-1, 1))
         else:
             print('OHE was set!!')
             self.label_list = self.onehotencoder.transform(np.array(self.label_list).reshape(-1, 1))
@@ -97,7 +101,7 @@ class BaseDataset(Dataset):
 
         for i, label in enumerate(self.label_list):
             data_dict[label].append(i)
-            
+
         self.data_dict = data_dict
         return data_dict
 
