@@ -622,7 +622,10 @@ class Trainer:
             if self.cuda:
                 imgs = imgs.cuda()
 
-            img_embeddings, _ = net(imgs)
+            if self.classification:
+                img_embeddings = net.encoder(imgs)
+            else:
+                img_embeddings, _ = net(imgs)
 
             if len(img_embeddings.shape) == 3:
                 img_embeddings = utils.get_diag_3d_tensor(img_embeddings)
