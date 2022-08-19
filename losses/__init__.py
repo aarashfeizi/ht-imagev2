@@ -1,7 +1,9 @@
 import pytorch_metric_learning.losses as pml_losses
 
 from losses import linkprediction, proxynca, triplet
+from ..utils import torch_get_cov
 from . import covariance
+import torch.nn as nn
 
 LOSSES = {
     'pnpp': proxynca.ProxyNCA_prob,
@@ -17,7 +19,8 @@ LOSSES = {
     'supcon': pml_losses.SupConLoss, # temperature=0.1
     'multisim': pml_losses.MultiSimilarityLoss, # alpha=2, beta=50, base=0.5
     'lifted': pml_losses.LiftedStructureLoss, # neg_margin=1, pos_margin=0,
-    'softtriple': pml_losses.SoftTripleLoss # num_classes, embedding_size, centers_per_class=10, la=20, gamma=0.1, margin=0.01
+    'softtriple': pml_losses.SoftTripleLoss, # num_classes, embedding_size, centers_per_class=10, la=20, gamma=0.1, margin=0.01
+    'CE': nn.CrossEntropyLoss
 }
 
 IMPLEMENTED_LOSSES = ['pnpp', 'bce', 'hardbce'] # 'trpl'
@@ -79,6 +82,8 @@ def get_loss(args):
                     la=args.get('SOFTTRPL_lambda'),
                     gamma=args.get('SOFTTRPL_gamma'),
                     margin=args.get('LOSS_margin'))
+    elif loss_name == 'CE':
+        input_kwargs = get_inputs()
 
     if input_kwargs is None:
         raise Exception('Loss no supported on losses/__init__.py')

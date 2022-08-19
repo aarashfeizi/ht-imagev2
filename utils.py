@@ -320,13 +320,15 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
                                         k_dec_freq=args.get('k_dec_freq'),
                                         use_pairwise_label=pairwise_labels,
                                         **kwargs)
-        batch_size = None
+        shuffle = False
+        kargs = {}
     else:
         sampler = None
-        batch_size = args.get('batch_size')
+        shuffle = True
+        kargs = {'batch_size': args.get('batch_size')}
 
-    dataloader = DataLoader(dataset=dataset, shuffle=False, num_workers=args.get('workers'), batch_sampler=sampler, batch_size=batch_size,
-                            pin_memory=args.get('pin_memory'), worker_init_fn=seed_worker)
+    dataloader = DataLoader(dataset=dataset, shuffle=shuffle, num_workers=args.get('workers'), batch_sampler=sampler,
+                            pin_memory=args.get('pin_memory'), worker_init_fn=seed_worker, **kargs)
 
     return dataloader
 
