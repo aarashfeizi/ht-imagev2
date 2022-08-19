@@ -76,7 +76,7 @@ class BaseDataset(Dataset):
         if self.classification and self.onehotencoder is None:
             self.onehotencoder = OHE()
             self.label_list = self.onehotencoder.fit_transform(torch.tensor(self.label_list).reshape(-1, 1))
-        else:
+        elif self.classification:
             print('OHE was set!!')
             self.label_list = self.onehotencoder.transform(np.array(self.label_list).reshape(-1, 1))
 
