@@ -12,6 +12,7 @@ class SSL_MODEL(nn.Module):
     def __init__(self, backbone, emb_size, num_classes, freeze_backbone=False):
         super(SSL_MODEL, self).__init__()
         self.encoder = backbone
+        self.encoder.fc = nn.Identity()
         self.emb_size = emb_size
 
         if freeze_backbone:            
