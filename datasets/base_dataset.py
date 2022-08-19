@@ -99,7 +99,10 @@ class BaseDataset(Dataset):
     def __getitem__(self, idx):
         swap_label = 0.0
         img_path = os.path.join(self.root, self.path_list[idx])
-        lbl = torch.tensor(self.label_list[idx], dtype=torch.float32)
+        if type(self.label_list[idx]) is not torch.Tensor:
+            lbl = torch.tensor(self.label_list[idx], dtype=torch.float32)
+        else:
+            lbl = self.label_list[idx]
 
         img = utils.open_img(img_path)
 
