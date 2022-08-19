@@ -673,7 +673,7 @@ class Trainer:
                         if self.val_classification_loader is None:
                             val_losses, val_acc, val_auroc_score = self.validate(net, capitalized_val_name, val_loader)
                         else:
-                            val_losses, val_acc, val_auroc_score = self.validate(net.encoder, capitalized_val_name, val_loader)
+                            val_losses, val_acc, val_auroc_score = self.validate(net.encoder, capitalized_val_name, val_loader, only_emb=True)
 
                         embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
 
@@ -792,7 +792,12 @@ class Trainer:
                             if val_loader is None:
                                 continue
                             capitalized_val_name = val_name[0].upper() + val_name[1:]
-                            val_losses, val_acc, val_auroc_score = self.validate(net, capitalized_val_name, val_loader)
+
+                            if self.val_classification_loader is None:
+                                val_losses, val_acc, val_auroc_score = self.validate(net, capitalized_val_name, val_loader)
+                            else:
+                                val_losses, val_acc, val_auroc_score = self.validate(net.encoder, capitalized_val_name, val_loader, only_emb=True)
+
 
                             embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
 
