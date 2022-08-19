@@ -487,7 +487,7 @@ class Trainer:
                     loss, loss_items = self.get_loss_value(img_embeddings, preds, lbls, swap_predictions=swap_preds, swap_lbls=all_zeros_lbls, train=False)
                 else:
                     loss = None
-                    loss_items = None
+                    loss_items = {}
 
                 if val_losses is None:
                     val_losses = loss_items
