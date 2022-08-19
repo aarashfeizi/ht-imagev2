@@ -48,6 +48,7 @@ class BaseDataset(Dataset):
         return self.onehotencoder
     
     def set_lbl2idx(self, new_lbl2idx, ohe=None):
+        self.make_data_dict()
         self.set_onehotencoder(ohe)
         self.lbl2idx = new_lbl2idx
         self.rename_labels()
