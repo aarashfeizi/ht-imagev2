@@ -1,7 +1,6 @@
 import pytorch_metric_learning.losses as pml_losses
 
 from losses import linkprediction, proxynca, triplet
-from ..utils import torch_get_cov
 from . import covariance
 import torch.nn as nn
 
