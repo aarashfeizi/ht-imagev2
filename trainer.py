@@ -435,25 +435,11 @@ class Trainer:
                     for k, v in loss_items.items():
                         epoch_losses[k] += v
 
-                if self.optimizer_name != 'sam':
-                    self.optimizer.zero_grad()
-                    loss.backward()
-                    self.optimizer.step()
-                else:
-                    loss.backward()
-                    self.optimizer.first_step(zero_grad=True)
-
-                    # second forward-backward step
-                    utils.disable_running_stats(net)
-
-                    img_embeddings_sam, _ = net(imgs)
-                    preds_sam, _ = utils.get_preds(img_embeddings_sam)
-
-                    loss_sam, _ = self.get_loss_value(img_embeddings_sam, preds_sam, lbls)
-
-                    loss_sam.backward()
-                    self.optimizer.second_step(zero_grad=True)
-
+                
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+                
                 postfixes = {f'train_CE': f'{epoch_loss / (batch_id) :.4f}',
                              'train_acc': f'{acc.get_acc():.4f}'}
                 t.set_postfix(**postfixes)
@@ -467,7 +453,7 @@ class Trainer:
 
   
 
-    def validate(self, net, val_name, val_loader, only_emb=False):
+    def validate(self, net, val_name, val_loader):
         if self.val_loaders_dict is None:
             raise Exception('val_loader is not set in trainer!')
         net.eval()
@@ -486,7 +472,7 @@ class Trainer:
                     imgs = imgs.cuda()
                     lbls = lbls.cuda()
 
-                if only_emb:
+                if self.classification:
                     img_embeddings = net(imgs)
                     swap_preds = None
                 else:
@@ -497,7 +483,11 @@ class Trainer:
                     all_zeros_lbls = torch.zeros_like(swap_preds)
                 else:
                     all_zeros_lbls = None
-                loss, loss_items = self.get_loss_value(img_embeddings, preds, lbls, swap_predictions=swap_preds, swap_lbls=all_zeros_lbls, train=False)
+                if not self.classification:
+                    loss, loss_items = self.get_loss_value(img_embeddings, preds, lbls, swap_predictions=swap_preds, swap_lbls=all_zeros_lbls, train=False)
+                else:
+                    loss = None
+                    loss_items = None
 
                 if val_losses is None:
                     val_losses = loss_items
@@ -513,11 +503,13 @@ class Trainer:
                 true_links.extend(balanced_bce_labels.numpy())
 
                 acc.update_acc(balanced_preds.flatten(), balanced_bce_labels.flatten(), sigmoid=False)
+                
+                postfixes = {f'{val_name}_acc': f'{acc.get_acc():.4f}'}
+                
+                if not self.classification:
+                    val_loss += loss.item()
+                    postfixes[f'{val_name}_{self.loss_name}'] = f'{val_loss / (batch_id) :.4f}'
 
-                val_loss += loss.item()
-
-                postfixes = {f'{val_name}_{self.loss_name}': f'{val_loss / (batch_id) :.4f}',
-                             f'{val_name}_acc': f'{acc.get_acc():.4f}'}
                 t.set_postfix(**postfixes)
 
                 t.update()
@@ -582,7 +574,9 @@ class Trainer:
 
     def get_loss_value(self, embeddings, binary_predictions, lbls, swap_predictions=None, swap_lbls=None, train=True):
         each_loss_item = {}
-        if self.loss_name == 'bce' or self.loss_name == 'hardbce':
+        if self.loss_name == 'CE':
+            return None, {}
+        elif self.loss_name == 'bce' or self.loss_name == 'hardbce':
             loss = self.loss_function(embeddings, lbls, output_pred=binary_predictions, train=train)
         else:
             loss = self.loss_function(embeddings, lbls.type(torch.int64))
@@ -673,7 +667,7 @@ class Trainer:
                         if self.val_classification_loader is None:
                             val_losses, val_acc, val_auroc_score = self.validate(net, capitalized_val_name, val_loader)
                         else:
-                            val_losses, val_acc, val_auroc_score = self.validate(net.encoder, capitalized_val_name, val_loader, only_emb=True)
+                            val_losses, val_acc, val_auroc_score = self.validate(net.encoder, capitalized_val_name, val_loader)
 
                         embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
 
@@ -796,7 +790,7 @@ class Trainer:
                             if self.val_classification_loader is None:
                                 val_losses, val_acc, val_auroc_score = self.validate(net, capitalized_val_name, val_loader)
                             else:
-                                val_losses, val_acc, val_auroc_score = self.validate(net.encoder, capitalized_val_name, val_loader, only_emb=True)
+                                val_losses, val_acc, val_auroc_score = self.validate(net.encoder, capitalized_val_name, val_loader)
 
 
                             embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
