@@ -77,6 +77,9 @@ def main():
                                   sampler_mode='classification',
                                   pairwise_labels=all_args.get('train_with_pairwise'))
 
+    train_lbl2idx = train_loader.dataset.get_lbl2idx()
+    train_ohe = train_loader.dataset.get_onehotencoder()
+
     # if train_transforms_swap is not None:
     #     train_loader = utils.get_data(all_args, mode='train', transform=train_transforms, sampler_mode='kbatch')
 
@@ -85,7 +88,9 @@ def main():
 
 
     val_classification_loader = utils.get_data(
-        all_args, mode='val', transform=val_transforms, sampler_mode='classification')
+        all_args, mode='val', transform=val_transforms, 
+        sampler_mode='classification', lbl2idx=train_lbl2idx, 
+        onehotencoder=train_ohe)
 
     val_loader = utils.get_data(
         all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet')

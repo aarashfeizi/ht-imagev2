@@ -31,6 +31,7 @@ class BaseDataset(Dataset):
         self.transform = transform
         self.data_dict = self.make_data_dict()
         self.lbl2idx = None
+        self.onehotencoder = None
         self.sample_pairwise = pairwise_labels
         self.labels = list(self.data_dict.keys())
         self.pairwise_labels_path = args.get(f'{mode}_pairwise_label_path')
@@ -39,6 +40,21 @@ class BaseDataset(Dataset):
             assert self.pairwise_labels.shape[0] == len(self.label_list)
         else:
             self.pairwise_labels = None
+    
+    def set_onehotencoder(self, ohe):
+        self.onehotencoder = ohe
+    
+    def get_onehotencoder(self):
+        return self.onehotencoder
+    
+    def set_lbl2idx(self, new_lbl2idx, ohe=None):
+        self.set_onehotencoder(ohe)
+        self.lbl2idx = new_lbl2idx
+        self.rename_labels()
+        return
+    
+    def get_lbl2idx(self):
+        return self.lbl2idx
 
     def rename_labels(self):
         if self.lbl2idx is None:
@@ -52,8 +68,11 @@ class BaseDataset(Dataset):
         self.label_list = [self.lbl2idx[l] for l in self.label_list]
         self.labels = list(self.data_dict.keys())
 
-        if self.classification:
+        if self.classification and self.onehotencoder is None:
             self.label_list = F.one_hot(torch.tensor(self.label_list, dtype=torch.int64))
+        else:
+            print('OHE was set!!')
+            self.label_list = self.onehotencoder.transform(np.array(self.label_list).reshape(-1, 1))
 
         return
 
