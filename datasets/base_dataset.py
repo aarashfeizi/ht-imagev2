@@ -29,7 +29,8 @@ class BaseDataset(Dataset):
         self.path_list = []
         self.label_list = []
         self.transform = transform
-        self.data_dict = self.make_data_dict()
+        self.data_dict = None
+        self.make_data_dict()
         self.lbl2idx = None
         self.onehotencoder = None
         self.sample_pairwise = pairwise_labels
@@ -96,7 +97,8 @@ class BaseDataset(Dataset):
 
         for i, label in enumerate(self.label_list):
             data_dict[label].append(i)
-
+            
+        self.data_dict = data_dict
         return data_dict
 
     def __read_txt(self):
