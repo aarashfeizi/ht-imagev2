@@ -623,7 +623,7 @@ class Trainer:
                 imgs = imgs.cuda()
 
             if self.classification:
-                img_embeddings = net.encoder(imgs)
+                img_embeddings = net.forward_backbone(imgs)
             else:
                 img_embeddings, _ = net(imgs)
 
