@@ -41,7 +41,7 @@ class Trainer:
         self.early_stopping_metric = early_stopping_metric
         self.val_classification_loader = None
         self.classification = False
-        self.fine_tune = not args.get('freeze_backbone')
+        self.fine_tune = args.get('backbone_mode') == 'FT'
         self.aug_swap = args.get('aug_swap') > 1
         self.pytorch_bce_with_logits = torch.nn.BCEWithLogitsLoss()
         self.cross_entropy = torch.nn.CrossEntropyLoss()
@@ -714,8 +714,8 @@ class Trainer:
                 list_for_tb = []
                 if self.classification:
                     val_cls_losses, val_cls_acc = self.validate_cls(net)
-                    list_for_tb.append((f'Val1/CE_loss', val_cls_losses['val1_CE_loss']))
-                    list_for_tb.append((f'Val1/Class_Acc', val_cls_acc))
+                    list_for_tb.append((f'Val/CE_loss', val_cls_losses['val1_CE_loss']))
+                    list_for_tb.append((f'Val/Class_Acc', val_cls_acc))
                     if self.use_wandb:
                         utils.wandb_update_value(list_for_tb)
 
@@ -842,8 +842,8 @@ class Trainer:
                 list_for_tb = []
                 if self.classification:
                     val_cls_losses, val_cls_acc = self.validate_cls(net)
-                    list_for_tb.append((f'Val1/CE_loss', val_cls_losses['val1_CE_loss']))
-                    list_for_tb.append((f'Val1/Class_Acc', val_cls_acc))
+                    list_for_tb.append((f'Val/CE_loss', val_cls_losses['val1_CE_loss']))
+                    list_for_tb.append((f'Val/Class_Acc', val_cls_acc))
                     if self.use_wandb:
                         utils.wandb_update_value(list_for_tb)
                         

@@ -64,7 +64,7 @@ def main():
     net = ssl_model.SSL_MODEL(backbone=encoder,
                                 emb_size=2048,
                                 num_classes=all_args.get('nb_classes'),
-                                freeze_backbone=all_args.get('freeze_backbone'))
+                                freeze_backbone=all_args.get('backbone_mode') == 'LP') # freezes backbone when Linear Probing
 
     print('successfull!')
 
