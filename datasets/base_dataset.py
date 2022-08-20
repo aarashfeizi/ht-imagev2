@@ -73,13 +73,13 @@ class BaseDataset(Dataset):
         self.label_list = [self.lbl2idx[l] for l in self.label_list]
         self.labels = list(self.data_dict.keys())
 
-        if self.classification and self.onehotencoder is None:
-            self.onehotencoder = OHE()
-            self.label_list = torch.tensor(self.onehotencoder.fit_transform(torch.tensor(self.label_list).reshape(-1, 1)).toarray(), dtype=torch.int64)
+        # if self.classification and self.onehotencoder is None:
+        #     self.onehotencoder = OHE()
+        #     self.label_list = torch.tensor(self.onehotencoder.fit_transform(torch.tensor(self.label_list).reshape(-1, 1)).toarray(), dtype=torch.int64)
 
-        elif self.classification:
-            print('OHE was set!!')
-            self.label_list = torch.tensor(self.onehotencoder.transform(np.array(self.label_list).reshape(-1, 1)).toarray(), dtype=torch.int64)
+        # elif self.classification:
+        #     print('OHE was set!!')
+        #     self.label_list = torch.tensor(self.onehotencoder.transform(np.array(self.label_list).reshape(-1, 1)).toarray(), dtype=torch.int64)
 
         return
 
@@ -127,7 +127,7 @@ class BaseDataset(Dataset):
         swap_label = 0.0
         img_path = os.path.join(self.root, self.path_list[idx])
         if type(self.label_list[idx]) is not torch.Tensor:
-            lbl = torch.tensor(self.label_list[idx], dtype=torch.float32)
+            lbl = torch.tensor(self.label_list[idx], dtype=torch.int64)
         else:
             lbl = self.label_list[idx]
 
@@ -136,7 +136,7 @@ class BaseDataset(Dataset):
         if self.swap_prob > 0:
             if self.transform is not None:
                 img, swap_label = self.do_swap_transform(img)
-            swap_label = torch.tensor(swap_label, dtype=torch.float32)
+            swap_label = torch.tensor(swap_label, dtype=torch.int64)
         else:
             if self.transform is not None:
                 img = self.transform(img)
