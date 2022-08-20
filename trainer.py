@@ -69,6 +69,7 @@ class Trainer:
 
         self.val_db_loaders_dict = val_db_loaders
         self.optimizer_name = optimizer
+        self.use_wandb = args.get('wandb')
         self.model_name = utils.get_model_name(self.args)
         self.optimizer = None
         self.tensorboard_path = None
@@ -270,7 +271,8 @@ class Trainer:
             #         name_imgs.extend([(f'img_{name}/{n}', i) for n, i in heatmap.items()])
 
             # self.__tb_draw_img(name_imgs)
-            utils.wandb_update_value(name_imgs)
+            if self.use_wandb:
+                utils.wandb_update_value(name_imgs)
 
     def draw_heatmaps(self, net):
         if self.heatmap_loader is None:
@@ -309,7 +311,8 @@ class Trainer:
                     name_imgs.extend([(f'img_{name}/{n}', i) for n, i in heatmap.items()])
 
             # self.__tb_draw_img(name_imgs)
-            utils.wandb_update_value(name_imgs)
+            if self.use_wandb:
+                utils.wandb_update_value(name_imgs)
 
     def __train_one_epoch(self, net):
         net.train()
@@ -417,7 +420,6 @@ class Trainer:
 
                 loss = self.cross_entropy(preds, lbls)
                 preds_lbls = preds.argmax(axis=1)
-                lbls_classes = lbls.argmax(axis=1)
 
                 if torch.isnan(loss):
                     raise Exception(f'Loss became NaN on iteration {batch_id} of epoch {self.current_epoch}! :(')
@@ -425,7 +427,7 @@ class Trainer:
                 loss_items = {'CE': loss.item()}
 
 
-                acc.update_acc(preds_lbls.flatten(), lbls_classes.flatten())
+                acc.update_acc(preds_lbls.flatten(), lbls.flatten())
 
                 epoch_loss += loss.item()
 
@@ -554,9 +556,8 @@ class Trainer:
                         val_losses[k] += v
 
                 class_preds = preds.argmax(axis=1)
-                class_lbls = lbls.argmax(axis=1)
 
-                acc.update_acc(class_preds.flatten(), class_lbls.flatten())
+                acc.update_acc(class_preds.flatten(), lbls.flatten())
 
                 val_loss += loss.item()
 
@@ -704,7 +705,8 @@ class Trainer:
                         total_vals_auroc += val_auroc_score
 
                         # self.__tb_update_value(list_for_tb)
-                        utils.wandb_update_value(list_for_tb)
+                        if self.use_wandb:
+                            utils.wandb_update_value(list_for_tb)
 
                     # if self.heatmap2x:
                     #     self.draw_heatmaps2x(net)
@@ -714,7 +716,8 @@ class Trainer:
                     val_cls_losses, val_cls_acc = self.validate_cls(net)
                     list_for_tb.append((f'Val1/CE_loss', val_cls_losses['val1_CE_loss']))
                     list_for_tb.append((f'Val1/Class_Acc', val_cls_acc))
-                    utils.wandb_update_value(list_for_tb)
+                    if self.use_wandb:
+                        utils.wandb_update_value(list_for_tb)
 
                 if self.heatmap2x:
                     self.draw_heatmaps2x(net)
@@ -748,7 +751,8 @@ class Trainer:
                     else:
                         print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
-            utils.wandb_log()
+            if self.use_wandb:
+                utils.wandb_log()
 
         if self.epochs == 0:
             assert self.early_stopping_tol > 0
@@ -756,8 +760,9 @@ class Trainer:
         else:
             max_epochs = self.epochs + 1
 
-        wandb.watch(net)
-        wandb.watch(self.loss_function)
+        if self.use_wandb:
+            wandb.watch(net)
+            wandb.watch(self.loss_function)
 
         for epoch in range(starting_epoch, max_epochs):
 
@@ -778,7 +783,8 @@ class Trainer:
             update_tb_losses.append(('Train/Accuracy', epoch_acc))
 
             # self.__tb_update_value(update_tb_losses)
-            utils.wandb_update_value(update_tb_losses)
+            if self.use_wandb:
+                utils.wandb_update_value(update_tb_losses)
 
             total_vals_Rat1 = 0.0
             total_vals_auroc = 0.0
@@ -830,14 +836,17 @@ class Trainer:
                             total_vals_auroc += val_auroc_score
 
                             # self.__tb_update_value(list_for_tb)
-                            utils.wandb_update_value(list_for_tb)
+                            if self.use_wandb:
+                                utils.wandb_update_value(list_for_tb)
 
                 list_for_tb = []
                 if self.classification:
                     val_cls_losses, val_cls_acc = self.validate_cls(net)
                     list_for_tb.append((f'Val1/CE_loss', val_cls_losses['val1_CE_loss']))
                     list_for_tb.append((f'Val1/Class_Acc', val_cls_acc))
-                    utils.wandb_update_value(list_for_tb)
+                    if self.use_wandb:
+                        utils.wandb_update_value(list_for_tb)
+                        
                     if self.heatmap:
                         self.draw_heatmaps(net)
 
@@ -888,7 +897,8 @@ class Trainer:
                     if self.early_stopping_tol > 0:
                         self.early_stopping_counter['class_acc'] += 1
 
-            utils.wandb_log()
+            if self.use_wandb:
+                utils.wandb_log()
 
             self.__tb_draw_histograms(net)
 
