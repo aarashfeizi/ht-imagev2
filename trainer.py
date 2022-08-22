@@ -129,10 +129,21 @@ class Trainer:
         else:
             netmod = net
         if self.args.get('loss') == 'CE':
-            learnable_params = [{'params': netmod.parameters(),
+            if self.args.get('backbone_mode') == 'FT':
+                learnable_params = [{'params': netmod.encoder.parameters(),
+                    'lr': self.args.get('learning_rate') / self.args.get('new_lr_coef'),
+                    'weight_decay': self.args.get('weight_decay'),
+                    'new': False}]
+                
+                learnable_params += [{'params': netmod.classifier.parameters(),
                     'lr': self.args.get('learning_rate'),
                     'weight_decay': self.args.get('weight_decay'),
                     'new': True}]
+            else:
+                learnable_params = [{'params': netmod.parameters(),
+                    'lr': self.args.get('learning_rate'),
+                    'weight_decay': self.args.get('weight_decay'),
+                    'new': False}]
         else:
             if self.args.get('backbone') == 'resnet50':
                 learnable_params = [{'params': netmod.encoder.rest.parameters(),
