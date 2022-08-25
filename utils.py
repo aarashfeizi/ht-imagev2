@@ -290,7 +290,7 @@ def open_img(path):
 
 
 def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
-             pairwise_labels=False, lbl2idx=None, onehotencoder=None, **kwargs):  # 'kbatch', 'balanced_triplet', 'db'
+             pairwise_labels=False, lbl2idx=None, onehotencoder=None, ssl=False, **kwargs):  # 'kbatch', 'balanced_triplet', 'db'
     SAMPLERS = {'kbatch': KBatchSampler,
                 'balanced_triplet': BalancedTripletSampler,
                 'hard_triplet': HardTripletSampler,
@@ -312,7 +312,8 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
                                     transform=transform,
                                     for_heatmap=sampler_mode.startswith('heatmap'),
                                     classification=(sampler_mode == 'classification'),
-                                    pairwise_labels=pairwise_labels)
+                                    pairwise_labels=pairwise_labels,
+                                    ssl=ssl)
     if lbl2idx is not None:
         dataset.set_lbl2idx(lbl2idx, onehotencoder)
 

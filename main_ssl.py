@@ -87,7 +87,8 @@ def main():
                                     transform=train_transforms,
                                     #   sampler_mode='kbatch',
                                     sampler_mode=sampler_mode,
-                                    pairwise_labels=all_args.get('train_with_pairwise'))
+                                    pairwise_labels=all_args.get('train_with_pairwise'),
+                                    ssl=all_args.get('ssl'))
     train_lbl2idx = train_loader.dataset.get_lbl2idx()
     train_ohe = train_loader.dataset.get_onehotencoder()
 

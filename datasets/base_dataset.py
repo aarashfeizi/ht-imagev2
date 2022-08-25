@@ -14,13 +14,13 @@ from sklearn.preprocessing import OneHotEncoder as OHE
 import utils
 
 class BaseDataset(Dataset):
-    def __init__(self, args, mode, filename='', transform=None, get_paths=False, pairwise_labels=False, classification=False):
+    def __init__(self, args, mode, filename='', transform=None, get_paths=False, pairwise_labels=False, classification=False, ssl=False):
         if filename == '':
             self.data_file_path = args.get(f'{mode}_file')
         else:
             self.data_file_path = filename
         
-        self.ssl = args.get('ssl')
+        self.ssl = ssl
         self.root = args.get('dataset_path')
         if args.get('aug_swap') > 1 and mode == 'train':
             self.swap_prob = args.get('aug_swap_prob')
