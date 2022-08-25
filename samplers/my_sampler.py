@@ -12,7 +12,7 @@ from samplers import RandomIdentitySampler
 class SSL_Sampler(RandomIdentitySampler):
     def __init__(self, dataset, batch_size, num_instances, k_dec_freq, **kwargs):
         super().__init__(dataset, batch_size, num_instances, k_dec_freq, **kwargs)
-        self.batch_size = (batch_size / 2) # number of individual images
+        self.batch_size = (batch_size // 2) # number of individual images
         self.max_iters = (dataset.__len__() // batch_size)
         self.dataset_size = dataset.__len__()
 
