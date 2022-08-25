@@ -129,7 +129,7 @@ class Trainer:
             netmod = net.module
         else:
             netmod = net
-        if self.args.get('loss') == 'CE':
+        if self.args.get('loss') == 'CE' or self.args.get('ssl'): 
             if self.args.get('backbone_mode') == 'FT':
                 learnable_params = [{'params': netmod.encoder.parameters(),
                     'lr': self.args.get('learning_rate') / self.args.get('new_lr_coef'),
