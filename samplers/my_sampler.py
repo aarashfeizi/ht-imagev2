@@ -9,6 +9,35 @@ import utils
 from samplers import RandomIdentitySampler
 
 
+class SSL_Sampler(RandomIdentitySampler):
+    def __init__(self, dataset, batch_size, num_instances, k_dec_freq, **kwargs):
+        super().__init__(dataset, batch_size, num_instances, k_dec_freq, **kwargs)
+        self.batch_size = (batch_size / 2) # number of individual images
+        self.max_iters = (dataset.__len__() // batch_size)
+        self.dataset_size = dataset.__len__()
+
+    def prepare_batch(self):
+
+        all_idxs = [i for i in range(self.dataset_size)]
+        random.shuffle(all_idxs)
+        batch_idxs_list = []
+        i = 0
+        for i in range(self.max_iters + 1):
+            idx_to_add = all_idxs[i * self.batch_size: (i + 1) * self.batch_size]
+            idx_to_add = list(np.repeat(idx_to_add, 2))
+            if len(idx_to_add) > 0:
+                batch_idxs_list.append(idx_to_add)
+
+        return batch_idxs_list, None
+
+    def __iter__(self):
+        batch_idxs_list, _ = self.prepare_batch()
+        for _ in range(len(batch_idxs_list)):
+            batch = batch_idxs_list.pop(0)
+            yield batch
+
+
+
 class KBatchSampler(RandomIdentitySampler):
 
     def prepare_batch(self):
@@ -180,6 +209,7 @@ class DataBaseSampler(RandomIdentitySampler):
     def __init__(self, dataset, batch_size, num_instances, k_dec_freq, **kwargs):
         super().__init__(dataset, batch_size, num_instances, k_dec_freq, **kwargs)
         self.batch_size = batch_size
+        self.max_iters = (dataset.__len__() // batch_size)
         self.dataset_size = dataset.__len__()
 
     def prepare_batch(self):

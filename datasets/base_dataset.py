@@ -19,7 +19,8 @@ class BaseDataset(Dataset):
             self.data_file_path = args.get(f'{mode}_file')
         else:
             self.data_file_path = filename
-
+        
+        self.ssl = self.args.get('ssl')
         self.root = args.get('dataset_path')
         if args.get('aug_swap') > 1 and mode == 'train':
             self.swap_prob = args.get('aug_swap_prob')
@@ -126,10 +127,13 @@ class BaseDataset(Dataset):
     def __getitem__(self, idx):
         swap_label = 0.0
         img_path = os.path.join(self.root, self.path_list[idx])
-        if type(self.label_list[idx]) is not torch.Tensor:
-            lbl = torch.tensor(self.label_list[idx], dtype=torch.int64)
+        if self.ssl: # only same indicies have same label
+            lbl = idx
         else:
             lbl = self.label_list[idx]
+        
+        if type(lbl) is not torch.Tensor:
+            lbl = torch.tensor(lbl, dtype=torch.int64)
 
         img = utils.open_img(img_path)
 

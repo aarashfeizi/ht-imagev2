@@ -19,7 +19,8 @@ LOSSES = {
     'multisim': pml_losses.MultiSimilarityLoss, # alpha=2, beta=50, base=0.5
     'lifted': pml_losses.LiftedStructureLoss, # neg_margin=1, pos_margin=0,
     'softtriple': pml_losses.SoftTripleLoss, # num_classes, embedding_size, centers_per_class=10, la=20, gamma=0.1, margin=0.01
-    'CE': nn.CrossEntropyLoss
+    'CE': nn.CrossEntropyLoss,
+    'infonce': pml_losses.NTXentLoss
 }
 
 IMPLEMENTED_LOSSES = ['pnpp', 'bce', 'hardbce'] # 'trpl'
@@ -42,6 +43,8 @@ def get_loss(args):
     elif loss_name == 'bce-trpl':
         input_kwargs = get_inputs(args=args,
                                   margin=args.get('LOSS_margin'))
+    elif loss_name == 'infonce':
+        input_kwargs = get_inputs(temperature=args.get('LOSS_temp'))
     elif loss_name == 'supcon':
         input_kwargs = get_inputs(temperature=args.get('LOSS_temp'))
     elif loss_name == 'trpl':

@@ -19,7 +19,22 @@ MODEL_URLS = {'byol': 'https://storage.googleapis.com/deepmind-byol/checkpoints/
                 'vicreg': None,
                 'simclr': 'https://storage.cloud.google.com/simclr-gcs/checkpoints/ResNet50_1x.zip',
                 'swav': None,
-                'barlow': None}
+                'barlow': None,
+                'densecl': 'https://cloudstor.aarnet.edu.au/plus/s/hdAg5RYm8NNM2QP/download',
+                'densecl_CC': 'https://cloudstor.aarnet.edu.au/plus/s/3GapXiWuVAzdKwJ/download'}
+
+def load_state_dict_wo_fc(net, state_dict):
+    for k in list(state_dict.keys()):
+        # retain only encoder up to before the embedding layer
+        if k.startswith('module.encoder') and not k.startswith('module.encoder.fc'):
+            # remove prefix
+            state_dict[k[len("module.encoder."):]] = state_dict[k]
+        # delete renamed or unused k
+        del state_dict[k]
+
+    msg = net.load_state_dict(state_dict, strict=False)
+    assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}
+    return
 
 def save_pretreind_model(net, path):
     torch.save({'model_state_dict': net.state_dict()}, path)
@@ -38,32 +53,19 @@ def download_barlow(net, checkpoint, save_path):
 
 def download_simsiam(net, checkpoint, save_path):
     state_dict = checkpoint['state_dict']
-    for k in list(state_dict.keys()):
-        # retain only encoder up to before the embedding layer
-        if k.startswith('module.encoder') and not k.startswith('module.encoder.fc'):
-            # remove prefix
-            state_dict[k[len("module.encoder."):]] = state_dict[k]
-        # delete renamed or unused k
-        del state_dict[k]
-
-    msg = net.load_state_dict(state_dict, strict=False)
-    assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}
+    load_ssl_weight_to_model(net, state_dict)
     save_pretreind_model(net, save_path)
-
     
 def download_dino(net, checkpoint, save_path):
     state_dict = checkpoint['student']
-    for k in list(state_dict.keys()):
-        # retain only encoder up to before the embedding layer
-        if k.startswith('module.backbone'):
-            # remove prefix
-            state_dict[k[len("module.backbone."):]] = state_dict[k]
-        # delete renamed or unused k
-        del state_dict[k]
-
-    msg = net.load_state_dict(state_dict, strict=False)
-    assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}
+    load_ssl_weight_to_model(net, state_dict)
     save_pretreind_model(net, save_path)
+    
+def download_densecl(net, checkpoint, save_path):
+    state_dict = checkpoint['state_dict']
+    load_ssl_weight_to_model(net, state_dict)
+    save_pretreind_model(net, save_path)
+
 
 # def download_simclr():
 save_ssl_download = {
@@ -72,6 +74,8 @@ save_ssl_download = {
     'vicreg': download_vicreg,
     'simsiam': download_simsiam,
     'barlow': download_barlow,
+    'densecl': download_densecl,
+    'densecl_CC': download_densecl,
 }
 
 
@@ -97,8 +101,8 @@ def load_ssl_weight_to_model(model, method_name, arch_name):
                 downloaded_chkp_path = req.urlretrieve(MODEL_URLS[method_name], f"{arch_name}_{method_name}{suffix}")[0]
                 downloaded_chkp = torch.load(downloaded_chkp_path, map_location='cpu')
                 
-
             save_ssl_download[method_name](model, downloaded_chkp, checkpoint_path)
+            
         return model
     
 def set_net_to_eval(net):

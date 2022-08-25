@@ -41,6 +41,7 @@ class Trainer:
         self.early_stopping_metric = early_stopping_metric
         self.val_classification_loader = None
         self.classification = False
+        self.ssl = args.get('ssl')
         self.fine_tune = args.get('backbone_mode') == 'FT'
         self.aug_swap = args.get('aug_swap') > 1
         self.pytorch_bce_with_logits = torch.nn.BCEWithLogitsLoss()
@@ -351,7 +352,11 @@ class Trainer:
                 if self.optimizer_name == 'adam':
                     utils.enable_running_stats(net)
 
-                img_embeddings, swap_preds = net(imgs)
+                if self.ssl:
+                    img_embeddings = net(imgs)
+                    swap_preds = None
+                else:
+                    img_embeddings, swap_preds = net(imgs)
                 preds, similarities = utils.get_preds(img_embeddings)
                 bce_labels = utils.make_batch_bce_labels(lbls)
 
@@ -486,6 +491,9 @@ class Trainer:
                     lbls = lbls.cuda()
 
                 if self.classification:
+                    img_embeddings = net(imgs)
+                    swap_preds = None
+                elif self.ssl:
                     img_embeddings = net(imgs)
                     swap_preds = None
                 else:
@@ -636,6 +644,8 @@ class Trainer:
 
             if self.classification:
                 img_embeddings = net.forward_backbone(imgs)
+            elif self.ssl:
+                img_embeddings = net(imgs)
             else:
                 img_embeddings, _ = net(imgs)
 

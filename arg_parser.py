@@ -15,7 +15,8 @@ LOSSES_LIST = ['pnpp',
                'multisim',
                'lifted',
                'softtriple',
-               'CE']
+               'CE',
+               'infonce']
 
 BACKBONE_LIST = ['resnet50', 'resnet18', 'deit_small']
 
@@ -67,7 +68,9 @@ SSL_MODELS = ['default',
                 'simclr',
                 'vicreg',
                 'dino',
-                'barlow']
+                'barlow',
+                'densecl',
+                'densecl_CC'] # _CC is pretrained on COCO (as opposed to ImageNet)
 
 eval_dataset_choices = ['cars', 'cub', 'hotels', 'hotels_small', 'hotelid-val', 'hotelid-test']
 eval_BASELINE_MODELS = ['ours',
@@ -309,6 +312,7 @@ def get_args_ssl():
     # learning
     parser.add_argument('--method_name', default='default', choices=SSL_MODELS) # does not support byol and simclr
     parser.add_argument('--backbone_mode', default='LP', choices=['LP', 'FT']) # to 'finetune' or 'linear prob' a backbone
+    parser.add_argument('--ssl', default=False, action='store_true')
     parser.add_argument('--optimizer', default='adam', choices=OPTIMIZER_LIST, help='optimizer to use')
     parser.add_argument('--ckpt_path', default=None, help="path to the checkpoint file")
     parser.add_argument('--learning_rate', type=float, default=0.001)

@@ -1,3 +1,4 @@
+from tkinter import E
 import arg_parser
 import utils
 import ssl_utils
@@ -60,10 +61,14 @@ def main():
                                              method_name=all_args.get(
                                                  'method_name'),
                                              arch_name=all_args.get('backbone'))
-
+    if all_args.get('ssl'):
+        class_num = 0
+    else:
+        class_num = all_args.get('nb_classes')
+    
     net = ssl_model.SSL_MODEL(backbone=encoder,
                                 emb_size=2048,
-                                num_classes=all_args.get('nb_classes'),
+                                num_classes=class_num,
                                 freeze_backbone=all_args.get('backbone_mode') == 'LP') # freezes backbone when Linear Probing
 
     print('successfull!')
@@ -71,12 +76,18 @@ def main():
     print('Train transforms: ', train_transforms_names)
     print('Val transforms: ', val_transforms_names)
 
-    train_loader = utils.get_data(all_args, mode='train',
-                                  transform=train_transforms,
-                                #   sampler_mode='kbatch',
-                                  sampler_mode='classification',
-                                  pairwise_labels=all_args.get('train_with_pairwise'))
+    if all_args.get('loss') == 'CE':
+        sampler_mode = 'classification'
+    elif all_args.get('loss') == 'infonce':
+        sampler_mode = 'ssl'                            
+    else:
+        raise Exception('Loss not supported!!')
 
+    train_loader = utils.get_data(all_args, mode='train',
+                                    transform=train_transforms,
+                                    #   sampler_mode='kbatch',
+                                    sampler_mode=sampler_mode,
+                                    pairwise_labels=all_args.get('train_with_pairwise'))
     train_lbl2idx = train_loader.dataset.get_lbl2idx()
     train_ohe = train_loader.dataset.get_onehotencoder()
 
@@ -86,11 +97,13 @@ def main():
     val2_loader = None
     val2_db_loader = None
 
-
-    val_classification_loader = utils.get_data(
-        all_args, mode='val', transform=val_transforms, 
-        sampler_mode='classification', lbl2idx=train_lbl2idx, 
-        onehotencoder=train_ohe)
+    if sampler_mode == 'classification':
+        val_classification_loader = utils.get_data(
+            all_args, mode='val', transform=val_transforms, 
+            sampler_mode='classification', lbl2idx=train_lbl2idx, 
+            onehotencoder=train_ohe)
+    else:
+        val_classification_loader = None
 
     val_loader = utils.get_data(
         all_args, mode='val', transform=val_transforms, sampler_mode='balanced_triplet')

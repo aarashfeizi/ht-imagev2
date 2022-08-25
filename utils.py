@@ -27,7 +27,7 @@ import metrics
 # from torchvision import transforms
 import transforms
 from samplers.my_sampler import BalancedTripletSampler, KBatchSampler, DataBaseSampler, DrawHeatmapSampler, \
-    HardTripletSampler, Draw2XHeatmapSampler
+    HardTripletSampler, Draw2XHeatmapSampler, SSL_Sampler
 from argparse import Namespace
 
 import wandb
@@ -297,7 +297,8 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
                 'db': DataBaseSampler,
                 'heatmap': DrawHeatmapSampler,
                 'heatmap2x': Draw2XHeatmapSampler,
-                'classification': None}
+                'classification': None,
+                'ssl': SSL_Sampler}
 
     mode_splits = mode.split('_')
     eval_mode = mode_splits[0]
