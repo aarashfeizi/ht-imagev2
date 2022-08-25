@@ -20,7 +20,7 @@ class BaseDataset(Dataset):
         else:
             self.data_file_path = filename
         
-        self.ssl = self.args.get('ssl')
+        self.ssl = args.get('ssl')
         self.root = args.get('dataset_path')
         if args.get('aug_swap') > 1 and mode == 'train':
             self.swap_prob = args.get('aug_swap_prob')
