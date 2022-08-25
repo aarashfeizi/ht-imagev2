@@ -66,7 +66,8 @@ SSL_MODELS = ['default',
                 'byol',
                 'simclr',
                 'vicreg',
-                'dino']
+                'dino',
+                'barlow']
 
 eval_dataset_choices = ['cars', 'cub', 'hotels', 'hotels_small', 'hotelid-val', 'hotelid-test']
 eval_BASELINE_MODELS = ['ours',

@@ -18,7 +18,8 @@ MODEL_URLS = {'byol': 'https://storage.googleapis.com/deepmind-byol/checkpoints/
                 'dino': 'https://dl.fbaipublicfiles.com/dino/dino_resnet50_pretrain/dino_resnet50_pretrain_full_checkpoint.pth',
                 'vicreg': None,
                 'simclr': 'https://storage.cloud.google.com/simclr-gcs/checkpoints/ResNet50_1x.zip',
-                'swav': None}
+                'swav': None,
+                'barlow': None}
 
 def save_pretreind_model(net, path):
     torch.save({'model_state_dict': net.state_dict()}, path)
@@ -30,6 +31,10 @@ def download_swav(net, checkpoint, save_path):
 def download_vicreg(net, checkpoint, save_path):
     model = torch.hub.load('facebookresearch/vicreg:main', 'resnet50')
     save_pretreind_model(model, save_path)
+
+def download_barlow(net, checkpoint, save_path):
+    model = torch.hub.load('facebookresearch/barlowtwins:main', 'resnet50')
+    save_pretreind_model(model, save_path)    
 
 def download_simsiam(net, checkpoint, save_path):
     state_dict = checkpoint['state_dict']
@@ -60,13 +65,13 @@ def download_dino(net, checkpoint, save_path):
     assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}
     save_pretreind_model(net, save_path)
 
-    
 # def download_simclr():
 save_ssl_download = {
     'swav': download_swav,
     'dino': download_dino,
     'vicreg': download_vicreg,
-    'simsiam': download_simsiam
+    'simsiam': download_simsiam,
+    'barlow': download_barlow,
 }
 
 
