@@ -9,7 +9,7 @@ import backbones
 
 
 class SSL_MODEL(nn.Module):
-    def __init__(self, backbone, emb_size, num_classes=0, freeze_backbone=False):
+    def __init__(self, backbone, emb_size, num_classes=0, freeze_backbone=False, projector_sclaing=2):
         super(SSL_MODEL, self).__init__()
         self.encoder = backbone
         self.encoder.fc = nn.Identity()
@@ -25,15 +25,21 @@ class SSL_MODEL(nn.Module):
         if num_classes > 0:
             self.classifier = nn.Sequential(nn.Linear(emb_size, num_classes), 
                                             nn.Softmax(dim=-1))
+            self.projector = None
         else:
-            self.classifier = nn.Identity()
+            self.classifier = None
+            assert (emb_size % projector_sclaing == 0)
+            self.projector = nn.Sequential(nn.Linear(emb_size, emb_size // projector_sclaing))
         
     def forward_backbone(self, x):
         return self.encoder(x)
         
     def forward(self, x):
         x = self.forward_backbone(x)
-        x_classes = self.classifier(x)
-        return x_classes
+        if self.classifier is not None:
+            x = self.classifier(x)
+        else: # self.projector is not None
+            x = self.projector(x)
+        return x
 
 

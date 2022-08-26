@@ -130,18 +130,17 @@ class Trainer:
         else:
             netmod = net
         if self.args.get('loss') == 'CE' or self.args.get('ssl'): 
-            if self.args.get('backbone_mode') == 'FT':
-                learnable_params = [{'params': netmod.encoder.parameters(),
+            learnable_params = [{'params': netmod.encoder.parameters(),
                     'lr': self.args.get('learning_rate') / self.args.get('new_lr_coef'),
                     'weight_decay': self.args.get('weight_decay'),
                     'new': False}]
-                
+            if netmod.classifier is not None:
                 learnable_params += [{'params': netmod.classifier.parameters(),
                     'lr': self.args.get('learning_rate'),
                     'weight_decay': self.args.get('weight_decay'),
                     'new': True}]
             else:
-                learnable_params = [{'params': netmod.parameters(),
+                learnable_params += [{'params': netmod.projector.parameters(),
                     'lr': self.args.get('learning_rate'),
                     'weight_decay': self.args.get('weight_decay'),
                     'new': False}]

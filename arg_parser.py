@@ -313,6 +313,7 @@ def get_args_ssl():
     parser.add_argument('--method_name', default='default', choices=SSL_MODELS) # does not support byol and simclr
     parser.add_argument('--backbone_mode', default='LP', choices=['LP', 'FT']) # to 'finetune' or 'linear prob' a backbone
     parser.add_argument('--ssl', default=False, action='store_true')
+    parser.add_argument('--ssl_projector_scale', type=int, default=2)
     parser.add_argument('--optimizer', default='adam', choices=OPTIMIZER_LIST, help='optimizer to use')
     parser.add_argument('--ckpt_path', default=None, help="path to the checkpoint file")
     parser.add_argument('--learning_rate', type=float, default=0.001)
