@@ -641,10 +641,8 @@ class Trainer:
             if self.cuda:
                 imgs = imgs.cuda()
 
-            if self.classification:
+            if self.classification or self.ssl:
                 img_embeddings = net.forward_backbone(imgs)
-            elif self.ssl:
-                img_embeddings = net(imgs)
             else:
                 img_embeddings, _ = net(imgs)
 
