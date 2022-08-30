@@ -1,4 +1,3 @@
-from msilib import datasizemask
 from datasets.base_dataset import BaseDataset
 from datasets.hotels_dataset import HotelsDataset, HotelsDataset_SSL
 
