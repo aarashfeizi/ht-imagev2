@@ -14,7 +14,7 @@ from sklearn.preprocessing import OneHotEncoder as OHE
 import utils
 
 class BaseDataset(Dataset):
-    def __init__(self, args, mode, filename='', transform=None, get_paths=False, pairwise_labels=False, classification=False, ssl=False):
+    def __init__(self, args, mode, filename='', transform=None, get_paths=False, pairwise_labels=False, classification=False, ssl=False, **kwargs):
         if filename == '':
             self.data_file_path = args.get(f'{mode}_file')
         else:

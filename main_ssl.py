@@ -1,3 +1,4 @@
+from re import L
 from tkinter import E
 import arg_parser
 import utils
@@ -83,13 +84,24 @@ def main():
         sampler_mode = 'ssl'                            
     else:
         raise Exception('Loss not supported!!')
+    
+    ssl_kwargs = {}
+    if all_args.get('ssl'):
+        ssl_transforms, ssl_transforms_names = utils.TransformLoader(all_args, scale=[0.8, 1.0]).get_composed_transform(mode='train-ssl')
+        print(ssl_transforms_names)
+
+        ssl_kwargs = {'random_crop_resize_transform': ssl_transforms[0],
+            'mask_in_transform':ssl_transforms[1],
+            'rest_transform': ssl_transforms[2]}
 
     train_loader = utils.get_data(all_args, mode='train',
                                     transform=train_transforms,
                                     #   sampler_mode='kbatch',
                                     sampler_mode=sampler_mode,
                                     pairwise_labels=all_args.get('train_with_pairwise'),
-                                    ssl=all_args.get('ssl'))
+                                    ssl=all_args.get('ssl'),
+                                    **ssl_kwargs)
+
     train_lbl2idx = train_loader.dataset.get_lbl2idx()
     train_ohe = train_loader.dataset.get_onehotencoder()
 

@@ -163,6 +163,8 @@ class TransformLoader:
             return method(size=self.random_swap, p=1, mask_prob=self.random_mask_prob) # self.random_swap_prob is applied in __getitem__()
         elif transform_type == 'RandomHorizontalFlip':
             return method(p=0.5)
+        elif transform_type == 'RandomMaskIn':
+            return method(p=0.9, ratio=(1.0, 1.1), scale=(0.05, 0.10))
         else:
             return method()
 
@@ -173,12 +175,12 @@ class TransformLoader:
         before_swap_transform_list = []
         swap_transform_list = []
 
-        if mode == 'train':
+        if mode == 'train' or mode == 'train-ssl':
             transform_list = ['Resize', 'RandomResizedCrop', 'RandomHorizontalFlip']
         else:
             transform_list = ['Resize', 'CenterCrop']
 
-        if color_jitter and mode == 'train':
+        if color_jitter and (mode == 'train' or mode == 'train-ssl'):
             transform_list.extend(['ColorJitter'])
 
         if self.random_swap != 1 and mode == 'train': # random_swap is number of crops on each edge
@@ -191,8 +193,15 @@ class TransformLoader:
         if mode == 'train' and random_erase > 0.0:
             self.random_erase_prob = random_erase
             transform_list.extend(['RandomErasing'])
-
-        transform_list.extend(['Normalize'])
+        
+        transform_list2 = []
+        transform_list3 = []
+        if mode == 'train-ssl':
+            # transform_list2 = [t for t in transform_list]
+            transform_list2.extend(['RandomMaskIn'])
+            transform_list3.extend(['Normalize'])
+        else:
+            transform_list.extend(['Normalize'])
 
         if len(swap_transform_list) > 0:
             transform_funcs = [self.parse_transform(x) for x in before_swap_transform_list]
@@ -206,7 +215,16 @@ class TransformLoader:
 
             return [transform_before_swap, transform_swap, transform_after_swap], \
                    [before_swap_transform_list, swap_transform_list, transform_list]
+        elif mode == 'train-ssl':
+            transform_funcs = [self.parse_transform(x) for x in transform_list]
+            transform_before = transforms.Compose(transform_funcs)
+            transform_funcs = [self.parse_transform(x) for x in transform_list2]
+            transform_maskin = transforms.Compose(transform_funcs)
+            transform_funcs = [self.parse_transform(x) for x in transform_list3]
+            transform_normalize = transforms.Compose(transform_funcs)
 
+            return [transform_before, transform_maskin, transform_normalize], \
+                [transform_list, transform_list2, transform_list3]
         else:
             transform_funcs = [self.parse_transform(x) for x in transform_list]
             transform = transforms.Compose(transform_funcs)
@@ -298,7 +316,8 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
                 'heatmap': DrawHeatmapSampler,
                 'heatmap2x': Draw2XHeatmapSampler,
                 'classification': None,
-                'ssl': SSL_Sampler}
+                # 'ssl': SSL_Sampler,
+                'ssl': None}
 
     mode_splits = mode.split('_')
     eval_mode = mode_splits[0]
@@ -313,7 +332,8 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
                                     for_heatmap=sampler_mode.startswith('heatmap'),
                                     classification=(sampler_mode == 'classification'),
                                     pairwise_labels=pairwise_labels,
-                                    ssl=ssl)
+                                    ssl=ssl,
+                                    **kwargs)
     if lbl2idx is not None:
         dataset.set_lbl2idx(lbl2idx, onehotencoder)
 

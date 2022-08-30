@@ -20,7 +20,7 @@ __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImag
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective", "RandomErasing", "GaussianBlur", "RandomSwap"]
+           "RandomPerspective", "RandomErasing", "GaussianBlur", "RandomSwap", "RandomMaskIn"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -1632,6 +1632,21 @@ class RandomSwap(object):
     def __call__(self, img):
         if torch.rand(1) < self.p:
             return F.swap(img, self.size, self.mask_prob)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(size={0})'.format(self.size)
+
+class RandomMaskIn(object):
+    def __init__(self, p=0.9, ratio=(1.0, 1.1), scale=(0.05, 0.10)):
+        self.p = p
+        self.to_tensor = ToTensor()
+        self.random_erasing = RandomErasing(p, scale=scale, ratio=ratio)
+
+    def __call__(self, img):
+        if torch.rand(1) < self.p:
+            masked_in = F.to_pil_image(self.to_tensor(img) - self.random_erasing(self.to_tensor(img)))
+            return masked_in
         return img
 
     def __repr__(self):
