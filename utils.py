@@ -188,19 +188,22 @@ class TransformLoader:
             swap_transform_list = ['RandomSwap']
             transform_list = []
 
-        transform_list.extend(['ToTensor'])
 
-        if mode == 'train' and random_erase > 0.0:
-            self.random_erase_prob = random_erase
-            transform_list.extend(['RandomErasing'])
-        
         transform_list2 = []
         transform_list3 = []
-        if mode == 'train-ssl':
+        if mode == 'train' and random_erase > 0.0:
+            self.random_erase_prob = random_erase
+            transform_list.extend(['ToTensor'])
+            transform_list.extend(['RandomErasing'])
+            transform_list.extend(['Normalize'])
+        elif mode == 'train-ssl':
             # transform_list2 = [t for t in transform_list]
             transform_list2.extend(['RandomMaskIn'])
+
+            transform_list3.extend(['ToTensor'])
             transform_list3.extend(['Normalize'])
         else:
+            transform_list.extend(['ToTensor'])
             transform_list.extend(['Normalize'])
 
         if len(swap_transform_list) > 0:
@@ -215,11 +218,14 @@ class TransformLoader:
 
             return [transform_before_swap, transform_swap, transform_after_swap], \
                    [before_swap_transform_list, swap_transform_list, transform_list]
+                   
         elif mode == 'train-ssl':
             transform_funcs = [self.parse_transform(x) for x in transform_list]
             transform_before = transforms.Compose(transform_funcs)
+
             transform_funcs = [self.parse_transform(x) for x in transform_list2]
             transform_maskin = transforms.Compose(transform_funcs)
+            
             transform_funcs = [self.parse_transform(x) for x in transform_list3]
             transform_normalize = transforms.Compose(transform_funcs)
 
