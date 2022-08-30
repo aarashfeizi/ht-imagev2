@@ -3,18 +3,19 @@ from datasets.hotels_dataset import HotelsDataset, HotelsDataset_SSL
 
 DATASETS = {
     'hotels': HotelsDataset,
-    'hotels-ssl': HotelsDataset_SSL,
     'hotels_small': HotelsDataset,
     'hotelid-val': HotelsDataset,
     'hotelid-test': HotelsDataset,
+    'hotelid-val-ssl': HotelsDataset_SSL,
+    'hotelid-test-ssl': HotelsDataset_SSL,
     'cub': BaseDataset
 }
 
 
 def load_dataset(args, mode, filename, transform, for_heatmap=False, pairwise_labels=False, classification=False, ssl=False, **kwargs):
     if ssl:
-        if 'val' in args.get('dataset') or \
-            'test' in args.get('dataset'):
+        if 'val' in mode or \
+            'test' in mode:
             raise Exception('evaluation datasets shouldn\'t have ssl setting')
         dataset_name = args.get('dataset') + '-ssl'
     else:
