@@ -40,8 +40,8 @@ class HotelsDataset_SSL(HotelsDataset):
         img = utils.open_img(img_path)
 
         img1_transformed, img2_transformed = self.__create_local_global_crop__(img)
-        imgs = [img1_transformed, img2_transformed]
-        lbls = [lbl, lbl]
+        imgs = torch.stack([img1_transformed, img2_transformed], dim=0)
+        lbls = torch.stack([lbl, lbl], dim=0)
         img_paths = [img_path, img_path]
         
 
