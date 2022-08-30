@@ -21,20 +21,46 @@ MODEL_URLS = {'byol': 'https://storage.googleapis.com/deepmind-byol/checkpoints/
                 'swav': None,
                 'barlow': None,
                 'densecl': 'https://cloudstor.aarnet.edu.au/plus/s/hdAg5RYm8NNM2QP/download',
-                'densecl_CC': 'https://cloudstor.aarnet.edu.au/plus/s/3GapXiWuVAzdKwJ/download'}
+                'densecl_CC': 'https://cloudstor.aarnet.edu.au/plus/s/3GapXiWuVAzdKwJ/download',
+                'byol': 'https://github.com/fundamentalvision/UniGrad/releases/download/v1.0/byol_grad_pretrained.pth',
+                'unigrad': 'https://github.com/fundamentalvision/UniGrad/releases/download/v1.0/unigrad_pretrained.pth'}
 
-def load_state_dict_wo_fc(net, state_dict):
+
+def change_number_to_name(state_dict):
+    new_state_dict = {}
+
+    for k, v in state_dict.items():
+        new_state_dict[number_2_layername[k[0]] + k[1:]] = v
+
+    return new_state_dict
+
+
+def load_state_dict_wo_fc(net, state_dict, change_names=False):
     for k in list(state_dict.keys()):
         # retain only encoder up to before the embedding layer
-        if k.startswith('module.encoder') and not k.startswith('module.encoder.fc'):
+        if k.startswith('module.encoder') and not k.startswith('module.encoder.fc') and not k.startswith('module.encoder.10'):
             # remove prefix
             state_dict[k[len("module.encoder."):]] = state_dict[k]
         # delete renamed or unused k
         del state_dict[k]
-
+    if change_names:
+        state_dict = change_number_to_name(state_dict=state_dict)
     msg = net.load_state_dict(state_dict, strict=False)
     assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}
     return
+
+
+number_2_layername = {'0': 'conv1',
+                        '1': 'bn1',
+                        '2': 'relu',
+                        '3': 'maxpool',
+                        '4': 'layer1',
+                        '5': 'layer2',
+                        '6': 'layer3',
+                        '7': 'layer4',
+                        '8': 'avgpool',
+                        '9': 'fc'}
+
 
 def save_pretreind_model(net, path):
     torch.save({'model_state_dict': net.state_dict()}, path)
@@ -53,18 +79,37 @@ def download_barlow(net, checkpoint, save_path):
 
 def download_simsiam(net, checkpoint, save_path):
     state_dict = checkpoint['state_dict']
-    load_ssl_weight_to_model(net, state_dict)
+    load_state_dict_wo_fc(net, state_dict)
     save_pretreind_model(net, save_path)
     
 def download_dino(net, checkpoint, save_path):
     state_dict = checkpoint['student']
-    load_ssl_weight_to_model(net, state_dict)
+    load_state_dict_wo_fc(net, state_dict)
     save_pretreind_model(net, save_path)
     
 def download_densecl(net, checkpoint, save_path):
     state_dict = checkpoint['state_dict']
-    load_ssl_weight_to_model(net, state_dict)
+    load_state_dict_wo_fc(net, state_dict)
     save_pretreind_model(net, save_path)
+
+
+def download_byol(net, checkpoint, save_path):
+    state_dict = checkpoint['model']
+    state_dict = load_state_dict_wo_fc(net, state_dict, change_names=True)
+    # model_list = list(net.children())
+    # new_net = torch.nn.Sequential(*model_list[:-1] + [nn.Flatten(1)] + [model_list[-1]])
+    # net = change_back_name(new_net, net)
+    save_pretreind_model(net, save_path)
+    
+
+def download_unigrad(net, checkpoint, save_path):
+    state_dict = checkpoint['model']
+    load_state_dict_wo_fc(net, state_dict, change_names=True)
+    # model_list = list(net.children())
+    # net = torch.nn.Sequential(*model_list[:-1] + [nn.Flatten(1)] + [model_list[-1]])
+    # net = change_back_name(new_net, net)
+    save_pretreind_model(net, save_path)
+    
 
 
 # def download_simclr():
@@ -76,6 +121,8 @@ save_ssl_download = {
     'barlow': download_barlow,
     'densecl': download_densecl,
     'densecl_CC': download_densecl,
+    'unigrad': download_unigrad,
+    'byol': download_byol
 }
 
 
