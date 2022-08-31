@@ -457,7 +457,7 @@ def get_model_name(args):
         gpu_ids = args.get("gpu_ids").replace(',', '')
         name += f'gpu{gpu_ids}_'
 
-    name += f"wbn_{args.get('epochs')}ep_" \
+    name += f"{args.get('epochs')}ep_" \
             f"{args.get('dataset')}_" \
             f"{args.get('backbone')}_" \
             f"{args.get('metric')}_" \
@@ -469,6 +469,12 @@ def get_model_name(args):
     if args.get('new_lr_coef') != 1.0:
         coef = args.get('new_lr_coef')
         name += f'-newLRcoef{coef}'
+    
+    if args.get('ssl'):
+        name += f"ssl_{args.get('method_name')}_" \
+                f"{args.get('backbone_mode')}_"
+        if args.get('backbone_mode') == 'FT':
+                name +=  f"{args.get('ssl_projector_scale')}scaledown_"
 
     if args.get('early_stopping_tol') > 0:
         tol = args.get('early_stopping_tol')
