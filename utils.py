@@ -164,7 +164,7 @@ class TransformLoader:
         elif transform_type == 'RandomHorizontalFlip':
             return method(p=0.5)
         elif transform_type == 'RandomMaskIn':
-            return method(p=0.9, ratio=(1.0, 1.1), scale=(0.05, 0.10))
+            return method(p=0.95, ratio=(0.5, 1.5), scale=(0.01, 0.3))
         else:
             return method()
 
