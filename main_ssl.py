@@ -87,7 +87,7 @@ def main():
     
     ssl_kwargs = {}
     if all_args.get('ssl'):
-        ssl_transforms, ssl_transforms_names = utils.TransformLoader(all_args, scale=[0.8, 1.0]).get_composed_transform(mode='train-ssl')
+        ssl_transforms, ssl_transforms_names = utils.TransformLoader(all_args, scale=[0.8, 1.0], rotate=90).get_composed_transform(mode='train-ssl')
         print(ssl_transforms_names)
 
         ssl_kwargs = {'random_crop_resize_transform': ssl_transforms[0],

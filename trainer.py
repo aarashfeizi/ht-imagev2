@@ -1,4 +1,5 @@
 import os
+from tkinter import image_names
 
 import numpy as np
 import torch
@@ -10,6 +11,7 @@ import optimizers
 import utils
 from SummaryWriter import SummaryWriter
 from metrics import Metric_Accuracy, Classification_Accuracy
+from einops import rearrange
 
 import wandb
 
@@ -341,6 +343,10 @@ class Trainer:
                     (imgs, lbls, swap_lbls) = batch
                 else:
                     (imgs, lbls) = batch
+                
+                if len(imgs.shape) == 5: # 2 transforms from the same image
+                    imgs = rearrange(imgs, 'b s c h w -> (b s) c h w')
+                    lbls = rearrange(lbls, 'b s -> (b s)')
 
                 if self.cuda:
                     imgs = imgs.cuda()

@@ -175,12 +175,14 @@ class TransformLoader:
         before_swap_transform_list = []
         swap_transform_list = []
 
-        if mode == 'train' or mode == 'train-ssl':
+        if mode == 'train':
             transform_list = ['Resize', 'RandomResizedCrop', 'RandomHorizontalFlip']
+        elif mode == 'train-ssl':
+            transform_list = ['Resize', 'RandomResizedCrop']
         else:
             transform_list = ['Resize', 'CenterCrop']
 
-        if color_jitter and (mode == 'train' or mode == 'train-ssl'):
+        if color_jitter and (mode == 'train'):
             transform_list.extend(['ColorJitter'])
 
         if self.random_swap != 1 and mode == 'train': # random_swap is number of crops on each edge
@@ -200,6 +202,13 @@ class TransformLoader:
             # transform_list2 = [t for t in transform_list]
             transform_list2.extend(['RandomMaskIn'])
 
+            transform_list3.extend(['RandomHorizontalFlip'])
+            if self.rotate > 0:
+                transform_list3.extend(['RandomRotation'])
+            
+            if color_jitter:
+                transform_list3.extend(['ColorJitter'])
+            
             transform_list3.extend(['ToTensor'])
             transform_list3.extend(['Normalize'])
         else:
@@ -218,7 +227,7 @@ class TransformLoader:
 
             return [transform_before_swap, transform_swap, transform_after_swap], \
                    [before_swap_transform_list, swap_transform_list, transform_list]
-                   
+
         elif mode == 'train-ssl':
             transform_funcs = [self.parse_transform(x) for x in transform_list]
             transform_before = transforms.Compose(transform_funcs)
