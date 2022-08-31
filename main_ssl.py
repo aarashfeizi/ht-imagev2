@@ -16,8 +16,6 @@ from trainer import Trainer
 import numpy as np
 import torch.nn as nn
 
-import wandb
-
 
 def main():
     args = arg_parser.get_args_ssl()

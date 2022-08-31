@@ -366,6 +366,8 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
         sampler = None
         shuffle = True
         kargs = {'batch_size': args.get('batch_size')}
+        if ssl:
+            kargs = {'batch_size': args.get('batch_size') // 2}
 
     dataloader = DataLoader(dataset=dataset, shuffle=shuffle, num_workers=args.get('workers'), batch_sampler=sampler,
                             pin_memory=args.get('pin_memory'), worker_init_fn=seed_worker, **kargs)
