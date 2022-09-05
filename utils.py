@@ -484,7 +484,7 @@ def get_model_name(args):
         if args.get('ssl_aug'):
                 name +=  f"sslAug_"
     
-    if args.get('collor_jitter'):
+    if args.get('color_jitter'):
         name +=  f"cjAug_"
 
     if args.get('early_stopping_tol') > 0:
