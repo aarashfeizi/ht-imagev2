@@ -115,7 +115,9 @@ class TransformLoader:
                  jitter_param=dict(Brightness=0.4, Contrast=0.4, Color=0.4),
                  color_jitter_param=dict(brightness=0.5, hue=0.5, contrast=0.5, saturation=0.5),
                  scale=[0.5, 1.0],
-                 resize_size=256):
+                 resize_size=256,
+                 mask_in_ratio=(0.5, 1.5),
+                 mask_in_scale=(0.01, 0.3)):
         # hotels v5 train small mean: tensor([0.5791, 0.5231, 0.4664])
         # hotels v5 train small std: tensor([0.2512, 0.2581, 0.2698])
 
@@ -124,6 +126,8 @@ class TransformLoader:
 
         self.image_size = image_size
         self.first_resize = resize_size
+        self.mask_in_scale = mask_in_scale
+        self.mask_in_ratio = mask_in_ratio
         if args.get('normalize_param') is None:
             self.normalize_param = normalize_param
         else:
@@ -164,7 +168,7 @@ class TransformLoader:
         elif transform_type == 'RandomHorizontalFlip':
             return method(p=0.5)
         elif transform_type == 'RandomMaskIn':
-            return method(p=0.95, ratio=(0.5, 1.5), scale=(0.01, 0.3))
+            return method(p=0.95, ratio=self.mask_in_ratio, scale=self.mask_in_scale)
         else:
             return method()
 
@@ -477,6 +481,8 @@ def get_model_name(args):
                 f"{args.get('backbone_mode')}_"
         if args.get('backbone_mode') == 'FT':
                 name +=  f"{args.get('ssl_projector_scale')}scaledown_"
+        if args.get('ssl_aug'):
+                name +=  f"sslAug_"
 
     if args.get('early_stopping_tol') > 0:
         tol = args.get('early_stopping_tol')

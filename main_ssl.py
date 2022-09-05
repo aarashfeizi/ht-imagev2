@@ -69,7 +69,7 @@ def main():
                                 emb_size=2048,
                                 num_classes=class_num,
                                 freeze_backbone=all_args.get('backbone_mode') == 'LP',
-                                projector_sclaing=all_args.get('ssl_projector_scale')) # freezes backbone when Linear Probing
+                                projector_sclaing=all_args.get('ss_projector_scale')) # freezes backbone when Linear Probing
 
     print('successfull!')
 
@@ -85,12 +85,16 @@ def main():
     
     ssl_kwargs = {}
     if all_args.get('ssl'):
-        ssl_transforms, ssl_transforms_names = utils.TransformLoader(all_args, scale=[0.8, 1.0], rotate=90).get_composed_transform(mode='train-ssl')
-        print('Train-SSL transforms: ', ssl_transforms_names)
+        if all_args.get('local_global_aug'):
+            ssl_transforms, ssl_transforms_names = utils.TransformLoader(all_args, scale=[0.8, 1.0], rotate=90).get_composed_transform(mode='train-ssl')
+            print('Train-SSL transforms: ', ssl_transforms_names)
 
-        ssl_kwargs = {'random_crop_resize_transform': ssl_transforms[0],
-            'mask_in_transform':ssl_transforms[1],
-            'rest_transform': ssl_transforms[2]}
+            ssl_kwargs = {'random_crop_resize_transform': ssl_transforms[0],
+                'mask_in_transform':ssl_transforms[1],
+                'rest_transform': ssl_transforms[2]}
+
+        ssl_kwargs['ssl_aug'] = all_args.get('local_global_aug')
+
 
     train_loader = utils.get_data(all_args, mode='train',
                                     transform=train_transforms,

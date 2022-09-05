@@ -799,6 +799,11 @@ class Trainer:
 
             all_losses = {lss_name: (lss / len(self.train_loader)) for lss_name, lss in epoch_losses.items()}
 
+            # ####################################################################
+            #todo update transform in 
+            # new_transforms = utils.TransformLoader(all_args, scale=[0.8, 1.0], rotate=90, mask_in_felan=(), mask_in_scale=felan).get_composed_transform(mode='train-ssl')
+            # self.train_loader.dataset.update_transforms(new_transforms)
+
             print(f'Epoch {self.current_epoch}-> loss: ', all_losses,
                   f', acc: ', epoch_acc)
 
