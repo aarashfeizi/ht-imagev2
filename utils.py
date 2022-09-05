@@ -483,6 +483,9 @@ def get_model_name(args):
                 name +=  f"{args.get('ssl_projector_scale')}scaledown_"
         if args.get('ssl_aug'):
                 name +=  f"sslAug_"
+    
+    if args.get('collor_jitter'):
+        name +=  f"cjAug_"
 
     if args.get('early_stopping_tol') > 0:
         tol = args.get('early_stopping_tol')

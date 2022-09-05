@@ -48,7 +48,7 @@ def main():
     logger.info(all_args)
 
     train_transforms, train_transforms_names = utils.TransformLoader(
-        all_args).get_composed_transform(mode='train')
+        all_args).get_composed_transform(mode='train', color_jitter=all_args.get('color_jitter'))
 
     val_transforms, val_transforms_names = utils.TransformLoader(
         all_args).get_composed_transform(mode='val')

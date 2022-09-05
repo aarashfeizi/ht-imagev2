@@ -34,7 +34,7 @@ def main():
     print(all_args)
     logger.info(all_args)
 
-    train_transforms, train_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='train')
+    train_transforms, train_transforms_names = utils.TransformLoader(all_args).get_composed_transform(mode='train', color_jitter=all_args.get('color_jitter'))
     # train_transforms_swap = None
     # if type(train_transforms) is list:
     #     train_transforms_swap = train_transforms[1]
