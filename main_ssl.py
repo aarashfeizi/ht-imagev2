@@ -88,8 +88,8 @@ def main():
         if all_args.get('local_global_aug'):
             ssl_transforms, ssl_transforms_names = utils.TransformLoader(all_args, 
                                                                             scale=[0.8, 1.0],
-                                                                            rotate=90,
-                                                                            color_jitter=all_args.get('color_jitter')).get_composed_transform(mode='train-ssl')
+                                                                            rotate=90).get_composed_transform(mode='train-ssl',
+                                                                                                                color_jitter=all_args.get('color_jitter'))
             print('Train-SSL transforms: ', ssl_transforms_names)
 
             ssl_kwargs = {'random_crop_resize_transform': ssl_transforms[0],
