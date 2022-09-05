@@ -69,7 +69,7 @@ def main():
                                 emb_size=2048,
                                 num_classes=class_num,
                                 freeze_backbone=all_args.get('backbone_mode') == 'LP',
-                                projector_sclaing=all_args.get('ss_projector_scale')) # freezes backbone when Linear Probing
+                                projector_sclaing=all_args.get('ssl_projector_scale')) # freezes backbone when Linear Probing
 
     print('successfull!')
 
