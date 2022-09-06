@@ -98,7 +98,8 @@ COLORS_VALUES_0255 = [
 
 
 DATASET_SIZES = {'cars': {'test': 8131},
-                 'cub': {'test': 5924},
+                'cub-val': {'val': 2975},
+                 'cub-test': {'test': 5924},
                  'hotels_small': {'val1_small': 3060,
                                   'val2_small': 2397,
                                   'val3_small': 2207,
@@ -129,13 +130,15 @@ DATASET_MEANS = {'hotels': [0.5805, 0.5247, 0.4683],
                  'hotels_small': [0.5805, 0.5247, 0.4683],
                  'hotelid-val': [0.4620, 0.3980, 0.3292],
                  "hotelid-test": [0.4620, 0.3980, 0.3292],
-                 'cub': None}
+                 'cub-val': None,
+                 'cub-test': None}
 
 DATASET_STDS = {'hotels': [0.2508, 0.2580, 0.2701],
                 'hotels_small': [0.2508, 0.2580, 0.2701],
                 'hotelid-val': [0.2619, 0.2529, 0.2460],
                 'hotelid-test': [0.2619, 0.2529, 0.2460],
-                'cub': None}
+                'cub-val': None,
+                 'cub-test': None}
 
 
 def get_features_and_labels(args, model, loader):

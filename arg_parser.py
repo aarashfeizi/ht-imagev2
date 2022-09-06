@@ -1,6 +1,6 @@
 import argparse
 
-DATASET_LIST = ['cub', 'hotels', 'hotels_small', 'cub', 'hotelid-val', 'hotelid-test']
+DATASET_LIST = ['hotels', 'hotels_small', 'cub-val', 'cub-test', 'hotelid-val', 'hotelid-test']
 
 LOSSES_LIST = ['pnpp',
                'bce',
@@ -73,7 +73,7 @@ SSL_MODELS = ['default',
                 'densecl',
                 'densecl_CC'] # _CC is pretrained on COCO (as opposed to ImageNet)
 
-eval_dataset_choices = ['cars', 'cub', 'hotels', 'hotels_small', 'hotelid-val', 'hotelid-test']
+eval_dataset_choices = ['cars', 'cub-val', 'cub-test', 'hotels', 'hotels_small', 'hotelid-val', 'hotelid-test']
 eval_BASELINE_MODELS = ['ours',
                    'softtriple',
                    'proxy-anchor',

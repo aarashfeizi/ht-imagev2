@@ -8,7 +8,8 @@ DATASETS = {
     'hotelid-test': HotelsDataset,
     'hotelid-val-ssl': HotelsDataset_SSL,
     'hotelid-test-ssl': HotelsDataset_SSL,
-    'cub': BaseDataset
+    'cub-val': BaseDataset,
+    'cub-test': BaseDataset
 }
 
 
