@@ -1,0 +1,37 @@
+{
+  "dataset_path": "../../datasets/CUB/",
+  "nb_classes": 50,
+  "log_path": "./",
+  "train_file": "train.txt",
+  "val_file": "val.txt",
+  "test_file": "test.txt",
+  "all_val_files": [
+    "val.txt"
+  ],
+  "all_test_files": [
+    "test.txt"
+  ],
+  "loss_mode": "metric",
+  "normalize_param": {
+    "mean": [0.40784313725490196, 0.4588235294117647, 0.5019607843137255],
+    "std": [0.00392156862745098, 0.00392156862745098, 0.00392156862745098]
+  },
+  "color_jitter_param": {
+    "brightness": 0.5,
+    "hue": 0.5,
+    "contrast": 0.5,
+    "saturation": 0.5
+  },
+
+  "ordered_idxs": "./cub_test_resnet50_idxs.npy",
+  "ordered_lbls": "./cub_test_resnet50_labels.npy",
+
+  "all_ordered_idxs": {
+    "val.txt": "./cub_test_resnet50_idxs.npy"
+  },
+
+  "all_ordered_lbls": {
+    "val.txt": "./cub_test_resnet50_labels.npy"
+  }
+}
+
