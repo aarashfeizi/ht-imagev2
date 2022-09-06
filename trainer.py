@@ -770,7 +770,7 @@ class Trainer:
                     utils.save_model(net, self.current_epoch, 'recall', self.save_path)
                 else:
                     print('NOT SAVING MODEL!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            if self.classification:
+            if self.classification and self.eval_classification:
                 if val_cls_acc > best_vals_class_ACC:
                     # best_val_acc = val_acc
                     best_vals_class_ACC = val_cls_acc
