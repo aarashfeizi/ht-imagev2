@@ -58,6 +58,9 @@ class RandomIdentitySampler(Sampler):
 
     def __iter__(self):
         batch_idxs_dict, avai_labels = self.prepare_batch()
+        if len(avai_labels) < self.num_labels_per_batch:
+            self.num_labels_per_batch = len(avai_labels)
+
         self.update_K()
         for _ in range(self.max_iters):
             batch = []
