@@ -43,6 +43,7 @@ class Trainer:
         self.early_stopping_metric = early_stopping_metric
         self.val_classification_loader = None
         self.classification = False
+        self.eval_classification = args.get('eval_classification')
         self.ssl = args.get('ssl')
         self.fine_tune = args.get('backbone_mode') == 'FT'
         self.aug_swap = args.get('aug_swap') > 1
@@ -122,8 +123,11 @@ class Trainer:
 
     def set_val_classification_loader(self, val_classification_loader):
         self.classification = True
-        self.early_stopping_metric = 'class_acc'
         self.val_classification_loader = val_classification_loader
+
+        if self.eval_classification:
+            self.early_stopping_metric = 'class_acc'
+
 
     def __set_optimizer(self, net):
 
@@ -736,7 +740,7 @@ class Trainer:
                     #     self.draw_heatmaps2x(net)
 
                 list_for_tb = []
-                if self.classification:
+                if self.classification and self.eval_classification:
                     val_cls_losses, val_cls_acc = self.validate_cls(net)
                     list_for_tb.append((f'Val/CE_loss', val_cls_losses['val1_CE_loss']))
                     list_for_tb.append((f'Val/Class_Acc', val_cls_acc))
@@ -869,7 +873,7 @@ class Trainer:
                                 utils.wandb_update_value(list_for_tb)
 
                 list_for_tb = []
-                if self.classification:
+                if self.classification and self.eval_classification:
                     val_cls_losses, val_cls_acc = self.validate_cls(net)
                     list_for_tb.append((f'Val/CE_loss', val_cls_losses['val1_CE_loss']))
                     list_for_tb.append((f'Val/Class_Acc', val_cls_acc))
@@ -912,7 +916,7 @@ class Trainer:
                     self.early_stopping_counter['rat1'] += 1
 
 
-            if self.classification:
+            if self.classification and self.eval_classification:
                 if (val and val_cls_acc >= best_vals_class_ACC) or \
                     (not val and epoch == max_epochs - 1):
                     # best_val_acc = val_acc
