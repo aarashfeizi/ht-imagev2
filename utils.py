@@ -341,6 +341,9 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
     mode_splits = mode.split('_')
     eval_mode = mode_splits[0]
     if eval_mode != 'train':
+        if args.get('dataset') == 'imagenet':
+            if eval_mode == 'val2':
+                eval_mode = 'val'
         if len(mode_splits) > 1 and mode_splits[1] == 'pairwise':
             assert pairwise_labels
         else:
@@ -357,7 +360,7 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
         dataset.set_lbl2idx(lbl2idx, onehotencoder)
 
 
-    if SAMPLERS[sampler_mode] is not None:
+    if SAMPLERS[sampler_mode] is not None or args.get('dataset') != 'imagenet':
         sampler = SAMPLERS[sampler_mode](dataset=dataset,
                                         batch_size=args.get('batch_size'),
                                         num_instances=args.get('num_inst_per_class'),
@@ -366,6 +369,10 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
                                         **kwargs)
         shuffle = False
         kargs = {}
+    elif args.get('dataset') in datasets.PREDEFINED_DATASETS:
+        sampler = None
+        shuffle = (sampler_mode == 'db')
+        kargs = {'batch_size': args.get('batch_size')}
     else:
         sampler = None
         shuffle = True
