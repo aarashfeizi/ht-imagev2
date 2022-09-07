@@ -371,7 +371,7 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
         kargs = {}
     elif args.get('dataset') in datasets.PREDEFINED_DATASETS:
         sampler = None
-        shuffle = (sampler_mode == 'db')
+        shuffle = not (sampler_mode == 'db')
         kargs = {'batch_size': args.get('batch_size')}
     else:
         sampler = None
