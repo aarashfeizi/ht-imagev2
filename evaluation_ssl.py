@@ -12,6 +12,7 @@ import torch
 import torch.nn.functional as F
 from sklearn.decomposition import PCA
 from tqdm import tqdm
+from datasets import PREDEFINED_DATASETS
 import ssl_utils, arg_parser
 import wandb
 import torch.nn as nn
@@ -319,16 +320,22 @@ def main():
         # eval_datasets = []
         eval_ldrs = []
 
-        if all_args.get('num_of_dataset') > len(all_args.get(f'all_{all_args.get("eval_mode")}_files')):
-            raise Exception(
-                f"num_of_dataset ({all_args.get('num_of_dataset')}) is greater than all_val_files in specified in json file")
+        if all_args.get('dataset') not in PREDEFINED_DATASETS:
+            if all_args.get('num_of_dataset') > len(all_args.get(f'all_{all_args.get("eval_mode")}_files')):
+                raise Exception(
+                    f"num_of_dataset ({all_args.get('num_of_dataset')}) is greater than all_val_files in specified in json file")
 
-        for i in range(0, all_args.get('num_of_dataset')):
-            val_set_name = all_args.get(f'all_{all_args.get("eval_mode")}_files')[i]
+            for i in range(0, all_args.get('num_of_dataset')):
+                val_set_name = all_args.get(f'all_{all_args.get("eval_mode")}_files')[i]
+                eval_ldrs.append(utils.get_data(all_args, mode=all_args.get('eval_mode'),
+                                                file_name=val_set_name,
+                                                transform=val_transforms,
+                                                sampler_mode='db'))
+        else:
             eval_ldrs.append(utils.get_data(all_args, mode=all_args.get('eval_mode'),
-                                            file_name=val_set_name,
                                             transform=val_transforms,
                                             sampler_mode='db'))
+
 
         # if 'hotels' in all_args.get('dataset'):
         #     for i in range(1, args.num_of_dataset + 1):
