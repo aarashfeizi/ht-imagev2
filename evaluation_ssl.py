@@ -16,6 +16,8 @@ import ssl_utils, arg_parser
 import wandb
 import torch.nn as nn
 
+import ssl_model
+
 import baseline_model_loaders.ms_models as mm
 import baseline_model_loaders.pnpp_models as pnpp
 import baseline_model_loaders.proxy_anchor_models as pa
@@ -123,7 +125,9 @@ DATASET_SIZES = {'cars': {'test': 8131},
                  'hotelid-test': {'test1': 9013,
                                   'test2': 11110,
                                   'test3': 10973,
-                                  'test4': 20220}
+                                  'test4': 20220},
+                'imagenet': {'test': 8131,
+                            'val': 2975},
                  }
 
 DATASET_MEANS = {'hotels': [0.5805, 0.5247, 0.4683],
@@ -131,14 +135,16 @@ DATASET_MEANS = {'hotels': [0.5805, 0.5247, 0.4683],
                  'hotelid-val': [0.4620, 0.3980, 0.3292],
                  "hotelid-test": [0.4620, 0.3980, 0.3292],
                  'cub-val': None,
-                 'cub-test': None}
+                 'cub-test': None,
+                 'imagenet': None}
 
 DATASET_STDS = {'hotels': [0.2508, 0.2580, 0.2701],
                 'hotels_small': [0.2508, 0.2580, 0.2701],
                 'hotelid-val': [0.2619, 0.2529, 0.2460],
                 'hotelid-test': [0.2619, 0.2529, 0.2460],
                 'cub-val': None,
-                 'cub-test': None}
+                'cub-test': None,
+                'imagenet': None}
 
 
 def get_features_and_labels(args, model, loader):
@@ -163,138 +169,6 @@ def get_features_and_labels(args, model, loader):
             t.update()
 
     return np.concatenate(features, axis=0), np.concatenate(labels, axis=0)
-
-
-def proxyanchor_load_model_resnet50(save_path, args):
-    if args.get('cuda'):
-        checkpoint = torch.load(save_path, map_location=torch.device(0))
-    else:
-        checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
-
-    net = pa.Resnet50(embedding_size=args.get('emb_size'),
-                      pretrained=True,
-                      is_norm=1,
-                      bn_freeze=1)
-
-    net.load_state_dict(checkpoint['model_state_dict'])
-
-    if args.get('cuda'):
-        net = net.cuda()
-
-    return net
-
-
-def supcontrastive_load_model_resnet50(save_path, args):
-    if args.get('cuda'):
-        checkpoint = torch.load(save_path, map_location=torch.device(0))
-    else:
-        checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
-
-    net = sc.resnet50()
-
-    new_checkpoint = {}
-    for key, value in checkpoint['model'].items():
-        if key.startswith('encoder'):
-            new_checkpoint[key[8:]] = value
-        elif key.startswith('head'):
-            pass
-
-    net.load_state_dict(new_checkpoint)
-
-    if args.get('cuda'):
-        net = net.cuda()
-
-    return net
-
-
-def softtriple_load_model_resnet50(save_path, args):
-    if args.get('cuda'):
-        checkpoint = torch.load(save_path, map_location=torch.device(0))
-    else:
-        checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
-
-    net = timm.create_model('resnet50', num_classes=args.get('emb_size'))
-
-    net.load_state_dict(checkpoint)
-
-    if args.get('cuda'):
-        net = net.cuda()
-
-    return net
-
-
-def proxyncapp_load_model_resnet50(save_path, args):
-    if args.get('cuda'):
-        checkpoint = torch.load(save_path, map_location=torch.device(0))
-    else:
-        checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
-
-    net = pnpp.get_model(args.get('emb_size'))
-
-    if args.get('trained_with_mltp_gpu'):
-        net = torch.nn.DataParallel(net)
-
-    net.load_state_dict(checkpoint)
-
-    if args.get('cuda'):
-        net = net.cuda()
-
-    return net
-
-
-def htv2_load_model_resnet50(save_path, args):
-    if args.get('cuda'):
-        checkpoint = torch.load(save_path, map_location=torch.device(0))
-    else:
-        checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
-
-    net = htv2.get_top_module(args)
-
-    # if args.get('trained_with_mltp_gpu'):
-    #     net = torch.nn.DataParallel(net)
-
-    net.load_state_dict(checkpoint['model_state_dict'])
-
-    if args.get('cuda'):
-        net = net.cuda()
-
-    # if args.get('trained_with_mltp_gpu'):
-    #     net = net.module.encoder
-    # else:
-    net = net.encoder
-
-    return net
-
-
-def softtriple_load_model_inception(save_path, args):
-    if args.get('cuda'):
-        checkpoint = torch.load(save_path, map_location=torch.device(0))
-    else:
-        checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
-
-    net = st.bninception(args.get('emb_size'))
-
-    net.load_state_dict(checkpoint)
-
-    if args.get('cuda'):
-        net = net.cuda()
-
-    return net
-
-def ms_load_model_resnet50(save_path, args):
-    if args.get('cuda'):
-        checkpoint = torch.load(save_path, map_location=torch.device(0))
-    else:
-        checkpoint = torch.load(save_path, map_location=torch.device('cpu'))
-
-    net = mm.build_model()
-
-    net.load_state_dict(checkpoint['model'])
-
-    if args.get('cuda'):
-        net = net.cuda()
-
-    return net
 
 
 def resnet_load_model(save_path, args):
@@ -395,26 +269,21 @@ def main():
     utils.make_dirs(os.path.join(eval_log_path, 'ssl_cache/'))
     net = None
 
+    encoder = ssl_utils.get_backbone(all_args.get('backbone'),
+                                 pretrained=(all_args.get('method_name') == 'default'))
+
+    if all_args.get('ssl'):
+        class_num = 0
+    else:
+        class_num = all_args.get('nb_classes')
+
 
     if all_args.get('checkpoint'):
         if all_args.get('name') is None:
-            raise Exception('Provide --name')
+            raise Exception('Provide --name')    
         checkpoint_name = os.path.split(all_args.get('checkpoint'))[1].split('.')[0]
         cache_path = os.path.join(eval_log_path, 'ssl_cache', f'{checkpoint_name}_' + all_args.get('name'))
     else:
-        net = ssl_utils.get_backbone(all_args.get('backbone'),
-                                    pretrained=(all_args.get('method_name') == 'default'))
-
-        net = ssl_utils.load_ssl_weight_to_model(model=net,
-                                                method_name=all_args.get(
-                                                    'method_name'),
-                                                arch_name=all_args.get('backbone'))
-        net.fc = nn.Identity()
-
-
-        if all_args.get('cuda'):
-            net = net.cuda()
-    
         checkpoint_name = f"{all_args.get('backbone')}_{all_args.get('method_name')}"
         cache_path = os.path.join(eval_log_path, 'ssl_cache', f'{checkpoint_name}')
 
@@ -480,25 +349,30 @@ def main():
         #             is_train=False, std=DATASET_STDS.get(all_args.get('dataset')),
         #             mean=DATASET_MEANS.get(all_args.get('dataset'))
         #         ))]
-        if all_args.get('checkpoint'):
-            if all_args.get('baseline') == 'proxy-anchor':
-                net = proxyanchor_load_model_resnet50(all_args.get('checkpoint'), all_args)
-            elif all_args.get('baseline') == 'supcontrastive':
-                net = supcontrastive_load_model_resnet50(all_args.get('checkpoint'), all_args)
-            elif all_args.get('baseline') == 'softtriple':
-                if all_args.get('backbone') == 'resnet50':
-                    net = softtriple_load_model_resnet50(all_args.get('checkpoint'), all_args)
-                elif all_args.get('backbone') == 'bninception':
-                    net = softtriple_load_model_inception(all_args.get('checkpoint'), all_args)
-            elif all_args.get('baseline') == 'resnet50':
-                net = resnet_load_model(all_args.get('checkpoint'), all_args)
-            elif all_args.get('baseline') == 'proxyncapp':
-                net = proxyncapp_load_model_resnet50(all_args.get('checkpoint'), all_args)
-            elif all_args.get('baseline') == 'htv2':
-                net = htv2_load_model_resnet50(all_args.get('checkpoint'), all_args)
-            elif all_args.get('baseline') == 'ms':
-                net = ms_load_model_resnet50(all_args.get('checkpoint'), all_args)
 
+        if all_args.get('checkpoint'):
+            net = ssl_model.SSL_MODEL(backbone=encoder,
+                        emb_size=2048,
+                        num_classes=class_num,
+                        freeze_backbone=True,
+                        projector_sclaing=all_args.get('ssl_projector_scale')) # freezes backbone when Linear Probing
+    
+            net, epoch = utils.load_model(net, checkpoint_path=all_args.get('checkpoint'))
+            net = net.encoder # just keep the feature extracting module
+        else:
+            net = ssl_utils.get_backbone(all_args.get('backbone'),
+                                        pretrained=(all_args.get('method_name') == 'default'))
+
+            net = ssl_utils.load_ssl_weight_to_model(model=net,
+                                                    method_name=all_args.get(
+                                                        'method_name'),
+                                                    arch_name=all_args.get('backbone'))
+            net.fc = nn.Identity()
+
+
+        if all_args.get('cuda'):
+            net = net.cuda()
+    
         assert net is not None
         net.eval()
         # eval_ldrs = []

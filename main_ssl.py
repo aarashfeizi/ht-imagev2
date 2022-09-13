@@ -15,7 +15,7 @@ from trainer import Trainer
 
 import numpy as np
 import torch.nn as nn
-
+import datasets
 
 def main():
     args = arg_parser.get_args_ssl()
@@ -107,8 +107,12 @@ def main():
                                     ssl=all_args.get('ssl'),
                                     **ssl_kwargs)
 
-    train_lbl2idx = train_loader.dataset.get_lbl2idx()
-    train_ohe = train_loader.dataset.get_onehotencoder()
+    if all_args.get('dataset') not in datasets.PREDEFINED_DATASETS:
+        train_lbl2idx = train_loader.dataset.get_lbl2idx()
+        train_ohe = train_loader.dataset.get_onehotencoder()
+    else:
+        train_lbl2idx = None
+        train_ohe = None
 
     # if train_transforms_swap is not None:
     #     train_loader = utils.get_data(all_args, mode='train', transform=train_transforms, sampler_mode='kbatch')
