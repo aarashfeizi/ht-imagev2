@@ -309,7 +309,10 @@ def main():
         #     not all_args.get('force_update'):
 
         for i in range(0, all_args.get('num_of_dataset')):
-            val_set_name = fix_name(all_args.get(f'all_{all_args.get("eval_mode")}_files')[i])
+            if all_args.get('dataset') not in PREDEFINED_DATASETS:
+                val_set_name = fix_name(all_args.get(f'all_{all_args.get("eval_mode")}_files')[i])
+            else:
+                val_set_name = f'{all_args.get("eval_mode")}_set'
 
             emb_data_path = os.path.join(cache_path, val_set_name + "_embs.npy")
 
@@ -327,6 +330,7 @@ def main():
         # eval_datasets = []
         eval_ldrs = []
 
+
         if all_args.get('dataset') not in PREDEFINED_DATASETS:
             if all_args.get('num_of_dataset') > len(all_args.get(f'all_{all_args.get("eval_mode")}_files')):
                 raise Exception(
@@ -339,6 +343,9 @@ def main():
                                                 transform=val_transforms,
                                                 sampler_mode='db'))
         else:
+            if all_args.get('num_of_dataset') != 1: 
+                print(f'setting num_of_datasets to eval from {all_args.get("num_of_dataset")} to 1')
+
             eval_ldrs.append(utils.get_data(all_args, mode=all_args.get('eval_mode'),
                                             transform=val_transforms,
                                             sampler_mode='db'))
@@ -406,8 +413,12 @@ def main():
                 all_data.append((features, labels))
 
         utils.make_dirs(cache_path)
+        print('cache_path created!', cache_path)
         for i in range(0, all_args.get('num_of_dataset')):
-            val_set_name = fix_name(all_args.get(f'all_{all_args.get("eval_mode")}_files')[i])
+            if all_args.get('dataset') not in PREDEFINED_DATASETS:
+                val_set_name = fix_name(all_args.get(f'all_{all_args.get("eval_mode")}_files')[i])
+            else:
+                val_set_name = f'{all_args.get("eval_mode")}_set'
             emb_data, lbl_data = all_data[i]
 
             emb_data_path = os.path.join(cache_path, val_set_name + "_embs.npy")
