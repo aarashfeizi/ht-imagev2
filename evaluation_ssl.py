@@ -172,7 +172,7 @@ def get_features_and_labels(args, model, loader):
             if idx2lbl is not None:
                 labels.append(lbl.apply_(idx2lbl.get))
             else:
-                labels.append(lbl.cpu().detach().numpu())
+                labels.append(lbl.cpu().detach().numpy())
 
             t.update()
 
