@@ -30,7 +30,7 @@ def load_dataset(args, mode, filename, transform, for_heatmap=False, pairwise_la
         dataset_name = args.get('dataset')
 
     if dataset_name in PREDEFINED_DATASETS:
-        return PREDEFINED_DATASETS[dataset_name](args.get('dataset_path'), split=mode)
+        return PREDEFINED_DATASETS[dataset_name](args.get('dataset_path'), transform=transform, split=mode)
     else:
         return DATASETS[dataset_name](args, mode, filename, transform, get_paths=for_heatmap,
                                              pairwise_labels=pairwise_labels, classification=classification, ssl=ssl, **kwargs)

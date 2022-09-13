@@ -340,7 +340,7 @@ def main():
                                                 sampler_mode='db'))
         else:
             eval_ldrs.append(utils.get_data(all_args, mode=all_args.get('eval_mode'),
-                                            transform=val_transforms,
+                                             =val_transforms,
                                             sampler_mode='db'))
 
 
