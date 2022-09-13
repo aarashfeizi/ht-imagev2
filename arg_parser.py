@@ -73,7 +73,7 @@ SSL_MODELS = ['default',
                 'densecl',
                 'densecl_CC'] # _CC is pretrained on COCO (as opposed to ImageNet)
 
-eval_dataset_choices = ['cars', 'cub-val', 'cub-test', 'hotels', 'hotels_small', 'hotelid-val', 'hotelid-test']
+eval_dataset_choices = ['cars', 'cub-val', 'cub-test', 'hotels', 'hotels_small', 'hotelid-val', 'hotelid-test', 'imagenet']
 eval_BASELINE_MODELS = ['ours',
                    'softtriple',
                    'proxy-anchor',
