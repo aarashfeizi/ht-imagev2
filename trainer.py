@@ -704,7 +704,7 @@ class Trainer:
                         embeddings, classes = self.get_embeddings(net, data_loader=self.val_db_loaders_dict[val_name])
 
                         p_labels = None
-                        if val_loader.dataset.sample_pairwise:
+                        if getattr(self.val_loaders_dict['val'].dataset, 'dataset', None):
                             p_labels = self.val_pairwise_lbls_dict.get(val_name, None)
 
                         r_at_k_score = utils.get_recall_at_k(embeddings, classes,
