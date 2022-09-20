@@ -86,10 +86,19 @@ def main():
     ssl_kwargs = {}
     if all_args.get('ssl'):
         if all_args.get('local_global_aug'):
-            ssl_transforms, ssl_transforms_names = utils.TransformLoader(all_args, 
-                                                                            scale=[0.8, 1.0],
-                                                                            rotate=90).get_composed_transform(mode='train-ssl',
-                                                                                                                color_jitter=all_args.get('color_jitter'))
+            if all_args.get('ssl_mask_in_scale') != -1.0:
+                print(f'Using ssl_mask_in_scale = {all_args.get("ssl_mask_in_scale")}')
+                transform_loader_obj = utils.TransformLoader(all_args, 
+                                                            scale=[0.8, 1.0],
+                                                            rotate=90,
+                                                            mask_in_scale=all_args.get('ssl_mask_in_scale'))
+            else:
+                transform_loader_obj = utils.TransformLoader(all_args, 
+                                                            scale=[0.8, 1.0],
+                                                            rotate=90)
+
+            ssl_transforms, ssl_transforms_names = transform_loader_obj.get_composed_transform(mode='train-ssl',
+                                                                                                color_jitter=all_args.get('color_jitter'))
             print('Train-SSL transforms: ', ssl_transforms_names)
 
             ssl_kwargs = {'random_crop_resize_transform': ssl_transforms[0],

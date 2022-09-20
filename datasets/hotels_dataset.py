@@ -6,6 +6,14 @@ import torch
 import utils
 from datasets.base_dataset import BaseDataset
 
+def get_color_distortion(s=1.0):
+    # s is the strength of color distortion.
+    color_jitter = transforms.ColorJitter(0.8*s, 0.8*s, 0.8*s, 0.2*s)
+    rnd_color_jitter = transforms.RandomApply([color_jitter], p=0.8)
+    rnd_gray = transforms.RandomGrayscale(p=0.2)
+    color_distort = transforms.Compose([rnd_color_jitter, rnd_gray])
+    return color_distort
+
 
 class HotelsDataset(BaseDataset):
     def __init__(self, args, mode, filename='', transform=None, get_paths=False, pairwise_labels=False, classification=False, ssl=False, **kwargs):
@@ -19,7 +27,14 @@ class HotelsDataset_SSL(HotelsDataset):
     def __init__(self, args, mode, filename='', transform=None, get_paths=False, pairwise_labels=False, classification=False, ssl=False, **kwargs):
         super(HotelsDataset_SSL, self).__init__(args, mode, filename, transform, get_paths, pairwise_labels, classification, ssl, **kwargs)
 
-        self.ssl_aug = kwargs['ssl_aug']
+        self.ssl_aug = kwargs.get('ssl_aug', False)
+        self.multi_crop = kwargs.get('multi_crop', False)
+
+        if self.ssl_aug:
+            assert not self.multi_crop
+        elif self.multi_crop:
+            assert not self.ssl_aug
+
         if self.ssl_aug:
             self.random_crop_resize_transform = kwargs['random_crop_resize_transform']
             self.mask_in_transform = kwargs['mask_in_transform']

@@ -294,6 +294,7 @@ def get_args_ssl():
     parser.add_argument('--seed', type=int, default=402, help="set random seed")
     parser.add_argument('--config_path', default='config/', help="config_path for datasets")
     parser.add_argument('--project_path', default='./', help="project_path")
+    # parser.add_argument('--log_path', default='./', help="project_path") ## this should be in the config file
     parser.add_argument('--xname', default='', help="extra name to be added to name")
     parser.add_argument('--save_model', default=False, action='store_true', help="save model or not")
     parser.add_argument('--no_validation', default=False, action='store_true', help="save model or not")
@@ -315,6 +316,8 @@ def get_args_ssl():
     parser.add_argument('--backbone_mode', default='LP', choices=['LP', 'FT']) # to 'finetune' or 'linear prob' a backbone
     parser.add_argument('--ssl', default=False, action='store_true')
     parser.add_argument('--color_jitter', default=False, action='store_true')
+    parser.add_argument('--ssl_mask_in_scale', type=float, default=-1.0)
+    
     parser.add_argument('--local_global_aug', default=False, action='store_true')
     parser.add_argument('--ssl_projector_scale', type=int, default=2)
     parser.add_argument('--optimizer', default='adam', choices=OPTIMIZER_LIST, help='optimizer to use')

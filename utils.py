@@ -127,6 +127,9 @@ class TransformLoader:
         self.image_size = image_size
         self.first_resize = resize_size
         self.mask_in_scale = mask_in_scale
+        if type(self.mask_in_scale) == float:
+            assert self.mask_in_scale <= 1
+            self.mask_in_scale = (self.mask_in_scale, self.mask_in_scale)
         self.mask_in_ratio = mask_in_ratio
         if args.get('normalize_param') is None:
             self.normalize_param = normalize_param
