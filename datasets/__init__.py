@@ -11,7 +11,9 @@ DATASETS = {
     'hotelid-val-ssl': HotelsDataset_SSL,
     'hotelid-test-ssl': HotelsDataset_SSL,
     'cub-val': BaseDataset,
-    'cub-test': BaseDataset
+    'cub-test': BaseDataset,
+    'mini-imagenet-val': BaseDataset,
+    'mini-imagenet-test': BaseDataset
 }
 
 PREDEFINED_DATASETS = {

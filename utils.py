@@ -117,7 +117,8 @@ class TransformLoader:
                  scale=[0.5, 1.0],
                  resize_size=256,
                  mask_in_ratio=(0.5, 1.5),
-                 mask_in_scale=(0.01, 0.3)):
+                 mask_in_scale=(0.01, 0.3),
+                 random_crop=False):
         # hotels v5 train small mean: tensor([0.5791, 0.5231, 0.4664])
         # hotels v5 train small std: tensor([0.2512, 0.2581, 0.2698])
 
@@ -145,6 +146,7 @@ class TransformLoader:
         self.rotate = rotate
         self.scale = scale
         self.random_erase_prob = 0.0
+        self.random_crop = random_crop # in case of SSL dataloading and data transforms
         self.random_swap = args.get('aug_swap')
         self.random_swap_prob = args.get('aug_swap_prob')
         self.random_mask_prob = args.get('aug_mask_prob')
@@ -172,6 +174,10 @@ class TransformLoader:
             return method(p=0.5)
         elif transform_type == 'RandomMaskIn':
             return method(p=0.95, ratio=self.mask_in_ratio, scale=self.mask_in_scale)
+        elif transform_type == 'RandomCrop':
+            min_size = max(int(self.image_size * self.mask_in_scale[0]), 20)
+            max_size = min(int(self.image_size * self.mask_in_scale[1]), int(self.image_size // 3))
+            return method(size=(min_size, max_size))
         else:
             return method()
 
@@ -207,7 +213,10 @@ class TransformLoader:
             transform_list.extend(['Normalize'])
         elif mode == 'train-ssl':
             # transform_list2 = [t for t in transform_list]
-            transform_list2.extend(['RandomMaskIn'])
+            if self.random_crop:
+                transform_list2.extend(['RandomCrop'])
+            else:
+                transform_list2.extend(['RandomMaskIn'])
 
             transform_list3.extend(['RandomHorizontalFlip'])
             if self.rotate > 0:

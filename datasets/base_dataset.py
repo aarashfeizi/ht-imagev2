@@ -91,6 +91,8 @@ class BaseDataset(Dataset):
             self.__read_txt()
         elif self.data_file_path.endswith('.csv'):
             self.__read_csv()
+        elif self.data_file_path.endswith('/'):
+            self.__read_dir()
         else:
             raise Exception(f'{self.data_file_path}: File type not supported')
 
@@ -120,6 +122,17 @@ class BaseDataset(Dataset):
         file = pd.read_csv(path)
         self.path_list = list(file['image'])
         self.label_list = list(file['label'])
+
+    def __read_dir(self):
+        path = os.path.join(self.root, self.data_file_path)
+        all_labels = os.listdir(path)
+        for l in all_labels:
+            class_path = os.path.join(path, l)
+            class_path_files = os.listdir(class_path)
+            class_fullpath_files = [os.path.join(class_path, f) for f in class_path_files]
+            self.path_list.extend(class_fullpath_files)
+            self.label_list.extend([l for _ in range(len(class_fullpath_files))])
+            
 
     def __len__(self):
         return len(self.path_list)

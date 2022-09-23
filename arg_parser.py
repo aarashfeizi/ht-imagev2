@@ -1,6 +1,6 @@
 import argparse
 
-DATASET_LIST = ['hotels', 'hotels_small', 'cub-val', 'cub-test', 'hotelid-val', 'hotelid-test', 'imagenet']
+DATASET_LIST = ['hotels', 'hotels_small', 'cub-val', 'cub-test', 'hotelid-val', 'hotelid-test', 'imagenet', 'mini-imagenet-test', 'mini-imagenet-val']
 
 LOSSES_LIST = ['pnpp',
                'bce',
@@ -73,7 +73,7 @@ SSL_MODELS = ['default',
                 'densecl',
                 'densecl_CC'] # _CC is pretrained on COCO (as opposed to ImageNet)
 
-eval_dataset_choices = ['cars', 'cub-val', 'cub-test', 'hotels', 'hotels_small', 'hotelid-val', 'hotelid-test', 'imagenet']
+eval_dataset_choices = ['cars', 'cub-val', 'cub-test', 'hotels', 'hotels_small', 'hotelid-val', 'hotelid-test', 'imagenet','mini-imagenet-val', 'mini-imagenet-test']
 eval_BASELINE_MODELS = ['ours',
                    'softtriple',
                    'proxy-anchor',
@@ -317,6 +317,7 @@ def get_args_ssl():
     parser.add_argument('--ssl', default=False, action='store_true')
     parser.add_argument('--color_jitter', default=False, action='store_true')
     parser.add_argument('--ssl_mask_in_scale', type=float, default=-1.0)
+    parser.add_argument('--ssl_random_crop', default=False, action='store_true')
     
     parser.add_argument('--local_global_aug', default=False, action='store_true')
     parser.add_argument('--ssl_projector_scale', type=int, default=2)

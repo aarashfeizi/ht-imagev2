@@ -91,11 +91,13 @@ def main():
                 transform_loader_obj = utils.TransformLoader(all_args, 
                                                             scale=[0.8, 1.0],
                                                             rotate=90,
-                                                            mask_in_scale=all_args.get('ssl_mask_in_scale'))
+                                                            mask_in_scale=all_args.get('ssl_mask_in_scale'),
+                                                            random_crop=all_args.get('ssl_random_crop'))
             else:
                 transform_loader_obj = utils.TransformLoader(all_args, 
                                                             scale=[0.8, 1.0],
-                                                            rotate=90)
+                                                            rotate=90,
+                                                            random_crop=all_args.get('ssl_random_crop'))
 
             ssl_transforms, ssl_transforms_names = transform_loader_obj.get_composed_transform(mode='train-ssl',
                                                                                                 color_jitter=all_args.get('color_jitter'))
