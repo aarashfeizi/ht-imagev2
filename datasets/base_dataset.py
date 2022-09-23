@@ -126,12 +126,15 @@ class BaseDataset(Dataset):
     def __read_dir(self):
         path = os.path.join(self.root, self.data_file_path)
         all_labels = os.listdir(path)
+        lbl2num = {l:i for i, l in enumerate(all_labels)}
         for l in all_labels:
             class_path = os.path.join(path, l)
             class_path_files = os.listdir(class_path)
             class_fullpath_files = [os.path.join(class_path, f) for f in class_path_files]
             self.path_list.extend(class_fullpath_files)
-            self.label_list.extend([l for _ in range(len(class_fullpath_files))])
+            label_names = [l for _ in range(len(class_fullpath_files))]
+            label_nums = list(map(lbl2num.get, label_names))
+            self.label_list.extend(label_nums)
             
 
     def __len__(self):
