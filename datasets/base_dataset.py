@@ -130,7 +130,7 @@ class BaseDataset(Dataset):
         for l in all_labels:
             class_path = os.path.join(path, l)
             class_path_files = os.listdir(class_path)
-            class_fullpath_files = [os.path.join(class_path, f) for f in class_path_files]
+            class_fullpath_files = [os.path.join(self.data_file_path, l, f) for f in class_path_files]
             self.path_list.extend(class_fullpath_files)
             label_names = [l for _ in range(len(class_fullpath_files))]
             label_nums = list(map(lbl2num.get, label_names))
