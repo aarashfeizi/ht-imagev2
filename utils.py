@@ -353,7 +353,7 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
     mode_splits = mode.split('_')
     eval_mode = mode_splits[0]
     if eval_mode != 'train':
-        if args.get('dataset') == 'imagenet':
+        if args.get('dataset') in datasets.PREDEFINED_DATASETS:
             if eval_mode == 'val2':
                 eval_mode = 'val'
         if len(mode_splits) > 1 and mode_splits[1] == 'pairwise':
