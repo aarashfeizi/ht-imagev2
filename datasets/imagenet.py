@@ -2,9 +2,9 @@ from torchvision.datasets import ImageNet as ImageNetT
 from typing import Any, Dict, List, Iterator, Optional, Tuple
 
 class ImageNet(ImageNetT):
-    def __init__(self, root: str, split: str = 'train', download: Optional[str] = None, **kwargs: Any) -> None:
+    def __init__(self, root: str, split: str = 'train', download: Optional[str] = None, number_of_classes=None, **kwargs: Any) -> None:
         super(ImageNet, self).__init__(root=root, split=split, **kwargs)
-        class_threshold = kwargs.get('number_of_classes', None)
+        class_threshold = number_of_classes
         if class_threshold is not None \
             and class_threshold != 0:
             new_samples = []

@@ -108,7 +108,8 @@ def main():
                 'rest_transform': ssl_transforms[2]}
 
         ssl_kwargs['ssl_aug'] = all_args.get('local_global_aug')
-        ssl_kwargs['number_of_classes'] = all_args.get('number_of_classes')
+    
+    ssl_kwargs['number_of_classes'] = all_args.get('number_of_classes')
 
     
     train_loader = utils.get_data(all_args, mode='train',
