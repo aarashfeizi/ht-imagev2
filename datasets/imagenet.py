@@ -1,4 +1,5 @@
 from torchvision.datasets import ImageNet as ImageNetT
+from typing import Any, Dict, List, Iterator, Optional, Tuple
 
 class ImageNet(ImageNetT):
     def __init__(self, root: str, split: str = 'train', download: Optional[str] = None, **kwargs: Any) -> None:
