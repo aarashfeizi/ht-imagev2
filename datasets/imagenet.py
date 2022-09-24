@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Iterator, Optional, Tuple
 
 class ImageNet(ImageNetT):
     def __init__(self, root: str, split: str = 'train', download: Optional[str] = None, **kwargs: Any) -> None:
-        super().__init__(root, split, download, **kwargs)
+        super(ImageNet, self).__init__(root=root, split=split, download=download, **kwargs)
         class_threshold = kwargs.get('number_of_classes', None)
         if class_threshold is not None \
             and class_threshold != 0:
