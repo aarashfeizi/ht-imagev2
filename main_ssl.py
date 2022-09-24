@@ -108,6 +108,7 @@ def main():
                 'rest_transform': ssl_transforms[2]}
 
         ssl_kwargs['ssl_aug'] = all_args.get('local_global_aug')
+        ssl_kwargs['number_of_classes'] = all_args.get('number_of_classes')
 
     
     train_loader = utils.get_data(all_args, mode='train',
@@ -130,12 +131,15 @@ def main():
 
     val2_loader = None
     val2_db_loader = None
+    val_ssl_kwargs = {}
 
-    if sampler_mode == 'classification' and all_args.get('eval_classification'):
+    if sampler_mode == 'classification' and all_args.get('eval_classification'):    
+        val_ssl_kwargs['number_of_classes'] = all_args.get('number_of_classes')
         val_classification_loader = utils.get_data(
             all_args, mode='val', transform=val_transforms, 
             sampler_mode='classification', lbl2idx=train_lbl2idx, 
-            onehotencoder=train_ohe)
+            onehotencoder=train_ohe,
+            **val_ssl_kwargs)
     else:
         val_classification_loader = None
 
