@@ -126,12 +126,14 @@ save_ssl_download = {
 }
 
 
-def load_ssl_weight_to_model(model, method_name, arch_name):
+def load_ssl_weight_to_model(model, method_name, arch_name, ssl_path='./'):
     import urllib.request as req
     import pathlib
-    utils.make_dirs('ssl_backbones')
 
-    checkpoint_path = os.path.join('ssl_backbones', f'{arch_name}_{method_name}.pth')
+    ssl_backbonedir_path = os.path.join(ssl_path, 'ssl_backbones')
+    utils.make_dirs(ssl_backbonedir_path)
+
+    checkpoint_path = os.path.join(ssl_backbonedir_path, f'{arch_name}_{method_name}.pth')
 
     if method_name == 'default':
         return model

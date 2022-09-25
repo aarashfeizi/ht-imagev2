@@ -59,7 +59,8 @@ def main():
     encoder = ssl_utils.load_ssl_weight_to_model(model=encoder,
                                              method_name=all_args.get(
                                                  'method_name'),
-                                             arch_name=all_args.get('backbone'))
+                                             arch_name=all_args.get('backbone'),
+                                             ssl_path=all_args.get('log_path'))
     if all_args.get('ssl'):
         class_num = 0
     else:
