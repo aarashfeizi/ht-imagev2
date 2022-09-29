@@ -21,11 +21,12 @@ class ImageNet(ImageNetT):
             and len(specific_classes) != 0:
             new_samples = []
             class_indexes = [self.wnid_to_idx[clss] for clss in specific_classes]
+            self.oldidx_to_newidx = {idx:i for i, idx in enumerate(class_indexes)}
             print(f'Only choosing classes {specific_classes}')
             print(f'Using class indices {class_indexes}')
             for path, label in self.samples:
                 if label in class_indexes:
-                    new_samples.append((path, label))
+                    new_samples.append((path, self.oldidx_to_newidx[label]))
 
             print(f'changed number of classes from 1000 to {len(specific_classes)}')
             print(f'changed number of samples from {len(self.samples)} to {len(new_samples)}')
