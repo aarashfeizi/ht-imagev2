@@ -19,7 +19,6 @@ class ImageNet(ImageNetT):
         
         if specific_classes is not None \
             and len(specific_classes) != 0:
-            self.samples = new_samples
             new_samples = []
             class_indexes = [self.wnid_to_idx[clss] for clss in specific_classes]
             print(f'Only choosing classes {specific_classes}')
