@@ -8,6 +8,7 @@
     "test_file": "",
     "all_val_files": [],
     "all_test_files": [],
+    "specific_classes": [],
     "loss_mode": "metric",
     "normalize_param": {
       "mean": [0.485, 0.456, 0.406],
