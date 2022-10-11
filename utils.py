@@ -368,6 +368,8 @@ def get_data(args, mode, file_name='', transform=None, sampler_mode='kbatch',
                                     pairwise_labels=pairwise_labels,
                                     ssl=ssl,
                                     **kwargs)
+
+    print(f'{eval_mode} size: ', dataset.__len__())
     if lbl2idx is not None:
         dataset.set_lbl2idx(lbl2idx, onehotencoder)
 
