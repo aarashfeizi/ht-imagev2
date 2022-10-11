@@ -1,0 +1,37 @@
+{
+    "dataset_path": "../../scratch/cifar100",
+    "nb_classes": 100,
+    "number_of_classes": 0,
+    "log_path": "/home/mila/f/feiziaar/scratch/ht-imagev2/logs",
+    "train_file": "",
+    "val_file": "",
+    "val2_file": "",
+    "test_file": "",
+    "all_val_files": [],
+    "all_test_files": [],
+    "specific_classes": [], 
+    "loss_mode": "metric",
+    "normalize_param": {
+      "mean": [0.4914, 0.4822, 0.4465],
+      "std": [0.247, 0.243, 0.261]
+    },
+    "color_jitter_param": {
+      "brightness": 0.5,
+      "hue": 0.5,
+      "contrast": 0.5,
+      "saturation": 0.5
+    },
+  
+    "ordered_idxs": "",
+    "ordered_lbls": "",
+  
+    "all_ordered_idxs": {
+      "val.txt": ""
+    },
+  
+    "all_ordered_lbls": {
+      "val.txt": ""
+    }
+  }
+  
+  

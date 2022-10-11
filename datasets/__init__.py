@@ -21,6 +21,7 @@ DATASETS = {
 PREDEFINED_DATASETS = {
     'imagenet': ImageNet,
     'imagenet100': ImageNet,
+    'cifar100': tv_datasets.CIFAR100,
     'places': tv_datasets.Places365,
 }
 
