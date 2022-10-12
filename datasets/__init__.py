@@ -1,5 +1,5 @@
 from tkinter import Image
-from datasets.base_dataset import BaseDataset
+from datasets.base_dataset import BaseDataset, BaseDataset_SSL
 from datasets.hotels_dataset import HotelsDataset, HotelsDataset_SSL
 from datasets.imagenet import ImageNet
 
@@ -14,6 +14,8 @@ DATASETS = {
     'hotelid-test-ssl': HotelsDataset_SSL,
     'cub-val': BaseDataset,
     'cub-test': BaseDataset,
+    'cub-val-ssl': BaseDataset_SSL,
+    'cub-test': BaseDataset_SSL,
     'mini-imagenet-val': BaseDataset,
     'mini-imagenet-test': BaseDataset
 }

@@ -1,10 +1,12 @@
 from hashlib import new
+import imp
 import os
 
 import torch
 
 import utils
 from datasets.base_dataset import BaseDataset
+from torchvision import transforms
 
 def get_color_distortion(s=1.0):
     # s is the strength of color distortion.
