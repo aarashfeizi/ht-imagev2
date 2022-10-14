@@ -50,6 +50,7 @@ class Trainer:
         self.ssl = args.get('ssl')
         self.fine_tune = args.get('backbone_mode') == 'FT'
         self.logistic_regression = args.get('backbone_mode') == 'LP_LogR'
+        self.logistic_regression_C = args.get('logistic_regression_C')
         self.aug_swap = args.get('aug_swap') > 1
         self.pytorch_bce_with_logits = torch.nn.BCEWithLogitsLoss()
         self.cross_entropy = torch.nn.CrossEntropyLoss()
@@ -703,7 +704,7 @@ class Trainer:
             list_for_tb = []
             print('Getting train embeddings for Logistic Regression...')
             train_embeddings, train_classes = self.get_embeddings(net, data_loader=self.train_loader, verbose=True)
-            log_reg = LogisticRegression(penalty='l2', solver='lbfgs')
+            log_reg = LogisticRegression(penalty='l2', solver='lbfgs', C=self.logistic_regression_C)
             print('Training Logistic Regression model...')
             log_reg.fit(X=train_embeddings, y=train_classes)
             

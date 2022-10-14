@@ -316,6 +316,8 @@ def get_args_ssl():
     # learning
     parser.add_argument('--method_name', default='default', choices=SSL_MODELS) # does not support byol and simclr
     parser.add_argument('--backbone_mode', default='LP', choices=['LP', 'FT', 'LP_LogR']) # to 'finetune' or 'linear prob' a backbone
+    parser.add_argument('--logistic_regression_C', type=float, default=0.0)
+
     parser.add_argument('--ssl', default=False, action='store_true')
     parser.add_argument('--color_jitter', default=False, action='store_true')
     parser.add_argument('--ssl_mask_in_scale', type=float, default=-1.0)
