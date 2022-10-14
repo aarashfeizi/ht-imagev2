@@ -700,6 +700,7 @@ class Trainer:
             raise Exception(f'train_loader is not initialized in trainer')
 
         if self.logistic_regression: # no more training
+            list_for_tb = []
             print('Getting train embeddings for Logistic Regression...')
             train_embeddings, train_classes = self.get_embeddings(net, data_loader=self.train_loader, verbose=True)
             log_reg = LogisticRegression(penalty='l2', solver='lbfgs')
@@ -714,6 +715,7 @@ class Trainer:
 
             pred_classes = log_reg.predict(embeddings)
             val_acc = accuracy_score(y_true=classes, y_pred=pred_classes)
+            print('Accuracy: ', val_acc)
             list_for_tb.append((f'Val/LR_Class_Acc', val_acc))
             if self.use_wandb:
                 utils.wandb_update_value(list_for_tb)
