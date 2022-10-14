@@ -2,8 +2,9 @@ import os
 from tkinter import image_names
 
 import numpy as np
+import sklearn
 import torch
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, accuracy_score
 from tqdm import tqdm
 
 import losses
@@ -12,6 +13,8 @@ import utils
 from SummaryWriter import SummaryWriter
 from metrics import Metric_Accuracy, Classification_Accuracy
 from einops import rearrange
+
+from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
 
 import wandb
 
@@ -46,6 +49,7 @@ class Trainer:
         self.eval_classification = args.get('eval_classification')
         self.ssl = args.get('ssl')
         self.fine_tune = args.get('backbone_mode') == 'FT'
+        self.logistic_regression = args.get('backbone_mode') == 'LP_LogR'
         self.aug_swap = args.get('aug_swap') > 1
         self.pytorch_bce_with_logits = torch.nn.BCEWithLogitsLoss()
         self.cross_entropy = torch.nn.CrossEntropyLoss()
@@ -638,45 +642,91 @@ class Trainer:
         #     loss = self.loss_function(embeddings, lbls)
         return loss, each_loss_item
 
-    def get_embeddings(self, net, data_loader=None):
+    def get_embeddings(self, net, data_loader=None, verbose=False):
         net.eval()
         if data_loader is None:
             data_loader = self.val_db_loaders_dict['val']
 
-        val_size = data_loader.dataset.__len__()
+        data_size = data_loader.dataset.__len__()
 
-        embeddings = np.zeros((val_size, self.emb_size), dtype=np.float32)
-        classes = np.zeros((val_size,), dtype=np.float32)
-        for batch_id, (imgs, lbls) in enumerate(data_loader):
-            if self.cuda:
-                imgs = imgs.cuda()
+        embeddings = np.zeros((data_size, self.emb_size), dtype=np.float32)
+        classes = np.zeros((data_size,), dtype=np.float32)
+        if verbose:
+            with tqdm(total=len(data_loader), desc='Getting Embeddings...') as t:
+                for batch_id, (imgs, lbls) in enumerate(data_loader):
+                    if self.cuda:
+                        imgs = imgs.cuda()
 
-            if self.classification or self.ssl:
-                img_embeddings = net.forward_backbone(imgs)
-            else:
-                img_embeddings, _ = net(imgs)
+                    if self.classification or self.ssl:
+                        img_embeddings = net.forward_backbone(imgs)
+                    else:
+                        img_embeddings, _ = net(imgs)
 
-            if len(img_embeddings.shape) == 3:
-                img_embeddings = utils.get_diag_3d_tensor(img_embeddings)
+                    if len(img_embeddings.shape) == 3:
+                        img_embeddings = utils.get_diag_3d_tensor(img_embeddings)
 
-            begin_idx = batch_id * self.batch_size
-            end_idx = min(val_size, (batch_id + 1) * self.batch_size)
+                    begin_idx = batch_id * self.batch_size
+                    end_idx = min(data_size, (batch_id + 1) * self.batch_size)
 
-            embeddings[begin_idx:end_idx, :] = img_embeddings.cpu().detach().numpy()
-            classes[begin_idx:end_idx] = lbls.cpu().detach().numpy()
+                    embeddings[begin_idx:end_idx, :] = img_embeddings.cpu().detach().numpy()
+                    classes[begin_idx:end_idx] = lbls.cpu().detach().numpy()
+                    
+                    t.update()
+
+        else:
+            for batch_id, (imgs, lbls) in enumerate(data_loader):
+                if self.cuda:
+                    imgs = imgs.cuda()
+
+                if self.classification or self.ssl:
+                    img_embeddings = net.forward_backbone(imgs)
+                else:
+                    img_embeddings, _ = net(imgs)
+
+                if len(img_embeddings.shape) == 3:
+                    img_embeddings = utils.get_diag_3d_tensor(img_embeddings)
+
+                begin_idx = batch_id * self.batch_size
+                end_idx = min(data_size, (batch_id + 1) * self.batch_size)
+
+                embeddings[begin_idx:end_idx, :] = img_embeddings.cpu().detach().numpy()
+                classes[begin_idx:end_idx] = lbls.cpu().detach().numpy()
 
         return embeddings, classes
 
     def train(self, net, val=True):
 
-        self.__set_optimizer(net)
-
         if self.train_loader is None:
             raise Exception(f'train_loader is not initialized in trainer')
+
+        if self.logistic_regression: # no more training
+            print('Getting train embeddings for Logistic Regression...')
+            train_embeddings, train_classes = self.get_embeddings(net, data_loader=self.train_loader, verbose=True)
+            log_reg = LogisticRegression(penalty='l2', solver='lbfgs')
+            print('Training Logistic Regression model...')
+            log_reg.fit(X=train_embeddings, y=train_classes)
+            
+            if self.val_classification_loader is None:
+                raise Exception('No validation set to do logistic regression on')
+
+            print(f'Getting embeddings for Validation Set')
+            embeddings, classes = self.get_embeddings(net, data_loader=self.val_classification_loader, verbose=True)
+
+            pred_classes = log_reg.predict(embeddings)
+            val_acc = accuracy_score(y_true=classes, y_pred=pred_classes)
+            list_for_tb.append((f'Val/LR_Class_Acc', val_acc))
+            if self.use_wandb:
+                utils.wandb_update_value(list_for_tb)
+
+            if self.use_wandb:
+                utils.wandb_log()
+            
+            return # no more training with optimizers and backprop...
 
         if self.optimizer is None:
             raise Exception(f'optimizer is not initialized in trainer')
 
+        self.__set_optimizer(net)
         starting_epoch = max(1, self.current_epoch + 1)
 
         best_val_Rat1 = -1
@@ -684,6 +734,8 @@ class Trainer:
         best_vals_class_ACC = -1
         val_auroc_score = 0
         val_acc = 0
+
+
 
         # validate before training
         if val:
