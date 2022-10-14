@@ -31,6 +31,7 @@ HYPER_PARAMS = ['optimizer',
                 'new_lr_coef',
                 'bb_learning_rate',
                 'weight_decay',
+                'opt_momentum',
                 'epochs',
                 'batch_size',
                 'emb_size',
@@ -119,6 +120,7 @@ def get_args():
     parser.add_argument('--new_lr_coef', type=float, default=1.0)
     parser.add_argument('--bb_learning_rate', type=float, default=0.00001)
     parser.add_argument('--weight_decay', type=float, default=0.0)
+    parser.add_argument('--opt_momentum', type=float, default=0.9)
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=20)
     parser.add_argument('--emb_size', type=int, default=512)
@@ -327,6 +329,7 @@ def get_args_ssl():
     parser.add_argument('--new_lr_coef', type=float, default=1.0)
     parser.add_argument('--bb_learning_rate', type=float, default=0.00001)
     parser.add_argument('--weight_decay', type=float, default=0.0)
+    parser.add_argument('--opt_momentum', type=float, default=0.9)
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=20)
     parser.add_argument('--emb_size', type=int, default=512)

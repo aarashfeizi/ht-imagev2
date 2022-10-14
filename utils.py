@@ -531,6 +531,9 @@ def get_model_name(args):
     if args.get('optimizer') != 'adam':
         opt = args.get('optimizer').upper()
         name += f'-opt{opt}'
+    
+    if args.get('opt_momentum') != 0.0: 
+        name += f"-moment{args.get('opt_momentum')}"
 
     if args.get('cov'):
         cov_coef = ''

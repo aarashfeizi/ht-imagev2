@@ -234,7 +234,8 @@ class BaseDataset_SSL(BaseDataset):
         img = utils.open_img(img_path)
 
         img1_transformed, img2_transformed = self.__ssl_transform_img(img)
-        imgs = torch.stack([img1_transformed, img2_transformed], dim=0)
+        # imgs = torch.stack([img1_transformed, img2_transformed], dim=0)
+        imgs = [img1_transformed, img2_transformed]
         lbls = torch.stack([lbl, lbl], dim=0)
         img_paths = [img_path, img_path]
         
