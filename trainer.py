@@ -725,10 +725,12 @@ class Trainer:
             
             return # no more training with optimizers and backprop...
 
+        self.__set_optimizer(net)
+        
         if self.optimizer is None:
             raise Exception(f'optimizer is not initialized in trainer')
 
-        self.__set_optimizer(net)
+
         starting_epoch = max(1, self.current_epoch + 1)
 
         best_val_Rat1 = -1
