@@ -301,6 +301,7 @@ def get_args_ssl():
     parser.add_argument('--save_model', default=False, action='store_true', help="save model or not")
     parser.add_argument('--no_validation', default=False, action='store_true', help="save model or not")
     parser.add_argument('--early_stopping_tol', default=2, type=int, help="early stopping tolerance on validation")
+    parser.add_argument('--val2_freq', type=int, default=1, help="Val2 frequency")
     
 
     parser.add_argument('--test', default=False, action='store_true')

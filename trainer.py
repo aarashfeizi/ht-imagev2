@@ -26,6 +26,7 @@ class Trainer:
 
     def __init__(self, args, loss, train_loader, val_loaders,
                  val_db_loaders, optimizer='adam', current_epoch=0, force_new_dir=True, early_stopping_metric='rat1'):
+        self.val2_freq = args.get('val2_freq')
         self.batch_size = args.get('batch_size')
         self.emb_size = args.get('emb_size')
         self.args = args
@@ -884,6 +885,10 @@ class Trainer:
                         for val_name, val_loader in self.val_loaders_dict.items():
                             if val_loader is None:
                                 continue
+                            
+                            if len(self.val_loaders_dict) > 1 and val_name == 'val2':
+                                if epoch % self.val2_freq != 0:
+                                    continue
                             capitalized_val_name = val_name[0].upper() + val_name[1:]
 
                             if self.val_classification_loader is None:

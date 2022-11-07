@@ -13,7 +13,8 @@ def get_backbone(backbone_name, pretrained=False):
     return model
 
     
-MODEL_URLS = {'byol': 'https://storage.googleapis.com/deepmind-byol/checkpoints/pretrain_res50x1.pkl',
+MODEL_URLS = {
+    # 'byol': 'https://storage.googleapis.com/deepmind-byol/checkpoints/pretrain_res50x1.pkl',
                 'simsiam': 'https://dl.fbaipublicfiles.com/simsiam/models/100ep/pretrain/checkpoint_0099.pth.tar',
                 'dino': 'https://dl.fbaipublicfiles.com/dino/dino_resnet50_pretrain/dino_resnet50_pretrain_full_checkpoint.pth',
                 'vicreg': None,
